@@ -9,7 +9,7 @@ import (
 
 	"github.com/zwh8800/dnd-core/pkg/dice"
 	"github.com/zwh8800/dnd-core/pkg/model"
-	storage2 "github.com/zwh8800/dnd-core/pkg/storage"
+	"github.com/zwh8800/dnd-core/pkg/storage"
 )
 
 // 引擎错误定义
@@ -57,7 +57,7 @@ func (e *EngineError) Unwrap() error {
 type Config struct {
 	// Storage 指定存储后端，用于游戏状态的持久化
 	// 如果为nil，将使用默认的内存存储
-	Storage storage2.Store
+	Storage storage.Store
 
 	// DiceSeed 指定骰子随机数生成器的种子
 	// 如果为0，将使用系统时间作为种子
@@ -75,7 +75,7 @@ type Config struct {
 // 所有对游戏状态的修改都会自动进行阶段权限验证和状态一致性检查。
 type Engine struct {
 	mu     sync.RWMutex
-	store  storage2.Store
+	store  storage.Store
 	roller *dice.Roller
 	config Config
 	closed bool
@@ -95,7 +95,7 @@ type Engine struct {
 func New(cfg Config) (*Engine, error) {
 	// 使用默认存储（如果未指定）
 	if cfg.Storage == nil {
-		cfg.Storage = storage2.NewMemoryStore()
+		cfg.Storage = storage.NewMemoryStore()
 	}
 
 	// 初始化存储
@@ -121,7 +121,7 @@ func New(cfg Config) (*Engine, error) {
 // 使用场景: 快速启动或测试时调用
 func DefaultConfig() Config {
 	return Config{
-		Storage:  storage2.NewMemoryStore(),
+		Storage:  storage.NewMemoryStore(),
 		DiceSeed: 0,
 		DataPath: "",
 	}
@@ -146,7 +146,7 @@ func (e *Engine) Close() error {
 }
 
 // getStore 获取存储后端
-func (e *Engine) getStore() storage2.Store {
+func (e *Engine) getStore() storage.Store {
 	return e.store
 }
 
@@ -159,7 +159,7 @@ func (e *Engine) getRoller() *dice.Roller {
 func (e *Engine) loadGame(ctx context.Context, gameID model.ID) (*model.GameState, error) {
 	game, err := e.store.LoadGame(ctx, gameID)
 	if err != nil {
-		var notFound *storage2.ErrGameNotFound
+		var notFound *storage.ErrGameNotFound
 		if errors.As(err, &notFound) {
 			return nil, ErrNotFound
 		}
