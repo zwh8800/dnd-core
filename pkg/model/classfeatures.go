@@ -189,3 +189,128 @@ func UpdateFighterFeatures(features *FighterFeatures, level int) {
 		features.IndomitableMax = 1
 	}
 }
+
+// BarbarianFeatures 野蛮人特性状态
+type BarbarianFeatures struct {
+	IsRaging              bool `json:"is_raging"`
+	RageMaxUses           int  `json:"rage_max_uses"`
+	RageUsesRemaining     int  `json:"rage_uses_remaining"`
+	HasUnarmoredDefense   bool `json:"has_unarmored_defense"`
+	UnarmoredDefenseBonus int  `json:"unarmored_defense_bonus"`
+	HasDangerSense        bool `json:"has_danger_sense"`
+	HasRecklessAttack     bool `json:"has_reckless_attack"`
+	ExtraAttacks          int  `json:"extra_attacks"`
+}
+
+// BardFeatures 吟游诗人特性状态
+type BardFeatures struct {
+	InspirationMaxUses       int  `json:"inspiration_max_uses"`
+	InspirationUsesRemaining int  `json:"inspiration_uses_remaining"`
+	HasExpertise             bool `json:"has_expertise"`
+	HasCountercharm          bool `json:"has_countercharm"`
+	SlashingMaxUses          int  `json:"slashing_max_uses"`
+	SlashingUseRemaining     int  `json:"slashing_use_remaining"`
+}
+
+// ClericFeatures 牧师特性状态
+type ClericFeatures struct {
+	ChannelDivinityMaxUses          int  `json:"channel_divinity_max_uses"`
+	ChannelDivinityUsesRemaining    int  `json:"channel_divinity_uses_remaining"`
+	DivineInterventionMaxUses       int  `json:"divine_intervention_max_uses"`
+	DivineInterventionUsesRemaining int  `json:"divine_intervention_uses_remaining"`
+	HasDestroyUndead                bool `json:"has_destroy_undead"`
+}
+
+// DruidFeatures 德鲁伊特性状态
+type DruidFeatures struct {
+	WildShapeMaxUses        int  `json:"wild_shape_max_uses"`
+	WildShapeUsesRemaining  int  `json:"wild_shape_uses_remaining"`
+	HasDruidic              bool `json:"has_druidic"`
+	HasWildShapeImprovement bool `json:"has_wild_shape_improvement"`
+	HasBeastSpells          bool `json:"has_beast_spells"`
+}
+
+// MonkFeatures 武僧特性状态
+type MonkFeatures struct {
+	KiPointsMax           int  `json:"ki_points_max"`
+	KiPointsRemaining     int  `json:"ki_points_remaining"`
+	MartialArtsBonus      int  `json:"martial_arts_bonus"`
+	HasUnarmoredDefense   bool `json:"has_unarmored_defense"`
+	UnarmoredDefenseBonus int  `json:"unarmored_defense_bonus"`
+	HasUnarmoredMovement  bool `json:"has_unarmored_movement"`
+	HasStepOfTheWind      bool `json:"has_step_of_the_wind"`
+	HasStunningStrike     bool `json:"has_stunning_strike"`
+	HasEvasion            bool `json:"has_evasion"`
+	HasUncannyDodge       bool `json:"has_uncanny_dodge"`
+}
+
+// PaladinFeatures 圣武士特性状态
+type PaladinFeatures struct {
+	LayOnHandsMax          int           `json:"lay_on_hands_max"`
+	LayOnHandsRemaining    int           `json:"lay_on_hands_remaining"`
+	DivineSenseMax         int           `json:"divine_sense_max"`
+	DivineSenseRemaining   int           `json:"divine_sense_remaining"`
+	DivineSmiteAvailable   bool          `json:"divine_smite_available"`
+	SelectedFightingStyle  FightingStyle `json:"selected_fighting_style"`
+	HasAuraOfProtection    bool          `json:"has_aura_of_protection"`
+	HasImprovedDivineSmite bool          `json:"has_improved_divine_smite"`
+	HasCleansingTouch      bool          `json:"has_cleansing_touch"`
+}
+
+// RangerFeatures 游侠特性状态
+type RangerFeatures struct {
+	HasFavoredEnemy      bool `json:"has_favored_enemy"`
+	HasNaturalExplorer   bool `json:"has_natural_explorer"`
+	HasFightingStyle     bool `json:"has_fighting_style"`
+	HasSpellcasting      bool `json:"has_spellcasting"`
+	HuntersPreyAvailable bool `json:"hunters_prey_available"`
+	ExtraAttacks         int  `json:"extra_attacks"`
+	HasLandStride        bool `json:"has_land_stride"`
+	HasHideInPlainSight  bool `json:"has_hide_in_plain_sight"`
+}
+
+// RogueFeatures 游荡者特性状态
+type RogueFeatures struct {
+	SneakAttackDamage      int  `json:"sneak_attack_damage"`
+	SneakAttackAvailable   bool `json:"sneak_attack_available"`
+	CunningActionAvailable bool `json:"cunning_action_available"`
+	HasUncannyDodge        bool `json:"has_uncanny_dodge"`
+	HasEvasion             bool `json:"has_evasion"`
+	HasReliableTalent      bool `json:"has_reliable_talent"`
+	HasBlindsense          bool `json:"has_blindsense"`
+	HasSlipperyMind        bool `json:"has_slippery_mind"`
+	HasElusive             bool `json:"has_elusive"`
+	HasStrokeOfLuck        bool `json:"has_stroke_of_luck"`
+}
+
+// SorcererFeatures 术士特性状态
+type SorcererFeatures struct {
+	SorceryPointsMax        int  `json:"sorcery_points_max"`
+	SorceryPointsRemaining  int  `json:"sorcery_points_remaining"`
+	HasMetamagic            bool `json:"has_metamagic"`
+	MetamagicOptionsKnown   int  `json:"metamagic_options_known"`
+	HasSorcerousRestoration bool `json:"has_sorcerous_restoration"`
+}
+
+// WarlockFeatures 邪术师特性状态
+type WarlockFeatures struct {
+	SpellSlotLevel         int  `json:"spell_slot_level"`
+	SpellSlotsMax          int  `json:"spell_slots_max"`
+	SpellSlotsUsed         int  `json:"spell_slots_used"`
+	HasEldritchInvocations bool `json:"has_eldritch_invocations"`
+	InvocationsKnown       int  `json:"invocations_known"`
+	InvocationsUsed        int  `json:"invocations_used"`
+	HasPactBoon            bool `json:"has_pact_boon"`
+	HasMysticArcanum       bool `json:"has_mystic_arcanum"`
+}
+
+// WizardFeatures 法师特性状态
+type WizardFeatures struct {
+	ArcaneRecoveryMax  int  `json:"arcane_recovery_max"`
+	ArcaneRecoveryUsed int  `json:"arcane_recovery_used"`
+	HasArcaneTradition bool `json:"has_arcane_tradition"`
+	HasSpellbook       bool `json:"has_spellbook"`
+	SpellbookSpells    int  `json:"spellbook_spells"`
+	HasSpellMastery    bool `json:"has_spell_mastery"`
+	HasSignatureSpells bool `json:"has_signature_spells"`
+}

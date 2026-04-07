@@ -26,15 +26,25 @@ func parseChallengeRating(cr string) int {
 	return val
 }
 
+// AttackEffect 代表攻击的额外效果（如武器掌控）
+type AttackEffect struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
+}
+
 // AttackResult 代表攻击检定的结果
 type AttackResult struct {
-	Roll        int  // 攻击掷骰结果
-	AttackBonus int  // 攻击加值
-	Total       int  // 攻击总计
-	TargetAC    int  // 目标AC
-	Hit         bool // 是否命中
-	IsCritical  bool // 是否暴击（天然20）
-	IsFumble    bool // 是否失误（天然1）
+	Roll            int            `json:"roll"`
+	AttackBonus     int            `json:"attack_bonus"`
+	Total           int            `json:"total"`
+	TargetAC        int            `json:"target_ac"`
+	Hit             bool           `json:"hit"`
+	IsCritical      bool           `json:"is_critical"`
+	IsFumble        bool           `json:"is_fumble"`
+	AbilityModifier int            `json:"ability_modifier"`  // 属性修正值（用于擦伤效果）
+	GrazeDamage     int            `json:"graze_damage"`      // 擦伤伤害（未命中时）
+	Killed          bool           `json:"killed"`            // 是否击杀目标
+	Effects         []AttackEffect `json:"effects,omitempty"` // 额外效果（武器掌控等）
 }
 
 // PerformAttackRoll 执行攻击检定

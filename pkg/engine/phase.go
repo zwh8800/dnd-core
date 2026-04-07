@@ -67,6 +67,11 @@ const (
 	OpAddExperience Operation = "add_experience"
 	OpLevelUp       Operation = "level_up"
 
+	// 专长操作
+	OpSelectFeat Operation = "select_feat"
+	OpRemoveFeat Operation = "remove_feat"
+	OpGetFeat    Operation = "get_feat"
+
 	// 状态查询（所有阶段都允许）
 	OpGetStateSummary Operation = "get_state_summary"
 	OpGetActorSheet   Operation = "get_actor_sheet"
@@ -113,9 +118,10 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpRoll: true, OpAbilityCheck: true, OpSkillCheck: true,
 		OpGetSpellSlots: true, OpPrepareSpells: true,
 		OpAddItem: true, OpEquipItem: true, OpGetInventory: true, OpTransferItem: true,
-		OpCreateScene:     true,
-		OpExecuteHealing:  true,
-		OpLevelUp:         true,
+		OpCreateScene:    true,
+		OpExecuteHealing: true,
+		OpLevelUp:        true,
+		OpSelectFeat:     true, OpRemoveFeat: true, OpGetFeat: true,
 		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
 	},
 	model.PhaseExploration: {
@@ -129,7 +135,8 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpCreateScene: true, OpMoveActorToScene: true, OpSetCurrentScene: true,
 		OpCreateQuest: true, OpAcceptQuest: true, OpUpdateObjective: true, OpCompleteQuest: true,
 		OpShortRest: true, OpStartLongRest: true,
-		OpAddExperience:   true,
+		OpAddExperience: true,
+		OpSelectFeat:    true, OpGetFeat: true,
 		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
 	},
 	model.PhaseCombat: {
