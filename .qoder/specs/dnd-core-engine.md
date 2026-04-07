@@ -150,7 +150,7 @@ type Actor struct {
 
 ```go
 type PlayerCharacter struct {
-    Actor             `json:",inline"`
+    Actor             
     Race              RaceReference    `json:"race"`
     Classes           []ClassLevel     `json:"classes"`
     TotalLevel        int              `json:"total_level"`

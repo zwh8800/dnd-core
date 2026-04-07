@@ -46,7 +46,7 @@ type PersonalityTraits struct {
 
 // PlayerCharacter 代表玩家角色
 type PlayerCharacter struct {
-	Actor `json:",inline"`
+	Actor
 
 	// 种族与职业
 	Race       RaceReference `json:"race"`
@@ -90,7 +90,7 @@ func (pc *PlayerCharacter) IsSpellcaster() bool {
 
 // NPC 代表非玩家角色
 type NPC struct {
-	Actor `json:",inline"`
+	Actor
 
 	// NPC特有字段
 	Occupation  string   `json:"occupation"`  // 职业/身份
@@ -104,7 +104,7 @@ type NPC struct {
 
 // Enemy 代表敌人/怪物
 type Enemy struct {
-	Actor `json:",inline"`
+	Actor
 
 	// 敌人特有字段
 	ChallengeRating       float64         `json:"challenge_rating"` // 挑战等级
@@ -120,7 +120,7 @@ type Enemy struct {
 
 // Companion 代表同伴/盟友（AI控制）
 type Companion struct {
-	Actor `json:",inline"`
+	Actor
 
 	// 同伴特有字段
 	LeaderID     ID       `json:"leader_id"`     // 领导者（玩家）ID
