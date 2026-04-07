@@ -1,6 +1,6 @@
 package data
 
-import "github.com/zwh8800/dnd-core/internal/model"
+import "github.com/zwh8800/dnd-core/pkg/model"
 
 // GetSkillDefinition 获取技能定义
 func GetSkillDefinition(skill model.Skill) (name string, ability model.Ability, description string) {

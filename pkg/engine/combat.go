@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/zwh8800/dnd-core/internal/model"
-	"github.com/zwh8800/dnd-core/internal/rules"
+	"github.com/zwh8800/dnd-core/pkg/model"
+	"github.com/zwh8800/dnd-core/pkg/rules"
 )
 
 // ============================================================================

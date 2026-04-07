@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/zwh8800/dnd-core/internal/model"
+	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
 // GameMeta 游戏元数据

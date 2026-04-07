@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/zwh8800/dnd-core/internal/model"
+	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
 // CreateSceneRequest 创建场景请求

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/zwh8800/dnd-core/internal/model"
+	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
 // Operation 定义引擎支持的所有操作类型

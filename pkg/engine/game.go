@@ -6,8 +6,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/zwh8800/dnd-core/internal/model"
-	"github.com/zwh8800/dnd-core/internal/storage"
+	"github.com/zwh8800/dnd-core/pkg/model"
+	"github.com/zwh8800/dnd-core/pkg/storage"
 )
 
 // GameSummary 游戏摘要

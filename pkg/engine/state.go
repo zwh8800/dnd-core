@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/zwh8800/dnd-core/internal/model"
-	"github.com/zwh8800/dnd-core/internal/rules"
+	"github.com/zwh8800/dnd-core/pkg/model"
+	"github.com/zwh8800/dnd-core/pkg/rules"
 )
 
 // StateSummary 游戏状态摘要

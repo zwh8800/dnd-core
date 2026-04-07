@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zwh8800/dnd-core/internal/model"
+	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
 func TestSetPhase(t *testing.T) {

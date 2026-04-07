@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/zwh8800/dnd-core/internal/model"
+	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
 // CreateQuestRequest 创建任务请求（整合 QuestInput）

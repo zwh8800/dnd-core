@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zwh8800/dnd-core/internal/model"
+	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
 // MemoryStore 内存存储实现

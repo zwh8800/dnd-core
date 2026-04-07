@@ -1,6 +1,6 @@
 package rules
 
-import "github.com/zwh8800/dnd-core/internal/model"
+import "github.com/zwh8800/dnd-core/pkg/model"
 
 // AttackResult 代表攻击检定的结果
 type AttackResult struct {

@@ -1,6 +1,6 @@
 package data
 
-import "github.com/zwh8800/dnd-core/internal/model"
+import "github.com/zwh8800/dnd-core/pkg/model"
 
 // RaceDefinition 种族定义
 type RaceDefinition struct {

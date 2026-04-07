@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/zwh8800/dnd-core/internal/model"
-	"github.com/zwh8800/dnd-core/internal/rules"
+	"github.com/zwh8800/dnd-core/pkg/model"
+	"github.com/zwh8800/dnd-core/pkg/rules"
 )
 
 // CastSpellRequest 施法请求（整合 SpellInput）
