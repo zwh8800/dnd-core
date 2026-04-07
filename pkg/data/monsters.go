@@ -1,0 +1,316 @@
+package data
+
+import "github.com/zwh8800/dnd-core/pkg/model"
+
+// MonsterStatBlocks 包含 5 个示例怪物的完整数据块
+var MonsterStatBlocks = []*model.MonsterStatBlock{
+	// Goblin - CR 1/4
+	{
+		ID:               "goblin",
+		Name:             "Goblin",
+		Size:             model.SizeSmall,
+		CreatureType:     model.CreatureTypeHumanoid,
+		CreatureTags:     []model.CreatureTag{model.CreatureTagGoblin},
+		Alignment:        "Neutral Evil",
+		ArmorClass:       15,
+		ArmorType:        "leather armor, shield",
+		InitiativeBonus:  2,
+		HitDice:          "2d6",
+		HitPointsAverage: 7,
+		Speed:            model.SpeedTypes{Walk: 30},
+		AbilityScores:    model.AbilityScores{Strength: 8, Dexterity: 14, Constitution: 10, Intelligence: 10, Wisdom: 8, Charisma: 8},
+		Languages:        "Common, Goblin",
+		ChallengeRating:  "1/4",
+		ExperiencePoints: 50,
+		ProficiencyBonus: 2,
+		Senses:           model.Senses{Darkvision: 60, PassivePerception: 9},
+		Actions: []model.MonsterAction{
+			{
+				Name:        "Scimitar",
+				Description: "Melee Weapon Attack: +4 to hit, reach 5 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 4,
+				Reach:       5,
+				DamageDice:  "1d6+2",
+				DamageType:  model.DamageTypeSlashing,
+			},
+			{
+				Name:        "Shortbow",
+				Description: "Ranged Weapon Attack: +4 to hit, range 80/320 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 4,
+				Range:       80,
+				LongRange:   320,
+				DamageDice:  "1d6+2",
+				DamageType:  model.DamageTypePiercing,
+			},
+		},
+	},
+
+	// Mimic - CR 2
+	{
+		ID:               "mimic",
+		Name:             "Mimic",
+		Size:             model.SizeMedium,
+		CreatureType:     model.CreatureTypeMonstrosity,
+		Alignment:        "Neutral",
+		ArmorClass:       12,
+		ArmorType:        "natural armor",
+		InitiativeBonus:  0,
+		HitDice:          "5d8+5",
+		HitPointsAverage: 58,
+		Speed:            model.SpeedTypes{Walk: 15},
+		AbilityScores:    model.AbilityScores{Strength: 17, Dexterity: 12, Constitution: 15, Intelligence: 5, Wisdom: 13, Charisma: 5},
+		DamageImmunities: []model.DamageImmunity{},
+		ConditionImmunities: []model.ConditionType{
+			model.ConditionProne,
+		},
+		Languages:        "",
+		ChallengeRating:  "2",
+		ExperiencePoints: 450,
+		ProficiencyBonus: 2,
+		Senses:           model.Senses{Darkvision: 60, PassivePerception: 11},
+		Traits: []model.MonsterTrait{
+			{
+				Name:        "Adhesive (Object Form Only)",
+				Description: "The mimic adheres to anything that touches it. A Huge or smaller creature adhered to the mimic is also grappled by it (escape DC 13).",
+			},
+			{
+				Name:        "Shapechanger",
+				Description: "If the mimic is in object form, it can use its action to polymorph into a Small or Medium object, or back into its true, amorphous form.",
+			},
+		},
+		Actions: []model.MonsterAction{
+			{
+				Name:        "Pseudopod",
+				Description: "Melee Weapon Attack: +5 to hit, reach 5 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 5,
+				Reach:       5,
+				DamageDice:  "1d8+3",
+				DamageType:  model.DamageTypeBludgeoning,
+				Effects: []model.MonsterAttackEffect{
+					{
+						ConditionApplied: model.ConditionGrappled,
+					},
+				},
+			},
+			{
+				Name:        "Bite",
+				Description: "Melee Weapon Attack: +5 to hit, reach 5 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 5,
+				Reach:       5,
+				DamageDice:  "1d8+3",
+				DamageType:  model.DamageTypePiercing,
+			},
+		},
+	},
+
+	// Owlbear - CR 3
+	{
+		ID:               "owlbear",
+		Name:             "Owlbear",
+		Size:             model.SizeLarge,
+		CreatureType:     model.CreatureTypeMonstrosity,
+		Alignment:        "Unaligned",
+		ArmorClass:       13,
+		ArmorType:        "natural armor",
+		InitiativeBonus:  1,
+		HitDice:          "7d10+21",
+		HitPointsAverage: 59,
+		Speed:            model.SpeedTypes{Walk: 40},
+		AbilityScores:    model.AbilityScores{Strength: 20, Dexterity: 12, Constitution: 17, Intelligence: 3, Wisdom: 12, Charisma: 7},
+		SkillBonuses: []model.MonsterSkillBonus{
+			{Skill: model.SkillPerception, Bonus: 5},
+		},
+		Languages:        "",
+		ChallengeRating:  "3",
+		ExperiencePoints: 700,
+		ProficiencyBonus: 2,
+		Senses:           model.Senses{Darkvision: 60, PassivePerception: 13},
+		Actions: []model.MonsterAction{
+			{
+				Name:        "Beak",
+				Description: "Melee Weapon Attack: +7 to hit, reach 5 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 7,
+				Reach:       5,
+				DamageDice:  "1d10+5",
+				DamageType:  model.DamageTypePiercing,
+			},
+			{
+				Name:        "Claws",
+				Description: "Melee Weapon Attack: +7 to hit, reach 5 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 7,
+				Reach:       5,
+				DamageDice:  "2d8+5",
+				DamageType:  model.DamageTypeSlashing,
+			},
+		},
+	},
+
+	// Ogre - CR 2
+	{
+		ID:               "ogre",
+		Name:             "Ogre",
+		Size:             model.SizeLarge,
+		CreatureType:     model.CreatureTypeGiant,
+		Alignment:        "Chaotic Evil",
+		ArmorClass:       11,
+		ArmorType:        "hide armor",
+		InitiativeBonus:  -1,
+		HitDice:          "5d10+10",
+		HitPointsAverage: 59,
+		Speed:            model.SpeedTypes{Walk: 40},
+		AbilityScores:    model.AbilityScores{Strength: 19, Dexterity: 8, Constitution: 16, Intelligence: 5, Wisdom: 7, Charisma: 7},
+		Languages:        "Common, Giant",
+		ChallengeRating:  "2",
+		ExperiencePoints: 450,
+		ProficiencyBonus: 2,
+		Senses:           model.Senses{Darkvision: 60, PassivePerception: 8},
+		Actions: []model.MonsterAction{
+			{
+				Name:        "Greatclub",
+				Description: "Melee Weapon Attack: +6 to hit, reach 5 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 6,
+				Reach:       5,
+				DamageDice:  "2d8+4",
+				DamageType:  model.DamageTypeBludgeoning,
+			},
+			{
+				Name:        "Javelelin",
+				Description: "Melee or Ranged Weapon Attack: +6 to hit, reach 5 ft. or range 30/120 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 6,
+				Reach:       5,
+				Range:       30,
+				LongRange:   120,
+				DamageDice:  "2d6+4",
+				DamageType:  model.DamageTypePiercing,
+			},
+		},
+	},
+
+	// Young Red Dragon - CR 10
+	{
+		ID:               "young-red-dragon",
+		Name:             "Young Red Dragon",
+		Size:             model.SizeLarge,
+		CreatureType:     model.CreatureTypeDragon,
+		Alignment:        "Chaotic Evil",
+		ArmorClass:       18,
+		ArmorType:        "natural armor",
+		InitiativeBonus:  2,
+		HitDice:          "17d10+85",
+		HitPointsAverage: 178,
+		Speed:            model.SpeedTypes{Walk: 40, Climb: 40, Fly: 80},
+		AbilityScores:    model.AbilityScores{Strength: 23, Dexterity: 14, Constitution: 21, Intelligence: 16, Wisdom: 13, Charisma: 21},
+		SaveBonuses: []model.MonsterSaveBonus{
+			{Ability: model.AbilityDexterity, Bonus: 7},
+			{Ability: model.AbilityConstitution, Bonus: 10},
+			{Ability: model.AbilityWisdom, Bonus: 6},
+			{Ability: model.AbilityCharisma, Bonus: 10},
+		},
+		SkillBonuses: []model.MonsterSkillBonus{
+			{Skill: model.SkillPerception, Bonus: 11},
+			{Skill: model.SkillStealth, Bonus: 7},
+		},
+		DamageImmunities: []model.DamageImmunity{
+			{DamageTypes: []model.DamageType{model.DamageTypeFire}},
+		},
+		Languages:        "Common, Draconic",
+		ChallengeRating:  "10",
+		ExperiencePoints: 5900,
+		ProficiencyBonus: 5,
+		Senses:           model.Senses{Blindsight: 30, Darkvision: 120, PassivePerception: 16},
+		Traits: []model.MonsterTrait{
+			{
+				Name:        "Legendary Resistance (3/Day)",
+				Description: "If the dragon fails a saving throw, it can choose to succeed instead.",
+			},
+		},
+		Actions: []model.MonsterAction{
+			{
+				Name:        "Multiattack",
+				Description: "The dragon can use its Frightful Presence. It then makes three attacks: one with its bite and two with its claws.",
+				ActionType:  model.ActionCustom,
+			},
+			{
+				Name:        "Bite",
+				Description: "Melee Weapon Attack: +11 to hit, reach 10 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 11,
+				Reach:       10,
+				DamageDice:  "2d10+6",
+				DamageType:  model.DamageTypePiercing,
+				Effects: []model.MonsterAttackEffect{
+					{
+						DamageDice: "1d6",
+						DamageType: model.DamageTypeFire,
+					},
+				},
+			},
+			{
+				Name:        "Claw",
+				Description: "Melee Weapon Attack: +11 to hit, reach 5 ft., one target.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 11,
+				Reach:       5,
+				DamageDice:  "2d6+6",
+				DamageType:  model.DamageTypeSlashing,
+			},
+			{
+				Name:        "Fire Breath (Recharge 5-6)",
+				Description: "The dragon exhales fire in a 30-foot cone. Each creature in that area must make a DC 17 Dexterity saving throw, taking 56 (16d6) fire damage on a failed save, or half as much on a successful one.",
+				ActionType:  model.ActionCustom,
+				Recharge:    &model.RechargeInfo{RollRange: [2]int{5, 6}},
+				Effects: []model.MonsterAttackEffect{
+					{
+						SaveEffect: &model.SaveEffect{
+							DC:         17,
+							Ability:    model.AbilityDexterity,
+							OnFailure:  "56 fire damage",
+							OnSuccess:  "half damage",
+							HalfDamage: true,
+						},
+					},
+				},
+			},
+		},
+		LegendaryActions: []model.MonsterAction{
+			{
+				Name:        "Detect",
+				Description: "The dragon makes a Perception check.",
+				ActionType:  model.ActionCustom,
+			},
+			{
+				Name:        "Tail Attack",
+				Description: "The dragon makes a claw attack.",
+				ActionType:  model.ActionAttack,
+				AttackBonus: 11,
+				Reach:       10,
+				DamageDice:  "2d6+6",
+				DamageType:  model.DamageTypeSlashing,
+			},
+			{
+				Name:        "Wing Attack (Costs 2 Actions)",
+				Description: "The dragon beats its wings. Each creature within 10 ft. must succeed on a DC 17 Dexterity saving throw or take 13 (2d6+6) bludgeoning damage and be knocked prone.",
+				ActionType:  model.ActionCustom,
+				Effects: []model.MonsterAttackEffect{
+					{
+						SaveEffect: &model.SaveEffect{
+							DC:        17,
+							Ability:   model.AbilityDexterity,
+							OnFailure: "damage and prone",
+							OnSuccess: "no effect",
+						},
+					},
+				},
+			},
+		},
+		LegendaryActionsPerRound: 3,
+	},
+}

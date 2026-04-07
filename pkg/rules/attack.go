@@ -1,6 +1,30 @@
 package rules
 
-import "github.com/zwh8800/dnd-core/pkg/model"
+import (
+	"strconv"
+	"strings"
+
+	"github.com/zwh8800/dnd-core/pkg/model"
+)
+
+// parseChallengeRating 解析挑战等级字符串为整数
+func parseChallengeRating(cr string) int {
+	if cr == "" {
+		return 1
+	}
+	// 处理分数格式如 "1/4", "1/2"
+	if strings.Contains(cr, "/") {
+		return 1 // 分数CR视为1级
+	}
+	val, err := strconv.Atoi(cr)
+	if err != nil {
+		return 1
+	}
+	if val < 1 {
+		return 1
+	}
+	return val
+}
 
 // AttackResult 代表攻击检定的结果
 type AttackResult struct {
@@ -52,7 +76,7 @@ func CalcAttachBonus(attacker any, attackerStrength int) int {
 		attackerLevel = 1
 	case *model.Enemy:
 		// 敌人使用挑战等级作为参考
-		attackerLevel = int(a.ChallengeRating)
+		attackerLevel = parseChallengeRating(a.ChallengeRating)
 		if attackerLevel < 1 {
 			attackerLevel = 1
 		}
@@ -109,7 +133,7 @@ func CalcAttackBonusWithWeapon(attacker any, attackerAbility int, weaponType str
 		attackerLevel = a.TotalLevel
 		pc = a
 	case *model.Enemy:
-		attackerLevel = int(a.ChallengeRating)
+		attackerLevel = parseChallengeRating(a.ChallengeRating)
 		if attackerLevel < 1 {
 			attackerLevel = 1
 		}

@@ -28,6 +28,20 @@ type HitPoints struct {
 	Maximum int `json:"maximum"`
 }
 
+// SpeedTypes 代表生物的各种移动方式速度
+type SpeedTypes struct {
+	// Walk 步行速度（英尺）
+	Walk int `json:"walk,omitempty"`
+	// Fly 飞行速度（英尺）
+	Fly int `json:"fly,omitempty"`
+	// Swim 游泳速度（英尺）
+	Swim int `json:"swim,omitempty"`
+	// Climb 攀爬速度（英尺）
+	Climb int `json:"climb,omitempty"`
+	// Burrow 掘地速度（英尺）
+	Burrow int `json:"burrow,omitempty"`
+}
+
 // Actor 是所有生物类型的基类
 type Actor struct {
 	ID              ID                  `json:"id"`
@@ -35,7 +49,9 @@ type Actor struct {
 	Name            string              `json:"name"`
 	Description     string              `json:"description"`
 	Size            Size                `json:"size"`
-	Speed           int                 `json:"speed"` // 基础移动速度（英尺）
+	CreatureType    CreatureType        `json:"creature_type"` // 生物类型（SRD 5.2.1）
+	Speed           int                 `json:"speed"`         // 基础移动速度（英尺，向后兼容）
+	Speeds          SpeedTypes          `json:"speeds"`        // 多种移动方式速度
 	AbilityScores   AbilityScores       `json:"ability_scores"`
 	Proficiencies   Proficiencies       `json:"proficiencies"`
 	HitPoints       HitPoints           `json:"hit_points"`
@@ -46,6 +62,8 @@ type Actor struct {
 	SceneID         ID                  `json:"scene_id"`           // 当前所在场景
 	Position        *Point              `json:"position,omitempty"` // 战斗中的位置（可选）
 	InitiativeBonus int                 `json:"initiative_bonus"`   // 先攻修正
+	ChallengeRating string              `json:"challenge_rating"`   // 挑战等级（怪物专用）
+	Inspiration     bool                `json:"inspiration"`        // 是否拥有灵感点
 }
 
 // Point 代表二维坐标位置

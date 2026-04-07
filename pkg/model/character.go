@@ -48,6 +48,9 @@ type PlayerCharacter struct {
 	TotalLevel int           `json:"total_level"`
 	Alignment  Alignment     `json:"alignment"`
 
+	// 背景系统
+	BackgroundID string `json:"background_id,omitempty"` // 背景 ID
+
 	// 经验与升级
 	Experience         int `json:"experience"`
 	DeathSaveSuccesses int `json:"death_save_successes"`
@@ -67,6 +70,9 @@ type PlayerCharacter struct {
 	// 特性与能力
 	Features     []string `json:"features"`
 	RacialTraits []string `json:"racial_traits"`
+
+	// 专长系统
+	Feats []FeatInstance `json:"feats,omitempty"` // 角色已获得的专长
 
 	// 职业特性系统
 	FeatureHooks map[ClassID]FeatureHook `json:"-"`                       // 运行时特性钩子(不序列化)
@@ -105,15 +111,24 @@ type Enemy struct {
 	Actor
 
 	// 敌人特有字段
-	ChallengeRating       float64         `json:"challenge_rating"` // 挑战等级
-	XPValue               int             `json:"xp_value"`         // 经验值
-	AttackBonus           int             `json:"attack_bonus"`     // 攻击加值
-	DamagePerRound        int             `json:"damage_per_round"` // 每回合伤害
-	Senses                []string        `json:"senses"`           // 感官（黑暗视觉等）
-	DamageImmunities      []DamageType    `json:"damage_immunities"`
-	DamageResistances     []DamageType    `json:"damage_resistances"`
-	DamageVulnerabilities []DamageType    `json:"damage_vulnerabilities"`
-	ConditionImmunities   []ConditionType `json:"condition_immunities"`
+	ChallengeRating       string           `json:"challenge_rating"` // 挑战等级（如 "1/4", "2", "10"）
+	XPValue               int              `json:"xp_value"`         // 经验值
+	AttackBonus           int              `json:"attack_bonus"`     // 攻击加值
+	DamagePerRound        int              `json:"damage_per_round"` // 每回合伤害
+	Senses                []string         `json:"senses"`           // 感官（黑暗视觉等）
+	DamageImmunities      []DamageImmunity `json:"damage_immunities"`
+	DamageResistances     []DamageImmunity `json:"damage_resistances"`
+	DamageVulnerabilities []DamageImmunity `json:"damage_vulnerabilities"`
+	ConditionImmunities   []ConditionType  `json:"condition_immunities"`
+
+	// 怪物模板引用（如果使用模板创建）
+	StatBlock *MonsterStatBlock `json:"-"`
+
+	// 传说动作追踪
+	LegendaryActionsRemaining int `json:"legendary_actions_remaining"`
+
+	// 充能动作追踪（动作索引 -> 剩余次数）
+	ActionRecharges map[int]int `json:"action_recharges"`
 }
 
 // Companion 代表同伴/盟友（AI控制）

@@ -1128,14 +1128,20 @@ func (e *Engine) applyDamageToTarget(game *model.GameState, sourceID, targetID m
 	resistances := model.NewDamageResistances()
 	// 从敌人数据加载抗性
 	if enemy, ok := target.(*model.Enemy); ok {
-		for _, dt := range enemy.DamageResistances {
-			resistances.AddResistance(dt)
+		for _, immunity := range enemy.DamageResistances {
+			for _, dt := range immunity.DamageTypes {
+				resistances.AddResistance(dt)
+			}
 		}
-		for _, dt := range enemy.DamageImmunities {
-			resistances.AddImmunity(dt)
+		for _, immunity := range enemy.DamageImmunities {
+			for _, dt := range immunity.DamageTypes {
+				resistances.AddImmunity(dt)
+			}
 		}
-		for _, dt := range enemy.DamageVulnerabilities {
-			resistances.AddVulnerability(dt)
+		for _, vuln := range enemy.DamageVulnerabilities {
+			for _, dt := range vuln.DamageTypes {
+				resistances.AddVulnerability(dt)
+			}
 		}
 	}
 

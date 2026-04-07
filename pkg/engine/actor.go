@@ -472,7 +472,7 @@ func (e *Engine) CreateEnemy(ctx context.Context, req CreateEnemyRequest) (*Crea
 			Conditions:    []model.ConditionInstance{},
 			Exhaustion:    0,
 		},
-		ChallengeRating: req.Enemy.ChallengeRating,
+		ChallengeRating: fmt.Sprintf("%d", int(req.Enemy.ChallengeRating)),
 	}
 
 	game.Enemies[enemy.ID] = enemy

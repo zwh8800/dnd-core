@@ -3,10 +3,30 @@ package engine
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/zwh8800/dnd-core/pkg/model"
 	"github.com/zwh8800/dnd-core/pkg/rules"
 )
+
+// parseChallengeRating 解析挑战等级字符串为整数
+func parseChallengeRating(cr string) int {
+	if cr == "" {
+		return 1
+	}
+	if strings.Contains(cr, "/") {
+		return 1
+	}
+	val, err := strconv.Atoi(cr)
+	if err != nil {
+		return 1
+	}
+	if val < 1 {
+		return 1
+	}
+	return val
+}
 
 // StateSummary 游戏状态摘要
 type StateSummary struct {
@@ -409,7 +429,7 @@ func getActorLevel(actor any) int {
 	case *model.Enemy:
 		// 敌人使用挑战等级作为近似
 		if e, ok := actor.(*model.Enemy); ok {
-			return int(e.ChallengeRating)
+			return parseChallengeRating(e.ChallengeRating)
 		}
 		return 1
 	default:
