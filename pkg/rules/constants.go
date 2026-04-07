@@ -77,22 +77,6 @@ var ProficiencyBonusTable = map[int]int{
 	20: 6,
 }
 
-// 生命骰按职业
-var HitDiceByClass = map[string]int{
-	"Barbarian": 12, // d12
-	"Fighter":   10, // d10
-	"Paladin":   10, // d10
-	"Ranger":    10, // d10
-	"Bard":      8,  // d8
-	"Cleric":    8,  // d8
-	"Druid":     8,  // d8
-	"Monk":      8,  // d8
-	"Rogue":     8,  // d8
-	"Warlock":   8,  // d8
-	"Sorcerer":  6,  // d6
-	"Wizard":    6,  // d6
-}
-
 // 休息持续时间（小时）
 const (
 	ShortRestDuration = 1 // 短休1小时

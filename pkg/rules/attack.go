@@ -42,9 +42,11 @@ func CalcAttachBonus(attacker any, attackerStrength int) int {
 	// 计算攻击加值（根据规则书：攻击加值 = 属性调整值 + 熟练加值）
 	// 首先获取攻击者的等级
 	var attackerLevel int
+	var pc *model.PlayerCharacter
 	switch a := attacker.(type) {
 	case *model.PlayerCharacter:
 		attackerLevel = a.TotalLevel
+		pc = a
 	case *model.NPC:
 		// NPC通常没有等级概念，默认为1
 		attackerLevel = 1
@@ -79,7 +81,67 @@ func CalcAttachBonus(attacker any, attackerStrength int) int {
 	// 当前实现：默认使用力量调整值（适用于大多数近战攻击）
 	// 如果需要支持远程武器或灵巧武器，需要在 AttackInput 中添加武器类型信息
 	attackBonus := profBonus + AbilityModifier(attackerStrength)
+
+	// 应用职业特性加值
+	if pc != nil && pc.FeatureHooks != nil {
+		ctx := &model.AttackContext{
+			BaseBonus:     attackBonus,
+			Bonus:         0,
+			WeaponType:    "",
+			IsRanged:      false,
+			CriticalRange: 20,
+		}
+		for _, hook := range pc.FeatureHooks {
+			hook.OnAttackRoll(ctx)
+		}
+		attackBonus = ctx.BaseBonus + ctx.Bonus
+	}
+
 	return attackBonus
+}
+
+// CalcAttackBonusWithWeapon 计算攻击加值（带武器类型信息）
+func CalcAttackBonusWithWeapon(attacker any, attackerAbility int, weaponType string, isRanged bool) (attackBonus int, criticalRange int) {
+	var attackerLevel int
+	var pc *model.PlayerCharacter
+	switch a := attacker.(type) {
+	case *model.PlayerCharacter:
+		attackerLevel = a.TotalLevel
+		pc = a
+	case *model.Enemy:
+		attackerLevel = int(a.ChallengeRating)
+		if attackerLevel < 1 {
+			attackerLevel = 1
+		}
+	default:
+		attackerLevel = 1
+	}
+
+	if attackerLevel < 1 {
+		attackerLevel = 1
+	}
+
+	profBonus := ProficiencyBonus(attackerLevel)
+	attackBonus = profBonus + AbilityModifier(attackerAbility)
+	criticalRange = 20
+
+	// 应用职业特性加值
+	if pc != nil && pc.FeatureHooks != nil {
+		ctx := &model.AttackContext{
+			BaseBonus:     attackBonus,
+			Bonus:         0,
+			WeaponType:    weaponType,
+			IsRanged:      isRanged,
+			CriticalRange: criticalRange,
+		}
+		for _, hook := range pc.FeatureHooks {
+			hook.OnAttackRoll(ctx)
+		}
+		attackBonus = ctx.BaseBonus + ctx.Bonus
+		criticalRange = ctx.CriticalRange
+	}
+
+	return
 }
 
 // DamageCalculation 伤害计算结果

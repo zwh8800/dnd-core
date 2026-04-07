@@ -7,12 +7,6 @@ type RaceReference struct {
 	Subrace string `json:"subrace,omitempty"`
 }
 
-// ClassLevel 代表一个职业的等级信息
-type ClassLevel struct {
-	ClassName string `json:"class_name"`
-	Level     int    `json:"level"`
-}
-
 // HitDiceEntry 代表一种生命骰
 type HitDiceEntry struct {
 	DiceType int `json:"dice_type"` // d6, d8, d10, d12
@@ -73,6 +67,10 @@ type PlayerCharacter struct {
 	// 特性与能力
 	Features     []string `json:"features"`
 	RacialTraits []string `json:"racial_traits"`
+
+	// 职业特性系统
+	FeatureHooks map[ClassID]FeatureHook `json:"-"`                       // 运行时特性钩子(不序列化)
+	FighterState *FighterFeatures        `json:"fighter_state,omitempty"` // 战士特性状态
 }
 
 // GetSpellcastingAbility 获取施法属性（基于主要施法职业）

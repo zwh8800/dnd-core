@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/zwh8800/dnd-core/pkg/data"
 	"github.com/zwh8800/dnd-core/pkg/model"
 	"github.com/zwh8800/dnd-core/pkg/rules"
 )
@@ -97,8 +98,9 @@ type PlayerCharacterInfo struct {
 
 // ClassInfo 职业信息
 type ClassInfo struct {
-	ClassName  string `json:"class_name"`  // 职业名称
-	ClassLevel int    `json:"class_level"` // 职业等级
+	Class      model.ClassID `json:"class"`              // 职业ID
+	ClassLevel int           `json:"class_level"`        // 职业等级
+	Features   []string      `json:"features,omitempty"` // 职业特性
 }
 
 // ActorFilter 角色过滤条件
@@ -336,11 +338,36 @@ func (e *Engine) CreatePC(ctx context.Context, req CreatePCRequest) (*CreatePCRe
 
 	// 添加职业
 	if req.PC.Class != "" {
+		classID, err := data.GetClassID(req.PC.Class)
+		if err != nil {
+			return nil, fmt.Errorf("无效的职业: %s", req.PC.Class)
+		}
+
+		level := req.PC.Level
+		if level < 1 {
+			level = 1
+		}
+
+		// 获取该职业的特性列表
+		features := getClassFeatures(classID, level)
+
 		pc.Classes = append(pc.Classes, model.ClassLevel{
-			ClassName: req.PC.Class,
-			Level:     req.PC.Level,
+			Class:    classID,
+			Level:    level,
+			Features: features,
 		})
-		pc.TotalLevel = req.PC.Level
+		pc.TotalLevel = level
+
+		// 初始化职业特性系统
+		pc.FeatureHooks = make(map[model.ClassID]model.FeatureHook)
+		if classID == model.ClassFighter {
+			pc.FighterState = &model.FighterFeatures{}
+			model.UpdateFighterFeatures(pc.FighterState, level)
+			pc.FeatureHooks[classID] = &model.FighterFeatureHooks{
+				Features: pc.FighterState,
+				Level:    level,
+			}
+		}
 	}
 
 	// 计算派生值
@@ -797,12 +824,18 @@ func (e *Engine) LevelUp(ctx context.Context, req LevelUpRequest) (*LevelUpResul
 	hpGain := 0
 	classToLevel := req.ClassChoice
 	if classToLevel == "" && len(pc.Classes) > 0 {
-		classToLevel = pc.Classes[0].ClassName
+		classToLevel = string(pc.Classes[0].Class)
 	}
 
-	hitDiceType := rules.HitDiceByClass[classToLevel]
-	if hitDiceType == 0 {
-		hitDiceType = 8 // 默认d8
+	classID, err := data.GetClassID(classToLevel)
+	if err != nil {
+		classID = model.ClassFighter // 默认战士
+	}
+
+	classDef := data.GetClass(classID)
+	hitDiceType := 8 // 默认d8
+	if classDef != nil {
+		hitDiceType = classDef.HitDie
 	}
 
 	// 简化的HP计算：取平均值+CON修正
@@ -1099,13 +1132,21 @@ func calculateMaxHP(pc *model.PlayerCharacter) int {
 	}
 
 	hp := 0
-	for _, cl := range pc.Classes {
-		hitDiceType := rules.HitDiceByClass[cl.ClassName]
-		if hitDiceType == 0 {
-			hitDiceType = 8
+	conMod := rules.AbilityModifier(pc.AbilityScores.Constitution)
+
+	for i, cl := range pc.Classes {
+		classDef := data.GetClass(cl.Class)
+		hitDiceType := 8 // 默认d8
+		if classDef != nil {
+			hitDiceType = classDef.HitDie
 		}
+
 		// 第一级取最大值，之后取平均
-		hp += hitDiceType + rules.AbilityModifier(pc.AbilityScores.Constitution)
+		if i == 0 {
+			hp += hitDiceType + conMod
+		} else {
+			hp += (hitDiceType/2 + 1) + conMod
+		}
 	}
 	return hp
 }
@@ -1165,8 +1206,9 @@ func playerCharacterToInfo(pc *model.PlayerCharacter) *PlayerCharacterInfo {
 	classes := make([]ClassInfo, len(pc.Classes))
 	for i, cl := range pc.Classes {
 		classes[i] = ClassInfo{
-			ClassName:  cl.ClassName,
+			Class:      cl.Class,
 			ClassLevel: cl.Level,
+			Features:   cl.Features,
 		}
 	}
 	info := &PlayerCharacterInfo{
@@ -1195,4 +1237,22 @@ func playerCharacterToInfo(pc *model.PlayerCharacter) *PlayerCharacterInfo {
 		info.Background = pc.Personality.Background
 	}
 	return info
+}
+
+// getClassFeatures 获取指定职业和等级的特性列表
+func getClassFeatures(classID model.ClassID, level int) []string {
+	var features []string
+
+	// 战士特性
+	if classID == model.ClassFighter {
+		for lvl := 1; lvl <= level; lvl++ {
+			if feats, ok := data.FighterFeaturesByLevel[lvl]; ok {
+				features = append(features, feats...)
+			}
+		}
+	}
+
+	// TODO: 添加其他职业的特性
+
+	return features
 }
