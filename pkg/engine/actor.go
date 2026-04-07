@@ -9,69 +9,291 @@ import (
 	"github.com/zwh8800/dnd-core/internal/rules"
 )
 
+// AbilityScoresInput 属性值输入
+type AbilityScoresInput struct {
+	Strength     int `json:"strength"`     // 力量
+	Dexterity    int `json:"dexterity"`    // 敏捷
+	Constitution int `json:"constitution"` // 体质
+	Intelligence int `json:"intelligence"` // 智力
+	Wisdom       int `json:"wisdom"`       // 感知
+	Charisma     int `json:"charisma"`     // 魅力
+}
+
+// PlayerCharacterInput 玩家角色创建输入
+type PlayerCharacterInput struct {
+	Name          string             `json:"name"`                 // 角色名称
+	Race          string             `json:"race"`                 // 种族
+	Background    string             `json:"background"`           // 背景
+	Class         string             `json:"class"`                // 职业
+	Level         int                `json:"level"`                // 等级
+	Alignment     string             `json:"alignment"`            // 阵营
+	AbilityScores AbilityScoresInput `json:"ability_scores"`       // 属性值
+	HitPoints     int                `json:"hit_points,omitempty"` // 初始HP（可选，不填则自动计算）
+}
+
+// NPCInput NPC创建输入
+type NPCInput struct {
+	Name          string             `json:"name"`           // NPC名称
+	Description   string             `json:"description"`    // 描述
+	Size          model.Size         `json:"size"`           // 体型
+	Speed         int                `json:"speed"`          // 速度（尺）
+	AbilityScores AbilityScoresInput `json:"ability_scores"` // 属性值
+}
+
+// EnemyInput 敌人创建输入
+type EnemyInput struct {
+	Name            string             `json:"name"`             // 敌人名称
+	Description     string             `json:"description"`      // 描述
+	Size            model.Size         `json:"size"`             // 体型
+	Speed           int                `json:"speed"`            // 速度（尺）
+	AbilityScores   AbilityScoresInput `json:"ability_scores"`   // 属性值
+	ChallengeRating float64            `json:"challenge_rating"` // 挑战等级
+	HitPoints       int                `json:"hit_points"`       // 生命值
+	ArmorClass      int                `json:"armor_class"`      // 护甲等级
+}
+
+// CompanionInput 同伴创建输入
+type CompanionInput struct {
+	Name          string             `json:"name"`           // 同伴名称
+	Description   string             `json:"description"`    // 描述
+	Size          model.Size         `json:"size"`           // 体型
+	Speed         int                `json:"speed"`          // 速度（尺）
+	AbilityScores AbilityScoresInput `json:"ability_scores"` // 属性值
+	LeaderID      model.ID           `json:"leader_id"`      // 领导者ID
+}
+
+// ActorInfo 角色基本信息
+type ActorInfo struct {
+	ID         model.ID        `json:"id"`          // 角色唯一标识
+	Type       model.ActorType `json:"type"`        // 角色类型
+	Name       string          `json:"name"`        // 角色名称
+	HitPoints  model.HitPoints `json:"hit_points"`  // 生命值
+	TempHP     int             `json:"temp_hp"`     // 临时HP
+	ArmorClass int             `json:"armor_class"` // 护甲等级
+	Speed      int             `json:"speed"`       // 移动速度
+	Conditions []string        `json:"conditions"`  // 状态效果列表
+	Exhaustion int             `json:"exhaustion"`  // 力竭等级
+	SceneID    model.ID        `json:"scene_id"`    // 所在场景ID
+	Position   *model.Point    `json:"position"`    // 位置坐标
+}
+
+// PlayerCharacterInfo 玩家角色完整信息
+type PlayerCharacterInfo struct {
+	ID               model.ID           `json:"id"`                // 角色唯一标识
+	Name             string             `json:"name"`              // 角色名称
+	Race             string             `json:"race"`              // 种族
+	Background       string             `json:"background"`        // 背景
+	Classes          []ClassInfo        `json:"classes"`           // 职业信息
+	TotalLevel       int                `json:"total_level"`       // 总等级
+	Experience       int                `json:"experience"`        // 经验值
+	AbilityScores    AbilityScoresInput `json:"ability_scores"`    // 属性值
+	HitPoints        model.HitPoints    `json:"hit_points"`        // 生命值
+	ArmorClass       int                `json:"armor_class"`       // 护甲等级
+	Speed            int                `json:"speed"`             // 移动速度
+	ProficiencyBonus int                `json:"proficiency_bonus"` // 熟练加值
+	Features         []string           `json:"features"`          // 特性列表
+	RacialTraits     []string           `json:"racial_traits"`     // 种族特性
+}
+
+// ClassInfo 职业信息
+type ClassInfo struct {
+	ClassName  string `json:"class_name"`  // 职业名称
+	ClassLevel int    `json:"class_level"` // 职业等级
+}
+
 // ActorFilter 角色过滤条件
 type ActorFilter struct {
-	Types   []model.ActorType
-	SceneID *model.ID
-	Alive   *bool
+	Types   []model.ActorType `json:"types,omitempty"`    // 角色类型过滤列表
+	SceneID *model.ID         `json:"scene_id,omitempty"` // 场景ID过滤
+	Alive   *bool             `json:"alive,omitempty"`    // 存活状态过滤
 }
 
 // ActorUpdate 角色更新内容
 type ActorUpdate struct {
-	AbilityScores *model.AbilityScores
-	HitPoints     *HitPointUpdate
-	Conditions    *ConditionUpdate
-	Position      *model.Point
-	SceneID       *model.ID
-	Custom        map[string]any
+	AbilityScores *AbilityScoresInput `json:"ability_scores,omitempty"` // 属性值更新
+	HitPoints     *HitPointUpdate     `json:"hit_points,omitempty"`     // HP更新
+	Conditions    *ConditionUpdate    `json:"conditions,omitempty"`     // 状态效果更新
+	Position      *model.Point        `json:"position,omitempty"`       // 位置更新
+	SceneID       *model.ID           `json:"scene_id,omitempty"`       // 场景ID更新
+	Custom        map[string]any      `json:"custom,omitempty"`         // 自定义字段
 }
 
 // HitPointUpdate HP更新
 type HitPointUpdate struct {
-	Current       *int
-	TempHitPoints *int
+	Current       *int `json:"current,omitempty"`         // 当前HP
+	TempHitPoints *int `json:"temp_hit_points,omitempty"` // 临时HP
 }
 
-// ConditionUpdate 状态更新
+// ConditionUpdate 状态效果更新
 type ConditionUpdate struct {
-	Add    []model.ConditionInstance
-	Remove []model.ConditionType
+	Add    []model.ConditionInstance `json:"add,omitempty"`    // 添加的状态效果
+	Remove []model.ConditionType     `json:"remove,omitempty"` // 移除的状态效果类型
 }
 
 // LevelUpResult 升级结果
 type LevelUpResult struct {
-	OldLevel             int      `json:"old_level"`
-	NewLevel             int      `json:"new_level"`
-	HPGain               int      `json:"hp_gain"`
-	NewFeatures          []string `json:"new_features"`
-	SpellSlotsUpdated    bool     `json:"spell_slots_updated"`
-	ProficiencyIncreased bool     `json:"proficiency_increased"`
-	Message              string   `json:"message"`
+	OldLevel             int      `json:"old_level"`             // 原等级
+	NewLevel             int      `json:"new_level"`             // 新等级
+	HPGain               int      `json:"hp_gain"`               // HP增长值
+	NewFeatures          []string `json:"new_features"`          // 新获得特性
+	SpellSlotsUpdated    bool     `json:"spell_slots_updated"`   // 法术位是否更新
+	ProficiencyIncreased bool     `json:"proficiency_increased"` // 熟练加值是否增加
+	Message              string   `json:"message"`               // 人类可读消息
 }
 
 // RestResult 休息结果
 type RestResult struct {
-	ActorResults []ActorRestResult `json:"actor_results"`
-	Message      string            `json:"message"`
+	ActorResults []ActorRestResult `json:"actor_results"` // 各角色休息结果
+	Message      string            `json:"message"`       // 人类可读消息
 }
 
 // ActorRestResult 角色休息结果
 type ActorRestResult struct {
-	ActorID            model.ID              `json:"actor_id"`
-	HPRecovered        int                   `json:"hp_recovered"`
-	HitDiceUsed        int                   `json:"hit_dice_used"`
-	SpellSlotsRestored bool                  `json:"spell_slots_restored"`
-	ConditionsRemoved  []model.ConditionType `json:"conditions_removed"`
-	ExhaustionReduced  bool                  `json:"exhaustion_reduced"`
-	AbilitiesRestored  bool                  `json:"abilities_restored"`
+	ActorID            model.ID              `json:"actor_id"`             // 角色ID
+	HPRecovered        int                   `json:"hp_recovered"`         // 恢复的HP
+	HitDiceUsed        int                   `json:"hit_dice_used"`        // 使用的生命骰数量
+	SpellSlotsRestored bool                  `json:"spell_slots_restored"` // 法术位是否恢复
+	ConditionsRemoved  []model.ConditionType `json:"conditions_removed"`   // 移除的状态效果
+	ExhaustionReduced  bool                  `json:"exhaustion_reduced"`   // 力竭是否减少
+	AbilitiesRestored  bool                  `json:"abilities_restored"`   // 能力是否恢复
+}
+
+// Request 结构体定义
+
+// CreatePCRequest 创建玩家角色请求
+type CreatePCRequest struct {
+	GameID model.ID              `json:"game_id"` // 游戏会话ID
+	PC     *PlayerCharacterInput `json:"pc"`      // 玩家角色创建参数
+}
+
+// CreatePCResult 创建玩家角色结果
+type CreatePCResult struct {
+	Actor *ActorInfo `json:"actor"` // 创建的角色信息
+}
+
+// CreateNPCRequest 创建NPC请求
+type CreateNPCRequest struct {
+	GameID model.ID  `json:"game_id"` // 游戏会话ID
+	NPC    *NPCInput `json:"npc"`     // NPC创建参数
+}
+
+// CreateNPCResult 创建NPC结果
+type CreateNPCResult struct {
+	Actor *ActorInfo `json:"actor"` // 创建的角色信息
+}
+
+// CreateEnemyRequest 创建敌人请求
+type CreateEnemyRequest struct {
+	GameID model.ID    `json:"game_id"` // 游戏会话ID
+	Enemy  *EnemyInput `json:"enemy"`   // 敌人创建参数
+}
+
+// CreateEnemyResult 创建敌人结果
+type CreateEnemyResult struct {
+	Actor *ActorInfo `json:"actor"` // 创建的角色信息
+}
+
+// CreateCompanionRequest 创建同伴请求
+type CreateCompanionRequest struct {
+	GameID    model.ID        `json:"game_id"`   // 游戏会话ID
+	Companion *CompanionInput `json:"companion"` // 同伴创建参数
+}
+
+// CreateCompanionResult 创建同伴结果
+type CreateCompanionResult struct {
+	Actor *ActorInfo `json:"actor"` // 创建的角色信息
+}
+
+// GetActorRequest 获取角色请求
+type GetActorRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID `json:"actor_id"` // 角色ID
+}
+
+// GetActorResult 获取角色结果
+type GetActorResult struct {
+	Actor *ActorInfo `json:"actor"` // 角色信息
+}
+
+// GetPCRequest 获取玩家角色请求
+type GetPCRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+	PCID   model.ID `json:"pc_id"`   // 玩家角色ID
+}
+
+// GetPCResult 获取玩家角色结果
+type GetPCResult struct {
+	PC *PlayerCharacterInfo `json:"pc"` // 玩家角色完整信息
+}
+
+// UpdateActorRequest 更新角色请求
+type UpdateActorRequest struct {
+	GameID  model.ID    `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID    `json:"actor_id"` // 角色ID
+	Update  ActorUpdate `json:"update"`   // 更新内容
+}
+
+// RemoveActorRequest 移除角色请求
+type RemoveActorRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID `json:"actor_id"` // 角色ID
+}
+
+// ListActorsRequest 列出角色请求
+type ListActorsRequest struct {
+	GameID model.ID     `json:"game_id"` // 游戏会话ID
+	Filter *ActorFilter `json:"filter"`  // 过滤条件（可选）
+}
+
+// ListActorsResult 列出角色结果
+type ListActorsResult struct {
+	Actors []ActorInfo `json:"actors"` // 角色列表
+}
+
+// AddExperienceRequest 添加经验值请求
+type AddExperienceRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+	PCID   model.ID `json:"pc_id"`   // 玩家角色ID
+	XP     int      `json:"xp"`      // 添加的经验值
+}
+
+// AddExperienceResult 添加经验值结果
+type AddExperienceResult struct {
+	LeveledUp bool `json:"leveled_up"` // 是否升级
+	OldLevel  int  `json:"old_level"`  // 原等级
+	NewLevel  int  `json:"new_level"`  // 新等级
+}
+
+// LevelUpRequest 升级请求
+type LevelUpRequest struct {
+	GameID      model.ID `json:"game_id"`      // 游戏会话ID
+	PCID        model.ID `json:"pc_id"`        // 玩家角色ID
+	ClassChoice string   `json:"class_choice"` // 升级职业选择
+}
+
+// ShortRestRequest 短休请求
+type ShortRestRequest struct {
+	GameID   model.ID   `json:"game_id"`   // 游戏会话ID
+	ActorIDs []model.ID `json:"actor_ids"` // 参与短休的角色ID列表
+}
+
+// StartLongRestRequest 开始长休请求
+type StartLongRestRequest struct {
+	GameID   model.ID   `json:"game_id"`   // 游戏会话ID
+	ActorIDs []model.ID `json:"actor_ids"` // 参与长休的角色ID列表
+}
+
+// EndLongRestRequest 结束长休请求
+type EndLongRestRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
 }
 
 // CreatePC 创建一个新的玩家角色
-func (e *Engine) CreatePC(ctx context.Context, gameID model.ID, pc *model.PlayerCharacter) (*model.PlayerCharacter, error) {
+func (e *Engine) CreatePC(ctx context.Context, req CreatePCRequest) (*CreatePCResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,14 +303,52 @@ func (e *Engine) CreatePC(ctx context.Context, gameID model.ID, pc *model.Player
 		return nil, err
 	}
 
-	// 生成ID
-	if pc.ID == "" {
-		pc.ID = model.NewID()
+	if req.PC == nil {
+		return nil, fmt.Errorf("pc input is required")
+	}
+
+	// 构建 PlayerCharacter
+	pc := &model.PlayerCharacter{
+		Actor: model.Actor{
+			ID:            model.NewID(),
+			Name:          req.PC.Name,
+			AbilityScores: abilityScoresInputToModel(req.PC.AbilityScores),
+			HitPoints:     model.HitPoints{},
+			Conditions:    []model.ConditionInstance{},
+			Exhaustion:    0,
+		},
+		Race: model.RaceReference{
+			Name: req.PC.Race,
+		},
+		Alignment:    model.Alignment(req.PC.Alignment),
+		Classes:      []model.ClassLevel{},
+		Experience:   0,
+		Features:     []string{},
+		RacialTraits: []string{},
+	}
+
+	// 设置背景
+	if req.PC.Background != "" {
+		pc.Personality = &model.PersonalityTraits{
+			Background: req.PC.Background,
+		}
+	}
+
+	// 添加职业
+	if req.PC.Class != "" {
+		pc.Classes = append(pc.Classes, model.ClassLevel{
+			ClassName: req.PC.Class,
+			Level:     req.PC.Level,
+		})
+		pc.TotalLevel = req.PC.Level
 	}
 
 	// 计算派生值
 	pc.ArmorClass = calculateArmorClass(pc)
-	if pc.HitPoints.Maximum <= 0 {
+	if req.PC.HitPoints > 0 {
+		pc.HitPoints.Maximum = req.PC.HitPoints
+		pc.HitPoints.Current = req.PC.HitPoints
+	} else {
 		pc.HitPoints.Maximum = calculateMaxHP(pc)
 		pc.HitPoints.Current = pc.HitPoints.Maximum
 	}
@@ -106,16 +366,17 @@ func (e *Engine) CreatePC(ctx context.Context, gameID model.ID, pc *model.Player
 		return nil, err
 	}
 
-	pcCopy := *pc
-	return &pcCopy, nil
+	return &CreatePCResult{
+		Actor: actorToInfo(&pc.Actor, model.ActorTypePC, pc.Name),
+	}, nil
 }
 
 // CreateNPC 创建一个新的非玩家角色
-func (e *Engine) CreateNPC(ctx context.Context, gameID model.ID, npc *model.NPC) (*model.NPC, error) {
+func (e *Engine) CreateNPC(ctx context.Context, req CreateNPCRequest) (*CreateNPCResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +385,22 @@ func (e *Engine) CreateNPC(ctx context.Context, gameID model.ID, npc *model.NPC)
 		return nil, err
 	}
 
-	if npc.ID == "" {
-		npc.ID = model.NewID()
+	if req.NPC == nil {
+		return nil, fmt.Errorf("npc input is required")
+	}
+
+	npc := &model.NPC{
+		Actor: model.Actor{
+			ID:            model.NewID(),
+			Name:          req.NPC.Name,
+			Description:   req.NPC.Description,
+			AbilityScores: abilityScoresInputToModel(req.NPC.AbilityScores),
+			Size:          req.NPC.Size,
+			Speed:         req.NPC.Speed,
+			HitPoints:     model.HitPoints{},
+			Conditions:    []model.ConditionInstance{},
+			Exhaustion:    0,
+		},
 	}
 
 	npc.ArmorClass = calculateArmorClassFromActor(&npc.Actor)
@@ -136,16 +411,17 @@ func (e *Engine) CreateNPC(ctx context.Context, gameID model.ID, npc *model.NPC)
 		return nil, err
 	}
 
-	npcCopy := *npc
-	return &npcCopy, nil
+	return &CreateNPCResult{
+		Actor: actorToInfo(&npc.Actor, model.ActorTypeNPC, req.NPC.Name),
+	}, nil
 }
 
 // CreateEnemy 创建一个新的敌人/怪物
-func (e *Engine) CreateEnemy(ctx context.Context, gameID model.ID, enemy *model.Enemy) (*model.Enemy, error) {
+func (e *Engine) CreateEnemy(ctx context.Context, req CreateEnemyRequest) (*CreateEnemyResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,8 +430,22 @@ func (e *Engine) CreateEnemy(ctx context.Context, gameID model.ID, enemy *model.
 		return nil, err
 	}
 
-	if enemy.ID == "" {
-		enemy.ID = model.NewID()
+	if req.Enemy == nil {
+		return nil, fmt.Errorf("enemy input is required")
+	}
+
+	enemy := &model.Enemy{
+		Actor: model.Actor{
+			ID:            model.NewID(),
+			AbilityScores: abilityScoresInputToModel(req.Enemy.AbilityScores),
+			Size:          req.Enemy.Size,
+			Speed:         req.Enemy.Speed,
+			HitPoints:     model.HitPoints{Current: req.Enemy.HitPoints, Maximum: req.Enemy.HitPoints},
+			ArmorClass:    req.Enemy.ArmorClass,
+			Conditions:    []model.ConditionInstance{},
+			Exhaustion:    0,
+		},
+		ChallengeRating: req.Enemy.ChallengeRating,
 	}
 
 	game.Enemies[enemy.ID] = enemy
@@ -164,16 +454,17 @@ func (e *Engine) CreateEnemy(ctx context.Context, gameID model.ID, enemy *model.
 		return nil, err
 	}
 
-	enemyCopy := *enemy
-	return &enemyCopy, nil
+	return &CreateEnemyResult{
+		Actor: actorToInfo(&enemy.Actor, model.ActorTypeEnemy, req.Enemy.Name),
+	}, nil
 }
 
 // CreateCompanion 创建一个同伴角色
-func (e *Engine) CreateCompanion(ctx context.Context, gameID model.ID, companion *model.Companion) (*model.Companion, error) {
+func (e *Engine) CreateCompanion(ctx context.Context, req CreateCompanionRequest) (*CreateCompanionResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -182,8 +473,21 @@ func (e *Engine) CreateCompanion(ctx context.Context, gameID model.ID, companion
 		return nil, err
 	}
 
-	if companion.ID == "" {
-		companion.ID = model.NewID()
+	if req.Companion == nil {
+		return nil, fmt.Errorf("companion input is required")
+	}
+
+	companion := &model.Companion{
+		Actor: model.Actor{
+			ID:            model.NewID(),
+			AbilityScores: abilityScoresInputToModel(req.Companion.AbilityScores),
+			Size:          req.Companion.Size,
+			Speed:         req.Companion.Speed,
+			HitPoints:     model.HitPoints{},
+			Conditions:    []model.ConditionInstance{},
+			Exhaustion:    0,
+		},
+		LeaderID: req.Companion.LeaderID,
 	}
 
 	companion.ArmorClass = calculateArmorClassFromActor(&companion.Actor)
@@ -194,68 +498,73 @@ func (e *Engine) CreateCompanion(ctx context.Context, gameID model.ID, companion
 		return nil, err
 	}
 
-	companionCopy := *companion
-	return &companionCopy, nil
+	return &CreateCompanionResult{
+		Actor: actorToInfo(&companion.Actor, model.ActorTypeCompanion, req.Companion.Name),
+	}, nil
 }
 
 // GetActor 获取任意类型的角色信息
-func (e *Engine) GetActor(ctx context.Context, gameID model.ID, actorID model.ID) (model.ActorSnapshot, error) {
+func (e *Engine) GetActor(ctx context.Context, req GetActorRequest) (*GetActorResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
-	if err != nil {
-		return model.ActorSnapshot{}, err
-	}
-
-	if err := e.checkPermission(game.Phase, OpGetActor); err != nil {
-		return model.ActorSnapshot{}, err
-	}
-
-	actor, ok := game.GetActor(actorID)
-	if !ok {
-		return model.ActorSnapshot{}, ErrNotFound
-	}
-
-	switch a := actor.(type) {
-	case *model.PlayerCharacter:
-		return model.ActorToSnapshot(&a.Actor, model.ActorTypePC, a.Name), nil
-	case *model.NPC:
-		return model.ActorToSnapshot(&a.Actor, model.ActorTypeNPC, a.Name), nil
-	case *model.Enemy:
-		return model.ActorToSnapshot(&a.Actor, model.ActorTypeEnemy, a.Name), nil
-	case *model.Companion:
-		return model.ActorToSnapshot(&a.Actor, model.ActorTypeCompanion, a.Name), nil
-	default:
-		return model.ActorSnapshot{}, fmt.Errorf("unknown actor type")
-	}
-}
-
-// GetPC 获取玩家角色的完整数据
-func (e *Engine) GetPC(ctx context.Context, gameID model.ID, pcID model.ID) (*model.PlayerCharacter, error) {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	pc, ok := game.PCs[pcID]
+	if err := e.checkPermission(game.Phase, OpGetActor); err != nil {
+		return nil, err
+	}
+
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
 
-	pcCopy := *pc
-	return &pcCopy, nil
+	var info *ActorInfo
+	switch a := actor.(type) {
+	case *model.PlayerCharacter:
+		info = actorToInfo(&a.Actor, model.ActorTypePC, a.Name)
+	case *model.NPC:
+		info = actorToInfo(&a.Actor, model.ActorTypeNPC, a.Name)
+	case *model.Enemy:
+		info = actorToInfo(&a.Actor, model.ActorTypeEnemy, a.Name)
+	case *model.Companion:
+		info = actorToInfo(&a.Actor, model.ActorTypeCompanion, a.Name)
+	default:
+		return nil, fmt.Errorf("unknown actor type")
+	}
+
+	return &GetActorResult{Actor: info}, nil
+}
+
+// GetPC 获取玩家角色的完整数据
+func (e *Engine) GetPC(ctx context.Context, req GetPCRequest) (*GetPCResult, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	game, err := e.loadGame(ctx, req.GameID)
+	if err != nil {
+		return nil, err
+	}
+
+	pc, ok := game.PCs[req.PCID]
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	return &GetPCResult{
+		PC: playerCharacterToInfo(pc),
+	}, nil
 }
 
 // UpdateActor 更新角色的部分状态
-func (e *Engine) UpdateActor(ctx context.Context, gameID model.ID, actorID model.ID, update ActorUpdate) error {
+func (e *Engine) UpdateActor(ctx context.Context, req UpdateActorRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
@@ -264,7 +573,7 @@ func (e *Engine) UpdateActor(ctx context.Context, gameID model.ID, actorID model
 		return err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return ErrNotFound
 	}
@@ -282,26 +591,26 @@ func (e *Engine) UpdateActor(ctx context.Context, gameID model.ID, actorID model
 	}
 
 	// 应用更新
-	if update.AbilityScores != nil {
-		baseActor.AbilityScores = *update.AbilityScores
+	if req.Update.AbilityScores != nil {
+		baseActor.AbilityScores = abilityScoresInputToModel(*req.Update.AbilityScores)
 	}
-	if update.HitPoints != nil {
-		if update.HitPoints.Current != nil {
-			baseActor.HitPoints.Current = *update.HitPoints.Current
+	if req.Update.HitPoints != nil {
+		if req.Update.HitPoints.Current != nil {
+			baseActor.HitPoints.Current = *req.Update.HitPoints.Current
 		}
-		if update.HitPoints.TempHitPoints != nil {
-			baseActor.TempHitPoints = *update.HitPoints.TempHitPoints
+		if req.Update.HitPoints.TempHitPoints != nil {
+			baseActor.TempHitPoints = *req.Update.HitPoints.TempHitPoints
 		}
 	}
-	if update.Conditions != nil {
+	if req.Update.Conditions != nil {
 		// 添加新状态
-		baseActor.Conditions = append(baseActor.Conditions, update.Conditions.Add...)
+		baseActor.Conditions = append(baseActor.Conditions, req.Update.Conditions.Add...)
 		// 移除指定状态
-		if len(update.Conditions.Remove) > 0 {
+		if len(req.Update.Conditions.Remove) > 0 {
 			newConditions := make([]model.ConditionInstance, 0)
 			for _, c := range baseActor.Conditions {
 				shouldRemove := false
-				for _, rem := range update.Conditions.Remove {
+				for _, rem := range req.Update.Conditions.Remove {
 					if c.Type == rem {
 						shouldRemove = true
 						break
@@ -314,11 +623,11 @@ func (e *Engine) UpdateActor(ctx context.Context, gameID model.ID, actorID model
 			baseActor.Conditions = newConditions
 		}
 	}
-	if update.Position != nil {
-		baseActor.Position = update.Position
+	if req.Update.Position != nil {
+		baseActor.Position = req.Update.Position
 	}
-	if update.SceneID != nil {
-		baseActor.SceneID = *update.SceneID
+	if req.Update.SceneID != nil {
+		baseActor.SceneID = *req.Update.SceneID
 	}
 
 	if err := e.saveGame(ctx, game); err != nil {
@@ -329,11 +638,11 @@ func (e *Engine) UpdateActor(ctx context.Context, gameID model.ID, actorID model
 }
 
 // RemoveActor 从游戏中移除一个角色
-func (e *Engine) RemoveActor(ctx context.Context, gameID model.ID, actorID model.ID) error {
+func (e *Engine) RemoveActor(ctx context.Context, req RemoveActorRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
@@ -344,13 +653,13 @@ func (e *Engine) RemoveActor(ctx context.Context, gameID model.ID, actorID model
 
 	// 检查是否在战斗中
 	if game.Phase == model.PhaseCombat && game.Combat != nil {
-		combatant := game.Combat.GetCombatantByActorID(actorID)
+		combatant := game.Combat.GetCombatantByActorID(req.ActorID)
 		if combatant != nil && !combatant.IsDefeated {
 			return ErrInvalidState
 		}
 	}
 
-	if !game.RemoveActor(actorID) {
+	if !game.RemoveActor(req.ActorID) {
 		return ErrNotFound
 	}
 
@@ -362,27 +671,31 @@ func (e *Engine) RemoveActor(ctx context.Context, gameID model.ID, actorID model
 }
 
 // ListActors 列出游戏中的角色，可按条件过滤
-func (e *Engine) ListActors(ctx context.Context, gameID model.ID, filter *ActorFilter) ([]model.ActorSnapshot, error) {
+func (e *Engine) ListActors(ctx context.Context, req ListActorsRequest) (*ListActorsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
 	allActors := game.GetAllActors()
 
-	if filter == nil {
-		return allActors, nil
+	if req.Filter == nil {
+		result := make([]ActorInfo, len(allActors))
+		for i, actor := range allActors {
+			result[i] = *actorSnapshotToInfo(&actor)
+		}
+		return &ListActorsResult{Actors: result}, nil
 	}
 
-	result := make([]model.ActorSnapshot, 0)
+	result := make([]ActorInfo, 0)
 	for _, actor := range allActors {
 		// 按类型过滤
-		if len(filter.Types) > 0 {
+		if len(req.Filter.Types) > 0 {
 			typeMatch := false
-			for _, t := range filter.Types {
+			for _, t := range req.Filter.Types {
 				if actor.Type == t {
 					typeMatch = true
 					break
@@ -394,30 +707,30 @@ func (e *Engine) ListActors(ctx context.Context, gameID model.ID, filter *ActorF
 		}
 
 		// 按场景ID过滤
-		if filter.SceneID != nil && actor.SceneID != *filter.SceneID {
+		if req.Filter.SceneID != nil && actor.SceneID != *req.Filter.SceneID {
 			continue
 		}
 
 		// 按存活状态过滤
-		if filter.Alive != nil {
+		if req.Filter.Alive != nil {
 			isAlive := actor.HitPoints.Current > 0
-			if isAlive != *filter.Alive {
+			if isAlive != *req.Filter.Alive {
 				continue
 			}
 		}
 
-		result = append(result, actor)
+		result = append(result, *actorSnapshotToInfo(&actor))
 	}
 
-	return result, nil
+	return &ListActorsResult{Actors: result}, nil
 }
 
 // AddExperience 为玩家角色添加经验值
-func (e *Engine) AddExperience(ctx context.Context, gameID model.ID, pcID model.ID, xp int) (*LevelUpResult, error) {
+func (e *Engine) AddExperience(ctx context.Context, req AddExperienceRequest) (*AddExperienceResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -426,34 +739,38 @@ func (e *Engine) AddExperience(ctx context.Context, gameID model.ID, pcID model.
 		return nil, err
 	}
 
-	pc, ok := game.PCs[pcID]
+	pc, ok := game.PCs[req.PCID]
 	if !ok {
 		return nil, ErrNotFound
 	}
 
 	oldLevel := pc.TotalLevel
-	pc.Experience += xp
+	pc.Experience += req.XP
 
 	// 检查是否升级
 	newLevel := rules.GetLevelByXP(pc.Experience)
-	if newLevel > oldLevel {
+	leveledUp := newLevel > oldLevel
+	if leveledUp {
 		pc.TotalLevel = newLevel
-		// 升级逻辑在 LevelUp 方法中处理
 	}
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	return &AddExperienceResult{
+		LeveledUp: leveledUp,
+		OldLevel:  oldLevel,
+		NewLevel:  pc.TotalLevel,
+	}, nil
 }
 
 // LevelUp 手动触发玩家角色升级
-func (e *Engine) LevelUp(ctx context.Context, gameID model.ID, pcID model.ID, classChoice string) (*LevelUpResult, error) {
+func (e *Engine) LevelUp(ctx context.Context, req LevelUpRequest) (*LevelUpResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -462,7 +779,7 @@ func (e *Engine) LevelUp(ctx context.Context, gameID model.ID, pcID model.ID, cl
 		return nil, err
 	}
 
-	pc, ok := game.PCs[pcID]
+	pc, ok := game.PCs[req.PCID]
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -478,7 +795,7 @@ func (e *Engine) LevelUp(ctx context.Context, gameID model.ID, pcID model.ID, cl
 
 	// 计算HP增长
 	hpGain := 0
-	classToLevel := classChoice
+	classToLevel := req.ClassChoice
 	if classToLevel == "" && len(pc.Classes) > 0 {
 		classToLevel = pc.Classes[0].ClassName
 	}
@@ -521,11 +838,11 @@ func (e *Engine) LevelUp(ctx context.Context, gameID model.ID, pcID model.ID, cl
 }
 
 // ShortRest 为指定角色执行短休
-func (e *Engine) ShortRest(ctx context.Context, gameID model.ID, actorIDs []model.ID) (*RestResult, error) {
+func (e *Engine) ShortRest(ctx context.Context, req ShortRestRequest) (*RestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -539,7 +856,7 @@ func (e *Engine) ShortRest(ctx context.Context, gameID model.ID, actorIDs []mode
 		Message:      "短休完成",
 	}
 
-	for _, actorID := range actorIDs {
+	for _, actorID := range req.ActorIDs {
 		actorResult, err := e.processShortRest(game, actorID)
 		if err != nil {
 			return nil, fmt.Errorf("short rest failed for actor %s: %w", actorID, err)
@@ -555,11 +872,11 @@ func (e *Engine) ShortRest(ctx context.Context, gameID model.ID, actorIDs []mode
 }
 
 // StartLongRest 开始长休过程
-func (e *Engine) StartLongRest(ctx context.Context, gameID model.ID, actorIDs []model.ID) (*RestResult, error) {
+func (e *Engine) StartLongRest(ctx context.Context, req StartLongRestRequest) (*RestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -569,7 +886,7 @@ func (e *Engine) StartLongRest(ctx context.Context, gameID model.ID, actorIDs []
 	}
 
 	// 创建长休状态
-	restState := model.NewLongRest(actorIDs)
+	restState := model.NewLongRest(req.ActorIDs)
 	restState.Start()
 	game.ActiveRest = restState
 
@@ -586,11 +903,11 @@ func (e *Engine) StartLongRest(ctx context.Context, gameID model.ID, actorIDs []
 }
 
 // EndLongRest 结束长休并应用恢复效果
-func (e *Engine) EndLongRest(ctx context.Context, gameID model.ID) (*RestResult, error) {
+func (e *Engine) EndLongRest(ctx context.Context, req EndLongRestRequest) (*RestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -791,4 +1108,91 @@ func calculateMaxHP(pc *model.PlayerCharacter) int {
 		hp += hitDiceType + rules.AbilityModifier(pc.AbilityScores.Constitution)
 	}
 	return hp
+}
+
+// abilityScoresInputToModel 将 AbilityScoresInput 转换为 model.AbilityScores
+func abilityScoresInputToModel(input AbilityScoresInput) model.AbilityScores {
+	return model.AbilityScores{
+		Strength:     input.Strength,
+		Dexterity:    input.Dexterity,
+		Constitution: input.Constitution,
+		Intelligence: input.Intelligence,
+		Wisdom:       input.Wisdom,
+		Charisma:     input.Charisma,
+	}
+}
+
+// actorToInfo 将 Actor 转换为 ActorInfo
+func actorToInfo(actor *model.Actor, actorType model.ActorType, name string) *ActorInfo {
+	conditions := make([]string, len(actor.Conditions))
+	for i, c := range actor.Conditions {
+		conditions[i] = string(c.Type)
+	}
+	info := &ActorInfo{
+		ID:         actor.ID,
+		Type:       actorType,
+		Name:       name,
+		HitPoints:  actor.HitPoints,
+		TempHP:     actor.TempHitPoints,
+		ArmorClass: actor.ArmorClass,
+		Speed:      actor.Speed,
+		Conditions: conditions,
+		Exhaustion: actor.Exhaustion,
+		SceneID:    actor.SceneID,
+	}
+	if actor.Position != nil {
+		pos := *actor.Position
+		info.Position = &pos
+	}
+	return info
+}
+
+// actorSnapshotToInfo 将 ActorSnapshot 转换为 ActorInfo
+func actorSnapshotToInfo(snapshot *model.ActorSnapshot) *ActorInfo {
+	return &ActorInfo{
+		ID:         snapshot.ID,
+		Type:       snapshot.Type,
+		Name:       snapshot.Name,
+		HitPoints:  snapshot.HitPoints,
+		ArmorClass: snapshot.ArmorClass,
+		Conditions: snapshot.Conditions,
+		SceneID:    snapshot.SceneID,
+	}
+}
+
+// playerCharacterToInfo 将 PlayerCharacter 转换为 PlayerCharacterInfo
+func playerCharacterToInfo(pc *model.PlayerCharacter) *PlayerCharacterInfo {
+	classes := make([]ClassInfo, len(pc.Classes))
+	for i, cl := range pc.Classes {
+		classes[i] = ClassInfo{
+			ClassName:  cl.ClassName,
+			ClassLevel: cl.Level,
+		}
+	}
+	info := &PlayerCharacterInfo{
+		ID:         pc.ID,
+		Name:       pc.Actor.Name,
+		Race:       pc.Race.Name,
+		Classes:    classes,
+		TotalLevel: pc.TotalLevel,
+		Experience: pc.Experience,
+		AbilityScores: AbilityScoresInput{
+			Strength:     pc.AbilityScores.Strength,
+			Dexterity:    pc.AbilityScores.Dexterity,
+			Constitution: pc.AbilityScores.Constitution,
+			Intelligence: pc.AbilityScores.Intelligence,
+			Wisdom:       pc.AbilityScores.Wisdom,
+			Charisma:     pc.AbilityScores.Charisma,
+		},
+		HitPoints:        pc.HitPoints,
+		ArmorClass:       pc.ArmorClass,
+		Speed:            pc.Speed,
+		ProficiencyBonus: rules.ProficiencyBonus(pc.TotalLevel),
+		Features:         pc.Features,
+		RacialTraits:     pc.RacialTraits,
+	}
+	if pc.Personality != nil {
+		info.Background = pc.Personality.Background
+	}
+	return info
 }

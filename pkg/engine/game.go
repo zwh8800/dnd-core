@@ -21,41 +21,117 @@ type GameSummary struct {
 	CurrentLevel int         `json:"current_level"`
 }
 
+// GameInfo 游戏信息摘要
+type GameInfo struct {
+	ID             model.ID    `json:"id"`                         // 游戏唯一标识
+	Name           string      `json:"name"`                       // 游戏名称
+	Description    string      `json:"description"`                // 游戏描述
+	Phase          model.Phase `json:"phase"`                      // 当前游戏阶段
+	CreatedAt      time.Time   `json:"created_at"`                 // 创建时间
+	UpdatedAt      time.Time   `json:"updated_at"`                 // 更新时间
+	PCCount        int         `json:"pc_count"`                   // 玩家角色数量
+	NPCCount       int         `json:"npc_count"`                  // NPC数量
+	EnemyCount     int         `json:"enemy_count"`                // 敌人数量
+	CompanionCount int         `json:"companion_count"`            // 同伴数量
+	SceneCount     int         `json:"scene_count"`                // 场景数量
+	CurrentSceneID model.ID    `json:"current_scene_id,omitempty"` // 当前场景ID
+	InCombat       bool        `json:"in_combat"`                  // 是否处于战斗中
+}
+
+// NewGameRequest 创建游戏请求
+type NewGameRequest struct {
+	Name        string `json:"name"`        // 游戏名称
+	Description string `json:"description"` // 游戏描述
+}
+
+// NewGameResult 创建游戏结果
+type NewGameResult struct {
+	Game *GameInfo `json:"game"` // 新创建的游戏信息
+}
+
+// LoadGameRequest 加载游戏请求
+type LoadGameRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏ID
+}
+
+// LoadGameResult 加载游戏结果
+type LoadGameResult struct {
+	Game *GameInfo `json:"game"` // 加载的游戏信息
+}
+
+// SaveGameRequest 保存游戏请求
+type SaveGameRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏ID
+}
+
+// DeleteGameRequest 删除游戏请求
+type DeleteGameRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏ID
+}
+
+// ListGamesRequest 列出游戏请求
+type ListGamesRequest struct {
+	// 无需参数，使用空结构体以统一API签名
+}
+
+// gameStateToInfo 将 GameState 转换为 GameInfo
+func gameStateToInfo(game *model.GameState) *GameInfo {
+	info := &GameInfo{
+		ID:             game.ID,
+		Name:           game.Name,
+		Description:    game.Description,
+		Phase:          game.Phase,
+		UpdatedAt:      game.UpdatedAt,
+		PCCount:        len(game.PCs),
+		NPCCount:       len(game.NPCs),
+		EnemyCount:     len(game.Enemies),
+		CompanionCount: len(game.Companions),
+		SceneCount:     len(game.Scenes),
+		InCombat:       game.Combat != nil,
+	}
+	if game.CurrentScene != nil && *game.CurrentScene != "" {
+		info.CurrentSceneID = *game.CurrentScene
+	}
+	return info
+}
+
 // NewGame 创建一个新的游戏会话
-func (e *Engine) NewGame(ctx context.Context, name, description string) (*model.GameState, error) {
+func (e *Engine) NewGame(ctx context.Context, req NewGameRequest) (*NewGameResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game := model.NewGameState(name, description)
+	game := model.NewGameState(req.Name, req.Description)
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return nil, err
 	}
 
-	gameCopy := *game
-	return &gameCopy, nil
+	return &NewGameResult{
+		Game: gameStateToInfo(game),
+	}, nil
 }
 
 // LoadGame 从存储加载一个已存在的游戏会话
-func (e *Engine) LoadGame(ctx context.Context, gameID model.ID) (*model.GameState, error) {
+func (e *Engine) LoadGame(ctx context.Context, req LoadGameRequest) (*LoadGameResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	gameCopy := *game
-	return &gameCopy, nil
+	return &LoadGameResult{
+		Game: gameStateToInfo(game),
+	}, nil
 }
 
 // SaveGame 将当前游戏状态持久化到存储后端
-func (e *Engine) SaveGame(ctx context.Context, gameID model.ID) error {
+func (e *Engine) SaveGame(ctx context.Context, req SaveGameRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
@@ -65,11 +141,11 @@ func (e *Engine) SaveGame(ctx context.Context, gameID model.ID) error {
 }
 
 // DeleteGame 从存储中删除一个游戏会话
-func (e *Engine) DeleteGame(ctx context.Context, gameID model.ID) error {
+func (e *Engine) DeleteGame(ctx context.Context, req DeleteGameRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	if err := e.store.DeleteGame(ctx, gameID); err != nil {
+	if err := e.store.DeleteGame(ctx, req.GameID); err != nil {
 		var notFound *storage.ErrGameNotFound
 		if errors.As(err, &notFound) {
 			return ErrNotFound
@@ -83,7 +159,7 @@ func (e *Engine) DeleteGame(ctx context.Context, gameID model.ID) error {
 }
 
 // ListGames 列出所有可用的游戏会话
-func (e *Engine) ListGames(ctx context.Context) ([]GameSummary, error) {
+func (e *Engine) ListGames(ctx context.Context, req ListGamesRequest) ([]GameSummary, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 

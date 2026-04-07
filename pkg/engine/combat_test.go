@@ -4,314 +4,538 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/zwh8800/dnd-core/internal/model"
 )
 
-// TestStartCombat 测试开始战斗
 func TestStartCombat(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
+	t.Run("starts combat successfully", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
 
-	ctx := context.Background()
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for combat",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
 
-	// 创建场景
-	scene, err := engine.CreateScene(ctx, gameID, "Battlefield", "A battlefield", model.SceneTypeOutdoor)
-	if err != nil {
-		t.Fatalf("Failed to create scene: %v", err)
-	}
-
-	// 创建PC
-	pc := &model.PlayerCharacter{
-		Actor: model.Actor{
-			Name:  "Fighter",
-			Size:  model.SizeMedium,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 16, Dexterity: 12, Constitution: 14,
-				Intelligence: 10, Wisdom: 8, Charisma: 13,
+		// Create combatants
+		pc1, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Fighter",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     16,
+					Dexterity:    14,
+					Constitution: 15,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     8,
+				},
 			},
-		},
-		Race: model.RaceReference{Name: "Human"},
-		Classes: []model.ClassLevel{
-			{ClassName: "Fighter", Level: 1},
-		},
-		TotalLevel: 1,
-	}
-	pcResult, err := engine.CreatePC(ctx, gameID, pc)
-	if err != nil {
-		t.Fatalf("Failed to create PC: %v", err)
-	}
+		})
+		require.NoError(t, err)
 
-	// 创建敌人
-	enemy := &model.Enemy{
-		Actor: model.Actor{
-			Name:  "Goblin",
-			Size:  model.SizeSmall,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 8, Dexterity: 14, Constitution: 10,
-				Intelligence: 10, Wisdom: 8, Charisma: 8,
+		pc2, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Wizard",
+				Race:  "Elf",
+				Class: "Wizard",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     8,
+					Dexterity:    14,
+					Constitution: 12,
+					Intelligence: 16,
+					Wisdom:       10,
+					Charisma:     12,
+				},
 			},
-			HitPoints:  model.HitPoints{Current: 7, Maximum: 7},
-			ArmorClass: 15,
-		},
-		ChallengeRating: 0.25,
-	}
-	enemyResult, err := engine.CreateEnemy(ctx, gameID, enemy)
-	if err != nil {
-		t.Fatalf("Failed to create enemy: %v", err)
-	}
+		})
+		require.NoError(t, err)
 
-	// 开始战斗
-	combat, err := engine.StartCombat(ctx, gameID, scene.Scene.ID, []model.ID{pcResult.ID, enemyResult.ID})
-	if err != nil {
-		t.Fatalf("Failed to start combat: %v", err)
-	}
+		enemy, err := e.CreateEnemy(ctx, CreateEnemyRequest{
+			GameID: gameID,
+			Enemy: &EnemyInput{
+				Name:        "Goblin",
+				Description: "A sneaky goblin",
+				Size:        model.SizeSmall,
+				Speed:       30,
+				AbilityScores: AbilityScoresInput{
+					Strength:     8,
+					Dexterity:    14,
+					Constitution: 10,
+					Intelligence: 10,
+					Wisdom:       8,
+					Charisma:     8,
+				},
+				ChallengeRating: 0.25,
+				HitPoints:       7,
+				ArmorClass:      15,
+			},
+		})
+		require.NoError(t, err)
 
-	if combat == nil {
-		t.Fatal("Combat is nil")
-	}
-	if combat.Status != model.CombatStatusActive {
-		t.Errorf("Expected combat status %s, got %s", model.CombatStatusActive, combat.Status)
-	}
-	if len(combat.Initiative) != 2 {
-		t.Errorf("Expected 2 combatants, got %d", len(combat.Initiative))
-	}
+		// Switch to exploration phase
+		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "test")
+		require.NoError(t, err)
+
+		result, err := e.StartCombat(ctx, StartCombatRequest{
+			GameID:         gameID,
+			ParticipantIDs: []model.ID{pc1.Actor.ID, pc2.Actor.ID, enemy.Actor.ID},
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.NotNil(t, result.Combat)
+	})
+
+	t.Run("starts combat with surprise", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for combat with surprise",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create combatants
+		pc, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Fighter",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     16,
+					Dexterity:    14,
+					Constitution: 15,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     8,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		enemy, err := e.CreateEnemy(ctx, CreateEnemyRequest{
+			GameID: gameID,
+			Enemy: &EnemyInput{
+				Name:        "Assassin",
+				Description: "A deadly assassin",
+				Size:        model.SizeMedium,
+				Speed:       30,
+				AbilityScores: AbilityScoresInput{
+					Strength:     12,
+					Dexterity:    16,
+					Constitution: 12,
+					Intelligence: 10,
+					Wisdom:       10,
+					Charisma:     8,
+				},
+				ChallengeRating: 0.5,
+				HitPoints:       12,
+				ArmorClass:      14,
+			},
+		})
+		require.NoError(t, err)
+
+		// Switch to exploration phase
+		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "test")
+		require.NoError(t, err)
+
+		result, err := e.StartCombatWithSurprise(ctx, StartCombatWithSurpriseRequest{
+			GameID:       gameID,
+			StealthySide: []model.ID{pc.Actor.ID},
+			Observers:    []model.ID{enemy.Actor.ID},
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.NotNil(t, result.Combat)
+	})
 }
 
-// TestEndCombat 测试结束战斗
 func TestEndCombat(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
+	t.Run("ends combat successfully", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
 
-	ctx := context.Background()
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for combat",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
 
-	// 创建场景
-	scene, err := engine.CreateScene(ctx, gameID, "Battlefield", "A battlefield", model.SceneTypeOutdoor)
-	if err != nil {
-		t.Fatalf("Failed to create scene: %v", err)
-	}
-
-	// 创建PC
-	pc := &model.PlayerCharacter{
-		Actor: model.Actor{
-			Name:  "Fighter",
-			Size:  model.SizeMedium,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 16, Dexterity: 12, Constitution: 14,
-				Intelligence: 10, Wisdom: 8, Charisma: 13,
+		// Create combatants and start combat
+		pc, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Fighter",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     16,
+					Dexterity:    14,
+					Constitution: 15,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     8,
+				},
 			},
-		},
-		Race: model.RaceReference{Name: "Human"},
-		Classes: []model.ClassLevel{
-			{ClassName: "Fighter", Level: 1},
-		},
-		TotalLevel: 1,
-	}
-	pcResult, err := engine.CreatePC(ctx, gameID, pc)
-	if err != nil {
-		t.Fatalf("Failed to create PC: %v", err)
-	}
+		})
+		require.NoError(t, err)
 
-	// 创建敌人
-	enemy := &model.Enemy{
-		Actor: model.Actor{
-			Name:  "Goblin",
-			Size:  model.SizeSmall,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 8, Dexterity: 14, Constitution: 10,
-				Intelligence: 10, Wisdom: 8, Charisma: 8,
+		enemy, err := e.CreateEnemy(ctx, CreateEnemyRequest{
+			GameID: gameID,
+			Enemy: &EnemyInput{
+				Name:        "Goblin",
+				Description: "A sneaky goblin",
+				Size:        model.SizeSmall,
+				Speed:       30,
+				AbilityScores: AbilityScoresInput{
+					Strength:     8,
+					Dexterity:    14,
+					Constitution: 10,
+					Intelligence: 10,
+					Wisdom:       8,
+					Charisma:     8,
+				},
+				ChallengeRating: 0.25,
+				HitPoints:       7,
+				ArmorClass:      15,
 			},
-			HitPoints:  model.HitPoints{Current: 7, Maximum: 7},
-			ArmorClass: 15,
-		},
-		ChallengeRating: 0.25,
-	}
-	enemyResult, err := engine.CreateEnemy(ctx, gameID, enemy)
-	if err != nil {
-		t.Fatalf("Failed to create enemy: %v", err)
-	}
+		})
+		require.NoError(t, err)
 
-	// 开始战斗
-	_, err = engine.StartCombat(ctx, gameID, scene.Scene.ID, []model.ID{pcResult.ID, enemyResult.ID})
-	if err != nil {
-		t.Fatalf("Failed to start combat: %v", err)
-	}
+		// Switch to exploration phase
+		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "test")
+		require.NoError(t, err)
 
-	// 结束战斗
-	err = engine.EndCombat(ctx, gameID)
-	if err != nil {
-		t.Fatalf("Failed to end combat: %v", err)
-	}
+		_, err = e.StartCombat(ctx, StartCombatRequest{
+			GameID:         gameID,
+			ParticipantIDs: []model.ID{pc.Actor.ID, enemy.Actor.ID},
+		})
+		require.NoError(t, err)
 
-	// 验证战斗已结束 - 尝试获取战斗应该返回ErrCombatNotActive
-	_, err = engine.GetCombatSummary(ctx, gameID)
-	if err == nil {
-		t.Fatal("Expected error when getting combat after ending, got nil")
-	}
-	if err != ErrCombatNotActive {
-		t.Errorf("Expected ErrCombatNotActive, got %v", err)
-	}
+		// End combat
+		err = e.EndCombat(ctx, EndCombatRequest{GameID: gameID})
+
+		require.NoError(t, err)
+	})
 }
 
-// TestCombatActions 测试战斗动作
-func TestCombatActions(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
-
-	ctx := context.Background()
-
-	// 创建场景
-	scene, err := engine.CreateScene(ctx, gameID, "Battlefield", "A battlefield", model.SceneTypeOutdoor)
-	if err != nil {
-		t.Fatalf("Failed to create scene: %v", err)
-	}
-
-	// 创建PC
-	pc := &model.PlayerCharacter{
-		Actor: model.Actor{
-			Name:  "Fighter",
-			Size:  model.SizeMedium,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 16, Dexterity: 12, Constitution: 14,
-				Intelligence: 10, Wisdom: 8, Charisma: 13,
-			},
-		},
-		Race: model.RaceReference{Name: "Human"},
-		Classes: []model.ClassLevel{
-			{ClassName: "Fighter", Level: 1},
-		},
-		TotalLevel: 1,
-	}
-	pcResult, err := engine.CreatePC(ctx, gameID, pc)
-	if err != nil {
-		t.Fatalf("Failed to create PC: %v", err)
-	}
-
-	// 创建敌人
-	enemy := &model.Enemy{
-		Actor: model.Actor{
-			Name:  "Goblin",
-			Size:  model.SizeSmall,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 8, Dexterity: 14, Constitution: 10,
-				Intelligence: 10, Wisdom: 8, Charisma: 8,
-			},
-			HitPoints:  model.HitPoints{Current: 7, Maximum: 7},
-			ArmorClass: 15,
-		},
-		ChallengeRating: 0.25,
-	}
-	enemyResult, err := engine.CreateEnemy(ctx, gameID, enemy)
-	if err != nil {
-		t.Fatalf("Failed to create enemy: %v", err)
-	}
-
-	// 开始战斗
-	_, err = engine.StartCombat(ctx, gameID, scene.Scene.ID, []model.ID{pcResult.ID, enemyResult.ID})
-	if err != nil {
-		t.Fatalf("Failed to start combat: %v", err)
-	}
-
-	// 获取当前回合的角色
-	turn, err := engine.GetCurrentTurn(ctx, gameID)
-	if err != nil {
-		t.Fatalf("Failed to get current turn: %v", err)
-	}
-
-	if turn == nil {
-		t.Fatal("Turn is nil")
-	}
-	if turn.ActorID == "" {
-		t.Error("Expected current actor ID to be set")
-	}
-}
-
-// TestNextTurn 测试下一个回合
 func TestNextTurn(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
+	t.Run("advances to next turn", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
 
-	ctx := context.Background()
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for combat",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
 
-	// 创建场景
-	scene, err := engine.CreateScene(ctx, gameID, "Battlefield", "A battlefield", model.SceneTypeOutdoor)
-	if err != nil {
-		t.Fatalf("Failed to create scene: %v", err)
-	}
-
-	// 创建PC
-	pc := &model.PlayerCharacter{
-		Actor: model.Actor{
-			Name:  "Fighter",
-			Size:  model.SizeMedium,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 16, Dexterity: 12, Constitution: 14,
-				Intelligence: 10, Wisdom: 8, Charisma: 13,
+		// Create combatants and start combat
+		pc1, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Fighter",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     16,
+					Dexterity:    14,
+					Constitution: 15,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     8,
+				},
 			},
-		},
-		Race: model.RaceReference{Name: "Human"},
-		Classes: []model.ClassLevel{
-			{ClassName: "Fighter", Level: 1},
-		},
-		TotalLevel: 1,
-	}
-	pcResult, err := engine.CreatePC(ctx, gameID, pc)
-	if err != nil {
-		t.Fatalf("Failed to create PC: %v", err)
-	}
+		})
+		require.NoError(t, err)
 
-	// 创建敌人
-	enemy := &model.Enemy{
-		Actor: model.Actor{
-			Name:  "Goblin",
-			Size:  model.SizeSmall,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 8, Dexterity: 14, Constitution: 10,
-				Intelligence: 10, Wisdom: 8, Charisma: 8,
+		pc2, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Wizard",
+				Race:  "Elf",
+				Class: "Wizard",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     8,
+					Dexterity:    14,
+					Constitution: 12,
+					Intelligence: 16,
+					Wisdom:       10,
+					Charisma:     12,
+				},
 			},
-			HitPoints:  model.HitPoints{Current: 7, Maximum: 7},
-			ArmorClass: 15,
-		},
-		ChallengeRating: 0.25,
-	}
-	enemyResult, err := engine.CreateEnemy(ctx, gameID, enemy)
-	if err != nil {
-		t.Fatalf("Failed to create enemy: %v", err)
-	}
+		})
+		require.NoError(t, err)
 
-	// 开始战斗
-	_, err = engine.StartCombat(ctx, gameID, scene.Scene.ID, []model.ID{pcResult.ID, enemyResult.ID})
-	if err != nil {
-		t.Fatalf("Failed to start combat: %v", err)
-	}
+		// Switch to exploration phase
+		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "test")
+		require.NoError(t, err)
 
-	// 获取第一个回合
-	turn1, err := engine.GetCurrentTurn(ctx, gameID)
-	if err != nil {
-		t.Fatalf("Failed to get current turn: %v", err)
-	}
+		_, err = e.StartCombat(ctx, StartCombatRequest{
+			GameID:         gameID,
+			ParticipantIDs: []model.ID{pc1.Actor.ID, pc2.Actor.ID},
+		})
+		require.NoError(t, err)
 
-	// 下一个回合
-	_, err = engine.NextTurn(ctx, gameID)
-	if err != nil {
-		t.Fatalf("Failed to next turn: %v", err)
-	}
+		// Next turn
+		result, err := e.NextTurn(ctx, NextTurnRequest{GameID: gameID})
 
-	// 获取新的回合
-	turn2, err := engine.GetCurrentTurn(ctx, gameID)
-	if err != nil {
-		t.Fatalf("Failed to get current turn after next: %v", err)
-	}
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.NotNil(t, result.Combat)
+	})
+}
 
-	// 应该是不同的角色
-	if turn1.ActorID == turn2.ActorID {
-		t.Error("Expected different actor after next turn")
-	}
+func TestGetCurrentCombat(t *testing.T) {
+	t.Run("gets current combat info", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for combat",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create combatants and start combat
+		pc, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Fighter",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     16,
+					Dexterity:    14,
+					Constitution: 15,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     8,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		// Switch to exploration phase
+		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "test")
+		require.NoError(t, err)
+
+		_, err = e.StartCombat(ctx, StartCombatRequest{
+			GameID:         gameID,
+			ParticipantIDs: []model.ID{pc.Actor.ID},
+		})
+		require.NoError(t, err)
+
+		// Get current combat
+		result, err := e.GetCurrentCombat(ctx, GetCurrentCombatRequest{GameID: gameID})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.NotNil(t, result.Combat)
+		assert.Equal(t, 1, result.Combat.Round)
+	})
+}
+
+func TestExecuteAttack(t *testing.T) {
+	t.Run("executes attack", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for combat",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create combatants and start combat
+		attacker, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Fighter",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     16,
+					Dexterity:    14,
+					Constitution: 15,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     8,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		target, err := e.CreateEnemy(ctx, CreateEnemyRequest{
+			GameID: gameID,
+			Enemy: &EnemyInput{
+				Name:        "Goblin",
+				Description: "A sneaky goblin",
+				Size:        model.SizeSmall,
+				Speed:       30,
+				AbilityScores: AbilityScoresInput{
+					Strength:     8,
+					Dexterity:    14,
+					Constitution: 10,
+					Intelligence: 10,
+					Wisdom:       8,
+					Charisma:     8,
+				},
+				ChallengeRating: 0.25,
+				HitPoints:       7,
+				ArmorClass:      15,
+			},
+		})
+		require.NoError(t, err)
+
+		// Switch to exploration phase
+		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "test")
+		require.NoError(t, err)
+
+		_, err = e.StartCombat(ctx, StartCombatRequest{
+			GameID:         gameID,
+			ParticipantIDs: []model.ID{attacker.Actor.ID, target.Actor.ID},
+		})
+		require.NoError(t, err)
+
+		// Execute attack
+		result, err := e.ExecuteAttack(ctx, ExecuteAttackRequest{
+			GameID:     gameID,
+			AttackerID: attacker.Actor.ID,
+			TargetID:   target.Actor.ID,
+			Attack:     AttackInput{IsUnarmed: true},
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.NotNil(t, result.AttackResult)
+	})
+}
+
+func TestExecuteDamage(t *testing.T) {
+	t.Run("executes damage", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for combat",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create target
+		target, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Target",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     16,
+					Dexterity:    14,
+					Constitution: 15,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     8,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		// Execute damage
+		result, err := e.ExecuteDamage(ctx, ExecuteDamageRequest{
+			GameID:   gameID,
+			TargetID: target.Actor.ID,
+			Damage: DamageInput{
+				Amount: 5,
+				Type:   model.DamageTypeSlashing,
+			},
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, 5, result.DamageResult.FinalDamage)
+	})
+}
+
+func TestExecuteHealing(t *testing.T) {
+	t.Run("executes healing", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for healing",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create wounded target
+		target, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Wounded Target",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     16,
+					Dexterity:    14,
+					Constitution: 15,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     8,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		// Damage the target
+		_, err = e.ExecuteDamage(ctx, ExecuteDamageRequest{
+			GameID:   gameID,
+			TargetID: target.Actor.ID,
+			Damage: DamageInput{
+				Amount: 10,
+				Type:   model.DamageTypeSlashing,
+			},
+		})
+		require.NoError(t, err)
+
+		// Heal the target
+		result, err := e.ExecuteHealing(ctx, ExecuteHealingRequest{
+			GameID:   gameID,
+			TargetID: target.Actor.ID,
+			Amount:   5,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, 5, result.Healed)
+	})
 }

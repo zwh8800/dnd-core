@@ -8,9 +8,54 @@ import (
 	"github.com/zwh8800/dnd-core/internal/rules"
 )
 
+// CastSpellRequest 施法请求（整合 SpellInput）
+type CastSpellRequest struct {
+	GameID   model.ID   `json:"game_id"`   // 游戏会话ID
+	CasterID model.ID   `json:"caster_id"` // 施法者ID
+	Spell    SpellInput `json:"spell"`     // 法术输入
+}
+
+// GetSpellSlotsRequest 获取法术位请求
+type GetSpellSlotsRequest struct {
+	GameID   model.ID `json:"game_id"`   // 游戏会话ID
+	CasterID model.ID `json:"caster_id"` // 施法者ID
+}
+
+// GetSpellSlotsResult 获取法术位结果
+type GetSpellSlotsResult struct {
+	Info *SpellSlotsInfo `json:"info"` // 法术位信息
+}
+
+// PrepareSpellsRequest 准备法术请求
+type PrepareSpellsRequest struct {
+	GameID   model.ID `json:"game_id"`   // 游戏会话ID
+	CasterID model.ID `json:"caster_id"` // 施法者ID
+	SpellIDs []string `json:"spell_ids"` // 准备法术ID列表
+}
+
+// LearnSpellRequest 学习法术请求
+type LearnSpellRequest struct {
+	GameID   model.ID `json:"game_id"`   // 游戏会话ID
+	CasterID model.ID `json:"caster_id"` // 施法者ID
+	SpellID  string   `json:"spell_id"`  // 法术ID
+}
+
+// ConcentrationCheckRequest 专注检定请求
+type ConcentrationCheckRequest struct {
+	GameID      model.ID `json:"game_id"`      // 游戏会话ID
+	CasterID    model.ID `json:"caster_id"`    // 施法者ID
+	DamageTaken int      `json:"damage_taken"` // 受到的伤害
+}
+
+// EndConcentrationRequest 结束专注请求
+type EndConcentrationRequest struct {
+	GameID   model.ID `json:"game_id"`   // 游戏会话ID
+	CasterID model.ID `json:"caster_id"` // 施法者ID
+}
+
 // SpellInput 施法输入
 type SpellInput struct {
-	SpellID     string             `json:"spell_id"`
+	SpellID     string             `json:"spell_id"`     // 法术ID
 	SlotLevel   int                `json:"slot_level"`   // 使用的法术位环级（0表示戏法）
 	TargetIDs   []model.ID         `json:"target_ids"`   // 目标角色ID列表
 	TargetPoint *model.Point       `json:"target_point"` // 目标位置
@@ -54,35 +99,35 @@ type ConcentrationResult struct {
 
 // SpellSlotsInfo 法术位信息
 type SpellSlotsInfo struct {
-	CantripsKnown       int             `json:"cantrips_known"`
-	SpellsPrepared      []string        `json:"spells_prepared,omitempty"`
-	KnownSpells         []string        `json:"known_spells,omitempty"`
-	SlotsByLevel        []SlotLevelInfo `json:"slots_by_level"`
-	SaveDC              int             `json:"save_dc"`
-	AttackBonus         int             `json:"attack_bonus"`
-	SpellcastingAbility string          `json:"spellcasting_ability"`
+	CantripsKnown       int             `json:"cantrips_known"`            // 已知戏法数量
+	SpellsPrepared      []string        `json:"spells_prepared,omitempty"` // 准备的法术列表
+	KnownSpells         []string        `json:"known_spells,omitempty"`    // 已知的法术列表
+	SlotsByLevel        []SlotLevelInfo `json:"slots_by_level"`            // 各环级法术位信息
+	SaveDC              int             `json:"save_dc"`                   // 豁免DC
+	AttackBonus         int             `json:"attack_bonus"`              // 攻击加成
+	SpellcastingAbility string          `json:"spellcasting_ability"`      // 施法关键属性
 }
 
 // SlotLevelInfo 单个环级的法术位信息
 type SlotLevelInfo struct {
-	Level     int `json:"level"`
-	Total     int `json:"total"`
-	Used      int `json:"used"`
-	Available int `json:"available"`
+	Level     int `json:"level"`     // 法术环级
+	Total     int `json:"total"`     // 总数
+	Used      int `json:"used"`      // 已使用
+	Available int `json:"available"` // 可用数量
 }
 
 // CastSpell 执行施法动作
-func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.ID, input SpellInput) (*SpellResult, error) {
+func (e *Engine) CastSpell(ctx context.Context, req CastSpellRequest) (*SpellResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 获取施法者
-	caster, ok := game.GetActor(casterID)
+	caster, ok := game.GetActor(req.CasterID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -102,19 +147,19 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 	}
 
 	// 查找法术定义
-	spellDef := findSpellDefinition(input.SpellID)
+	spellDef := findSpellDefinition(req.Spell.SpellID)
 	if spellDef == nil {
-		return nil, fmt.Errorf("spell %s not found", input.SpellID)
+		return nil, fmt.Errorf("spell %s not found", req.Spell.SpellID)
 	}
 
 	// 验证施法者是否知道/准备该法术
-	if !canCastSpell(spellcaster, input.SpellID) {
+	if !canCastSpell(spellcaster, req.Spell.SpellID) {
 		return nil, fmt.Errorf("caster does not know or have prepared spell: %s", spellDef.Name)
 	}
 
 	// 检查法术位（戏法不需要法术位）
 	if spellDef.Level > 0 {
-		slotLevel := input.SlotLevel
+		slotLevel := req.Spell.SlotLevel
 		if slotLevel == 0 {
 			slotLevel = spellDef.Level
 		}
@@ -136,7 +181,7 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 	// 创建施法结果
 	result := &SpellResult{
 		SpellName:     spellDef.Name,
-		SlotLevel:     input.SlotLevel,
+		SlotLevel:     req.Spell.SlotLevel,
 		CasterSaveDC:  spellcaster.SpellSaveDC,
 		Targets:       make([]SpellTargetResult, 0),
 		Concentration: spellDef.Concentration,
@@ -147,9 +192,9 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 		// 法术攻击
 		attackBonus := spellcaster.SpellAttackBonus
 		var rollResult *model.DiceResult
-		if input.Advantage.Advantage {
+		if req.Spell.Advantage.Advantage {
 			rollResult, _ = e.roller.RollAdvantage(0)
-		} else if input.Advantage.Disadvantage {
+		} else if req.Spell.Advantage.Disadvantage {
 			rollResult, _ = e.roller.RollDisadvantage(0)
 		} else {
 			rollResult, _ = e.roller.Roll("1d20")
@@ -160,7 +205,7 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 		result.AttackTotal = attackTotal
 
 		// 对每个目标进行攻击
-		for _, targetID := range input.TargetIDs {
+		for _, targetID := range req.Spell.TargetIDs {
 			target, ok := game.GetActor(targetID)
 			if !ok {
 				continue
@@ -188,7 +233,7 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 
 			if hit {
 				// 计算伤害
-				damageResult, err := e.applySpellDamage(game, casterID, targetID, spellDef, input.UpcastLevel, isNat20)
+				damageResult, err := e.applySpellDamage(game, req.CasterID, targetID, spellDef, req.Spell.UpcastLevel, isNat20)
 				if err != nil {
 					return nil, err
 				}
@@ -199,7 +244,7 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 		}
 	} else if spellDef.DamageDice != "" && spellDef.SaveDC != "" {
 		// 需要豁免的伤害法术
-		for _, targetID := range input.TargetIDs {
+		for _, targetID := range req.Spell.TargetIDs {
 			target, ok := game.GetActor(targetID)
 			if !ok {
 				continue
@@ -238,7 +283,7 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 				if saveSuccess {
 					baseDamage /= 2
 				}
-				damageResult, err := e.applySpellDamageDirect(game, casterID, targetID, baseDamage, spellDef.DamageType, false)
+				damageResult, err := e.applySpellDamageDirect(game, req.CasterID, targetID, baseDamage, spellDef.DamageType, false)
 				if err != nil {
 					return nil, err
 				}
@@ -250,7 +295,7 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 	} else if spellDef.HealingDice != "" {
 		// 治疗法术
 		healingAmount := parseDiceString(spellDef.HealingDice)
-		for _, targetID := range input.TargetIDs {
+		for _, targetID := range req.Spell.TargetIDs {
 			healResult, err := e.applyHealingInSpell(game, targetID, healingAmount)
 			if err != nil {
 				return nil, err
@@ -264,7 +309,7 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 
 	// 设置专注
 	if spellDef.Concentration {
-		spellcaster.ConcentrationSpell = input.SpellID
+		spellcaster.ConcentrationSpell = req.Spell.SpellID
 		result.Concentration = true
 	}
 
@@ -282,16 +327,16 @@ func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.
 }
 
 // GetSpellSlots 获取施法者的法术位状态
-func (e *Engine) GetSpellSlots(ctx context.Context, gameID model.ID, casterID model.ID) (*SpellSlotsInfo, error) {
+func (e *Engine) GetSpellSlots(ctx context.Context, req GetSpellSlotsRequest) (*GetSpellSlotsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	caster, ok := game.GetActor(casterID)
+	caster, ok := game.GetActor(req.CasterID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -335,20 +380,20 @@ func (e *Engine) GetSpellSlots(ctx context.Context, gameID model.ID, casterID mo
 		}
 	}
 
-	return info, nil
+	return &GetSpellSlotsResult{Info: info}, nil
 }
 
 // PrepareSpells 准备法术（针对准备型施法者）
-func (e *Engine) PrepareSpells(ctx context.Context, gameID model.ID, casterID model.ID, spellIDs []string) error {
+func (e *Engine) PrepareSpells(ctx context.Context, req PrepareSpellsRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	caster, ok := game.GetActor(casterID)
+	caster, ok := game.GetActor(req.CasterID)
 	if !ok {
 		return ErrNotFound
 	}
@@ -370,13 +415,13 @@ func (e *Engine) PrepareSpells(ctx context.Context, gameID model.ID, casterID mo
 	}
 
 	// 验证所有法术都在已知列表中
-	for _, spellID := range spellIDs {
+	for _, spellID := range req.SpellIDs {
 		if !spellcaster.CanPrepareSpell(spellID) {
 			return fmt.Errorf("spell %s is not known and cannot be prepared", spellID)
 		}
 	}
 
-	spellcaster.PreparedSpells = spellIDs
+	spellcaster.PreparedSpells = req.SpellIDs
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return err
@@ -386,16 +431,16 @@ func (e *Engine) PrepareSpells(ctx context.Context, gameID model.ID, casterID mo
 }
 
 // LearnSpell 学习新法术（针对已知型施法者）
-func (e *Engine) LearnSpell(ctx context.Context, gameID model.ID, casterID model.ID, spellID string) error {
+func (e *Engine) LearnSpell(ctx context.Context, req LearnSpellRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	caster, ok := game.GetActor(casterID)
+	caster, ok := game.GetActor(req.CasterID)
 	if !ok {
 		return ErrNotFound
 	}
@@ -414,12 +459,12 @@ func (e *Engine) LearnSpell(ctx context.Context, gameID model.ID, casterID model
 
 	// 检查是否已经学会
 	for _, s := range spellcaster.KnownSpells {
-		if s == spellID {
-			return fmt.Errorf("spell %s is already known", spellID)
+		if s == req.SpellID {
+			return fmt.Errorf("spell %s is already known", req.SpellID)
 		}
 	}
 
-	spellcaster.KnownSpells = append(spellcaster.KnownSpells, spellID)
+	spellcaster.KnownSpells = append(spellcaster.KnownSpells, req.SpellID)
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return err
@@ -429,16 +474,16 @@ func (e *Engine) LearnSpell(ctx context.Context, gameID model.ID, casterID model
 }
 
 // ConcentrationCheck 进行专注检定（当施法者受到伤害时）
-func (e *Engine) ConcentrationCheck(ctx context.Context, gameID model.ID, casterID model.ID, damageTaken int) (*ConcentrationResult, error) {
+func (e *Engine) ConcentrationCheck(ctx context.Context, req ConcentrationCheckRequest) (*ConcentrationResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	caster, ok := game.GetActor(casterID)
+	caster, ok := game.GetActor(req.CasterID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -458,7 +503,7 @@ func (e *Engine) ConcentrationCheck(ctx context.Context, gameID model.ID, caster
 	}
 
 	// 专注检定DC = max(10, 伤害值/2)
-	dc := damageTaken / 2
+	dc := req.DamageTaken / 2
 	if dc < 10 {
 		dc = 10
 	}
@@ -499,16 +544,16 @@ func (e *Engine) ConcentrationCheck(ctx context.Context, gameID model.ID, caster
 }
 
 // EndConcentration 主动结束专注
-func (e *Engine) EndConcentration(ctx context.Context, gameID model.ID, casterID model.ID) error {
+func (e *Engine) EndConcentration(ctx context.Context, req EndConcentrationRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	caster, ok := game.GetActor(casterID)
+	caster, ok := game.GetActor(req.CasterID)
 	if !ok {
 		return ErrNotFound
 	}

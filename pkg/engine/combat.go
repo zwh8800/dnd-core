@@ -9,113 +9,350 @@ import (
 	"github.com/zwh8800/dnd-core/internal/rules"
 )
 
+// ============================================================================
+// 新增结构体定义
+// ============================================================================
+
+// CombatInfo 战斗状态信息（替代 *model.CombatState）
+// 用于API返回时封装战斗的核心状态数据
+type CombatInfo struct {
+	ID           model.ID             `json:"id"`            // 战斗唯一标识
+	SceneID      model.ID             `json:"scene_id"`      // 战斗所在场景
+	Status       model.CombatStatus   `json:"status"`        // 战斗状态
+	Round        int                  `json:"round"`         // 当前回合数
+	CurrentIndex int                  `json:"current_index"` // 当前先攻索引
+	Initiative   []CombatantEntryInfo `json:"initiative"`    // 先攻顺序
+	CurrentTurn  *TurnInfo            `json:"current_turn"`  // 当前回合信息
+}
+
+// CombatantEntryInfo 战斗者条目信息
+// 描述参与战斗的角色在先攻序列中的信息
+type CombatantEntryInfo struct {
+	ActorID         model.ID `json:"actor_id"`         // 角色ID
+	ActorName       string   `json:"actor_name"`       // 角色名称
+	InitiativeRoll  int      `json:"initiative_roll"`  // 先攻掷骰值（原始d20结果）
+	InitiativeTotal int      `json:"initiative_total"` // 先攻总值（d20+敏捷修正+加值）
+	IsSurprised     bool     `json:"is_surprised"`     // 是否处于被突袭状态（第一回合无法行动）
+	IsDefeated      bool     `json:"is_defeated"`      // 是否已被击败（HP降至0）
+}
+
+// StartCombatRequest 开始战斗请求
+// 用于启动一场标准战斗遭遇
+type StartCombatRequest struct {
+	GameID         model.ID   `json:"game_id"`         // 游戏会话ID
+	SceneID        model.ID   `json:"scene_id"`        // 战斗所在场景ID
+	ParticipantIDs []model.ID `json:"participant_ids"` // 参战角色ID列表
+}
+
+// StartCombatResult 开始战斗结果
+// 返回新创建的战斗状态信息
+type StartCombatResult struct {
+	Combat *CombatInfo `json:"combat"` // 战斗状态信息
+}
+
+// StartCombatWithSurpriseRequest 突袭战斗请求
+// 用于启动带突袭判定的战斗，区分潜行方和观察方
+type StartCombatWithSurpriseRequest struct {
+	GameID       model.ID   `json:"game_id"`       // 游戏会话ID
+	SceneID      model.ID   `json:"scene_id"`      // 战斗所在场景ID
+	StealthySide []model.ID `json:"stealthy_side"` // 潜行方角色ID列表（不会第一回合被突袭）
+	Observers    []model.ID `json:"observers"`     // 被观察方角色ID列表（第一回合被突袭）
+}
+
+// StartCombatWithSurpriseResult 突袭战斗结果
+// 返回新创建的带突袭判定的战斗状态信息
+type StartCombatWithSurpriseResult struct {
+	Combat *CombatInfo `json:"combat"` // 战斗状态信息
+}
+
+// EndCombatRequest 结束战斗请求
+// 用于主动结束当前活跃的战斗
+type EndCombatRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
+// GetCurrentCombatRequest 获取当前战斗请求
+// 用于查询当前活跃战斗的状态
+type GetCurrentCombatRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
+// GetCurrentCombatResult 获取当前战斗结果
+// 返回当前活跃战斗的状态信息
+type GetCurrentCombatResult struct {
+	Combat *CombatInfo `json:"combat"` // 战斗状态信息
+}
+
+// NextTurnRequest 下一回合请求
+// 用于推进战斗到下一个角色的回合
+type NextTurnRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
+// NextTurnResult 下一回合结果
+// 返回推进后的战斗状态信息
+type NextTurnResult struct {
+	Combat *CombatInfo `json:"combat"` // 战斗状态信息
+}
+
+// GetCurrentTurnRequest 获取当前回合请求
+// 用于查询当前回合角色的详细信息
+type GetCurrentTurnRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
+// ExecuteActionRequest 执行动作请求
+// 用于在当前回合执行一个动作（冲刺、脱离、闪避等）
+type ExecuteActionRequest struct {
+	GameID  model.ID    `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID    `json:"actor_id"` // 角色ID
+	Action  ActionInput `json:"action"`   // 动作输入
+}
+
+// ExecuteActionResult 执行动作结果
+// 返回动作执行后的结果
+type ExecuteActionResult struct {
+	ActionResult *ActionResult `json:"action_result"` // 动作执行结果
+	Combat       *CombatInfo   `json:"combat"`        // 当前战斗状态
+}
+
+// ExecuteAttackRequest 执行攻击请求
+// 用于执行一次攻击动作
+type ExecuteAttackRequest struct {
+	GameID     model.ID    `json:"game_id"`     // 游戏会话ID
+	AttackerID model.ID    `json:"attacker_id"` // 攻击者ID
+	TargetID   model.ID    `json:"target_id"`   // 目标ID
+	Attack     AttackInput `json:"attack"`      // 攻击输入
+}
+
+// ExecuteAttackResult 执行攻击结果
+// 返回攻击的完整结果，包括命中判定和伤害
+type ExecuteAttackResult struct {
+	AttackResult *AttackResult `json:"attack_result"` // 攻击结果
+	Combat       *CombatInfo   `json:"combat"`        // 当前战斗状态
+}
+
+// ExecuteDamageRequest 执行伤害请求
+// 用于直接对角色施加伤害（如环境伤害、陷阱伤害等）
+type ExecuteDamageRequest struct {
+	GameID   model.ID    `json:"game_id"`   // 游戏会话ID
+	TargetID model.ID    `json:"target_id"` // 目标ID
+	Damage   DamageInput `json:"damage"`    // 伤害输入
+}
+
+// ExecuteDamageResult 执行伤害结果
+// 返回应用伤害后的结果
+type ExecuteDamageResult struct {
+	DamageResult *DamageResult `json:"damage_result"` // 伤害结果
+	Combat       *CombatInfo   `json:"combat"`        // 当前战斗状态
+}
+
+// ExecuteHealingRequest 执行治疗请求
+// 用于对角色进行治疗
+type ExecuteHealingRequest struct {
+	GameID   model.ID `json:"game_id"`   // 游戏会话ID
+	TargetID model.ID `json:"target_id"` // 目标ID
+	Amount   int      `json:"amount"`    // 治疗量
+}
+
+// ExecuteHealingResult 执行治疗结果
+// 返回治疗后的角色状态变化
+type ExecuteHealingResult struct {
+	TargetID  model.ID `json:"target_id"`  // 目标ID
+	Healed    int      `json:"healed"`     // 实际治疗量
+	CurrentHP int      `json:"current_hp"` // 治疗后当前HP
+	Message   string   `json:"message"`    // 人类可读消息
+}
+
+// MoveActorRequest 移动角色请求
+// 用于在场景中移动角色位置
+type MoveActorRequest struct {
+	GameID  model.ID    `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID    `json:"actor_id"` // 角色ID
+	To      model.Point `json:"to"`       // 目标位置
+}
+
+// MoveActorResult 移动角色结果
+// 返回移动操作的结果
+type MoveActorResult struct {
+	MoveResult      *MoveResult      `json:"move_result"`       // 移动结果
+	SceneMoveResult *SceneMoveResult `json:"scene_move_result"` // 场景移动结果（如果是场景间移动）
+	Combat          *CombatInfo      `json:"combat"`            // 当前战斗状态（如果战斗中有移动）
+}
+
+// ============================================================================
+// 已存在的输入输出结构体
+// ============================================================================
+
 // ActionInput 动作输入
 type ActionInput struct {
-	Type    model.ActionType `json:"type"`
-	Details map[string]any   `json:"details,omitempty"`
+	Type    model.ActionType `json:"type"`              // 动作类型
+	Details map[string]any   `json:"details,omitempty"` // 动作详情（可选）
 }
 
 // ActionResult 动作执行结果
 type ActionResult struct {
-	Success bool              `json:"success"`
-	Message string            `json:"message"`
-	Roll    *model.DiceResult `json:"roll,omitempty"`
-	Effects []EffectDetail    `json:"effects"`
+	Success bool              `json:"success"`        // 是否成功
+	Message string            `json:"message"`        // 人类可读消息
+	Roll    *model.DiceResult `json:"roll,omitempty"` // 相关掷骰结果
+	Effects []EffectDetail    `json:"effects"`        // 产生的效果列表
 }
 
 // EffectDetail 效果详情
+// 描述动作产生的具体效果
 type EffectDetail struct {
-	Type        string `json:"type"`
-	Description string `json:"description"`
-	Value       int    `json:"value,omitempty"`
+	Type        string `json:"type"`            // 效果类型
+	Description string `json:"description"`     // 效果描述
+	Value       int    `json:"value,omitempty"` // 效果数值（如果有）
 }
 
 // AttackInput 攻击输入
+// 描述一次攻击的所有参数
 type AttackInput struct {
-	WeaponID    *model.ID          `json:"weapon_id,omitempty"`
-	SpellID     *string            `json:"spell_id,omitempty"`
-	IsUnarmed   bool               `json:"is_unarmed"`
-	IsOffHand   bool               `json:"is_off_hand"`
-	Advantage   model.RollModifier `json:"advantage"`
-	ExtraDamage []DamageInput      `json:"extra_damage,omitempty"`
+	WeaponID    *model.ID          `json:"weapon_id,omitempty"`    // 武器ID（如果使用武器攻击）
+	SpellID     *string            `json:"spell_id,omitempty"`     // 法术ID（如果施法攻击）
+	IsUnarmed   bool               `json:"is_unarmed"`             // 是否徒手攻击
+	IsOffHand   bool               `json:"is_off_hand"`            // 是否为副手攻击
+	Advantage   model.RollModifier `json:"advantage"`              // 攻击掷骰的优劣势修正
+	ExtraDamage []DamageInput      `json:"extra_damage,omitempty"` // 额外伤害（如偷袭、爆发等）
 }
 
 // AttackResult 攻击结果
+// 描述一次攻击的完整结果
 type AttackResult struct {
-	Roll        *model.DiceResult `json:"roll"`
-	AttackTotal int               `json:"attack_total"`
-	TargetAC    int               `json:"target_ac"`
-	Hit         bool              `json:"hit"`
-	IsCritical  bool              `json:"is_critical"`
-	IsFumble    bool              `json:"is_fumble"`
-	Damage      *DamageResult     `json:"damage,omitempty"`
-	Message     string            `json:"message"`
+	Roll        *model.DiceResult `json:"roll"`             // 攻击掷骰结果
+	AttackTotal int               `json:"attack_total"`     // 攻击总值
+	TargetAC    int               `json:"target_ac"`        // 目标护甲等级
+	Hit         bool              `json:"hit"`              // 是否命中
+	IsCritical  bool              `json:"is_critical"`      // 是否为重击（自然20）
+	IsFumble    bool              `json:"is_fumble"`        // 是否为大失败（自然1）
+	Damage      *DamageResult     `json:"damage,omitempty"` // 伤害结果（如果命中）
+	Message     string            `json:"message"`          // 人类可读消息
 }
 
 // DamageInput 伤害输入
+// 描述伤害的来源和类型
 type DamageInput struct {
-	Amount int              `json:"amount"`
-	Type   model.DamageType `json:"type"`
-	Dice   string           `json:"dice,omitempty"`
-	Source model.ID         `json:"source"`
+	Amount int              `json:"amount"`         // 伤害数量
+	Type   model.DamageType `json:"type"`           // 伤害类型
+	Dice   string           `json:"dice,omitempty"` // 伤害骰子表达式（如"2d6"）
+	Source model.ID         `json:"source"`         // 伤害来源ID
 }
 
 // DamageResult 伤害结果
+// 描述应用伤害后的完整结果
 type DamageResult struct {
-	RawDamage       int                `json:"raw_damage"`
-	Resistances     []model.DamageType `json:"resistances_applied"`
-	Vulnerabilities []model.DamageType `json:"vulnerabilities_applied"`
-	FinalDamage     int                `json:"final_damage"`
-	TargetHPBefore  int                `json:"target_hp_before"`
-	TargetHPAfter   int                `json:"target_hp_after"`
-	IsDead          bool               `json:"is_dead"`
-	IsStabilized    bool               `json:"is_stabilized"`
-	DeathSaves      *DeathSaveUpdate   `json:"death_saves,omitempty"`
-	Message         string             `json:"message"`
+	RawDamage       int                `json:"raw_damage"`              // 原始伤害值
+	Resistances     []model.DamageType `json:"resistances_applied"`     // 应用的伤害抗性
+	Vulnerabilities []model.DamageType `json:"vulnerabilities_applied"` // 应用的伤害易伤
+	FinalDamage     int                `json:"final_damage"`            // 最终伤害值
+	TargetHPBefore  int                `json:"target_hp_before"`        // 目标攻击前HP
+	TargetHPAfter   int                `json:"target_hp_after"`         // 目标攻击后HP
+	IsDead          bool               `json:"is_dead"`                 // 是否死亡
+	IsStabilized    bool               `json:"is_stabilized"`           // 是否进入稳定状态
+	DeathSaves      *DeathSaveUpdate   `json:"death_saves,omitempty"`   // 死亡豁免状态更新
+	Message         string             `json:"message"`                 // 人类可读消息
 }
 
 // DeathSaveUpdate 死亡豁免更新
+// 描述角色死亡豁免状态的变化
 type DeathSaveUpdate struct {
-	Successes int  `json:"successes"`
-	Failures  int  `json:"failures"`
-	IsStable  bool `json:"is_stable"`
+	Successes int  `json:"successes"` // 成功次数
+	Failures  int  `json:"failures"`  // 失败次数
+	IsStable  bool `json:"is_stable"` // 是否稳定
 }
 
 // HealResult 治疗结果
+// 描述一次治疗的效果
 type HealResult struct {
-	Amount    int    `json:"amount"`
-	HPBefore  int    `json:"hp_before"`
-	HPAfter   int    `json:"hp_after"`
-	WasStable bool   `json:"was_stable"`
-	Message   string `json:"message"`
+	Amount    int    `json:"amount"`     // 治疗量
+	HPBefore  int    `json:"hp_before"`  // 治疗前HP
+	HPAfter   int    `json:"hp_after"`   // 治疗后HP
+	WasStable bool   `json:"was_stable"` // 治疗前是否处于稳定状态
+	Message   string `json:"message"`    // 人类可读消息
 }
 
 // MoveResult 移动结果
+// 描述一次移动操作的结果
 type MoveResult struct {
-	Success       bool   `json:"success"`
-	DistanceMoved int    `json:"distance_moved"`
-	RemainingMove int    `json:"remaining_move"`
-	Message       string `json:"message"`
+	Success       bool   `json:"success"`        // 是否成功
+	DistanceMoved int    `json:"distance_moved"` // 实际移动距离
+	RemainingMove int    `json:"remaining_move"` // 剩余移动距离
+	Message       string `json:"message"`        // 人类可读消息
 }
 
 // TurnInfo 回合信息
+// 描述当前回合的详细信息
 type TurnInfo struct {
-	ActorID              model.ID `json:"actor_id"`
-	ActorName            string   `json:"actor_name"`
-	Round                int      `json:"round"`
-	InitiativePos        int      `json:"initiative_position"`
-	MovementLeft         int      `json:"movement_left"`
-	ActionAvailable      bool     `json:"action_available"`
-	BonusActionAvailable bool     `json:"bonus_action_available"`
-	ReactionAvailable    bool     `json:"reaction_available"`
+	ActorID              model.ID `json:"actor_id"`               // 角色ID
+	ActorName            string   `json:"actor_name"`             // 角色名称
+	Round                int      `json:"round"`                  // 回合数
+	InitiativePos        int      `json:"initiative_position"`    // 先攻序列中的位置（从1开始）
+	MovementLeft         int      `json:"movement_left"`          // 剩余移动距离
+	ActionAvailable      bool     `json:"action_available"`       // 动作是否可用
+	BonusActionAvailable bool     `json:"bonus_action_available"` // 奖励动作是否可用
+	ReactionAvailable    bool     `json:"reaction_available"`     // 反应是否可用
 }
 
+// ============================================================================
+// 辅助函数
+// ============================================================================
+
+// combatStateToInfo 将 CombatState 转换为 CombatInfo
+// 用于将内部模型转换为API返回格式
+func combatStateToInfo(combat *model.CombatState) *CombatInfo {
+	if combat == nil {
+		return nil
+	}
+
+	info := &CombatInfo{
+		ID:           combat.ID,
+		SceneID:      combat.SceneID,
+		Status:       combat.Status,
+		Round:        combat.Round,
+		CurrentIndex: combat.CurrentIndex,
+		Initiative:   make([]CombatantEntryInfo, 0, len(combat.Initiative)),
+	}
+
+	// 转换先攻列表
+	for _, entry := range combat.Initiative {
+		info.Initiative = append(info.Initiative, CombatantEntryInfo{
+			ActorID:         entry.ActorID,
+			ActorName:       entry.ActorName,
+			InitiativeRoll:  entry.InitiativeRoll,
+			InitiativeTotal: entry.InitiativeTotal,
+			IsSurprised:     entry.IsSurprised,
+			IsDefeated:      entry.IsDefeated,
+		})
+	}
+
+	// 转换当前回合信息
+	if combat.CurrentTurn != nil {
+		info.CurrentTurn = &TurnInfo{
+			ActorID:              combat.CurrentTurn.ActorID,
+			Round:                combat.CurrentTurn.Round,
+			InitiativePos:        combat.CurrentIndex + 1,
+			MovementLeft:         0, // 需要从game state获取
+			ActionAvailable:      !combat.CurrentTurn.ActionUsed,
+			BonusActionAvailable: !combat.CurrentTurn.BonusActionUsed,
+			ReactionAvailable:    !combat.CurrentTurn.ReactionUsed,
+		}
+	}
+
+	return info
+}
+
+// ============================================================================
+// 改造后的方法
+// ============================================================================
+
 // StartCombat 开始一场战斗遭遇
-func (e *Engine) StartCombat(ctx context.Context, gameID model.ID, sceneID model.ID, participantIDs []model.ID) (*model.CombatState, error) {
+// 在指定场景中启动一场标准战斗，所有参与者投先攻骰排序
+func (e *Engine) StartCombat(ctx context.Context, req StartCombatRequest) (*StartCombatResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -128,8 +365,23 @@ func (e *Engine) StartCombat(ctx context.Context, gameID model.ID, sceneID model
 		return nil, ErrCombatAlreadyActive
 	}
 
+	// 如果没有指定场景ID，自动创建一个战斗场景
+	if req.SceneID == "" {
+		sceneID := model.NewID()
+		if game.Scenes == nil {
+			game.Scenes = make(map[model.ID]*model.Scene)
+		}
+		game.Scenes[sceneID] = &model.Scene{
+			ID:          sceneID,
+			Name:        "Combat Arena",
+			Description: "Auto-created combat scene",
+			Type:        model.SceneTypeOutdoor,
+		}
+		req.SceneID = sceneID
+	}
+
 	// 验证参与者
-	for _, pid := range participantIDs {
+	for _, pid := range req.ParticipantIDs {
 		if _, ok := game.GetActor(pid); !ok {
 			return nil, fmt.Errorf("actor %s not found", pid)
 		}
@@ -138,15 +390,15 @@ func (e *Engine) StartCombat(ctx context.Context, gameID model.ID, sceneID model
 	// 创建战斗状态
 	combat := &model.CombatState{
 		ID:      model.NewID(),
-		SceneID: sceneID,
+		SceneID: req.SceneID,
 		Status:  model.CombatStatusActive,
 		Round:   1,
 		Log:     make([]model.CombatLogEntry, 0),
 	}
 
 	// 掷先攻
-	combat.Initiative = make([]model.CombatantEntry, 0, len(participantIDs))
-	for _, actorID := range participantIDs {
+	combat.Initiative = make([]model.CombatantEntry, 0, len(req.ParticipantIDs))
+	for _, actorID := range req.ParticipantIDs {
 		entry, err := e.rollInitiative(game, actorID)
 		if err != nil {
 			return nil, err
@@ -177,16 +429,18 @@ func (e *Engine) StartCombat(ctx context.Context, gameID model.ID, sceneID model
 		return nil, err
 	}
 
-	combatCopy := *combat
-	return &combatCopy, nil
+	return &StartCombatResult{
+		Combat: combatStateToInfo(combat),
+	}, nil
 }
 
 // StartCombatWithSurprise 开始带突袭判定的战斗
-func (e *Engine) StartCombatWithSurprise(ctx context.Context, gameID model.ID, sceneID model.ID, stealthySide []model.ID, observers []model.ID) (*model.CombatState, error) {
+// 启动战斗并区分潜行方和观察方，被突袭方第一回合无法行动
+func (e *Engine) StartCombatWithSurprise(ctx context.Context, req StartCombatWithSurpriseRequest) (*StartCombatWithSurpriseResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -199,23 +453,38 @@ func (e *Engine) StartCombatWithSurprise(ctx context.Context, gameID model.ID, s
 		return nil, ErrCombatAlreadyActive
 	}
 
+	// 如果没有指定场景ID，自动创建一个战斗场景
+	if req.SceneID == "" {
+		sceneID := model.NewID()
+		if game.Scenes == nil {
+			game.Scenes = make(map[model.ID]*model.Scene)
+		}
+		game.Scenes[sceneID] = &model.Scene{
+			ID:          sceneID,
+			Name:        "Combat Arena",
+			Description: "Auto-created combat scene",
+			Type:        model.SceneTypeOutdoor,
+		}
+		req.SceneID = sceneID
+	}
+
 	// 隐秘方进行隐匿检定，观察方进行察觉检定
 	// 简化实现：隐秘方有优势
 	stealthMap := make(map[model.ID]bool)
-	for _, id := range stealthySide {
+	for _, id := range req.StealthySide {
 		stealthMap[id] = true
 	}
 
 	// 创建战斗状态
 	combat := &model.CombatState{
 		ID:      model.NewID(),
-		SceneID: sceneID,
+		SceneID: req.SceneID,
 		Status:  model.CombatStatusActive,
 		Round:   1,
 		Log:     make([]model.CombatLogEntry, 0),
 	}
 
-	allParticipants := append(stealthySide, observers...)
+	allParticipants := append(req.StealthySide, req.Observers...)
 	combat.Initiative = make([]model.CombatantEntry, 0, len(allParticipants))
 
 	for _, actorID := range allParticipants {
@@ -255,16 +524,18 @@ func (e *Engine) StartCombatWithSurprise(ctx context.Context, gameID model.ID, s
 		return nil, err
 	}
 
-	combatCopy := *combat
-	return &combatCopy, nil
+	return &StartCombatWithSurpriseResult{
+		Combat: combatStateToInfo(combat),
+	}, nil
 }
 
 // EndCombat 结束当前战斗
-func (e *Engine) EndCombat(ctx context.Context, gameID model.ID) error {
+// 主动结束一场活跃的战斗，将游戏阶段切换回探索阶段
+func (e *Engine) EndCombat(ctx context.Context, req EndCombatRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
@@ -289,11 +560,12 @@ func (e *Engine) EndCombat(ctx context.Context, gameID model.ID) error {
 }
 
 // GetCurrentCombat 获取当前活跃的战斗状态
-func (e *Engine) GetCurrentCombat(ctx context.Context, gameID model.ID) (*model.CombatState, error) {
+// 返回当前战斗的信息，如果无活跃战斗则返回错误
+func (e *Engine) GetCurrentCombat(ctx context.Context, req GetCurrentCombatRequest) (*GetCurrentCombatResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -303,15 +575,18 @@ func (e *Engine) GetCurrentCombat(ctx context.Context, gameID model.ID) (*model.
 	}
 
 	combatCopy := *game.Combat
-	return &combatCopy, nil
+	return &GetCurrentCombatResult{
+		Combat: combatStateToInfo(&combatCopy),
+	}, nil
 }
 
 // NextTurn 推进到下一个角色的回合
-func (e *Engine) NextTurn(ctx context.Context, gameID model.ID) (*model.CombatState, error) {
+// 将战斗回合推进到先攻序列中的下一个角色
+func (e *Engine) NextTurn(ctx context.Context, req NextTurnRequest) (*NextTurnResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -340,15 +615,18 @@ func (e *Engine) NextTurn(ctx context.Context, gameID model.ID) (*model.CombatSt
 	}
 
 	combatCopy := *game.Combat
-	return &combatCopy, nil
+	return &NextTurnResult{
+		Combat: combatStateToInfo(&combatCopy),
+	}, nil
 }
 
 // GetCurrentTurn 获取当前回合的信息
-func (e *Engine) GetCurrentTurn(ctx context.Context, gameID model.ID) (*TurnInfo, error) {
+// 返回当前行动角色的回合状态详情
+func (e *Engine) GetCurrentTurn(ctx context.Context, req GetCurrentTurnRequest) (*TurnInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -396,11 +674,12 @@ func (e *Engine) GetCurrentTurn(ctx context.Context, gameID model.ID) (*TurnInfo
 }
 
 // ExecuteAction 在当前回合执行一个动作
-func (e *Engine) ExecuteAction(ctx context.Context, gameID model.ID, actorID model.ID, action ActionInput) (*ActionResult, error) {
+// 执行角色当前回合的动作（冲刺、脱离、闪避、帮助等）
+func (e *Engine) ExecuteAction(ctx context.Context, req ExecuteActionRequest) (*ExecuteActionResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -414,12 +693,12 @@ func (e *Engine) ExecuteAction(ctx context.Context, gameID model.ID, actorID mod
 	}
 
 	// 检查是否是该角色的回合
-	if !game.Combat.IsActorTurn(actorID) {
+	if !game.Combat.IsActorTurn(req.ActorID) {
 		return nil, ErrNotYourTurn
 	}
 
 	// 检查角色是否失能
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -446,7 +725,7 @@ func (e *Engine) ExecuteAction(ctx context.Context, gameID model.ID, actorID mod
 	}
 
 	// 根据动作类型处理
-	switch action.Type {
+	switch req.Action.Type {
 	case model.ActionDash:
 		result.Message = fmt.Sprintf("%s 执行冲刺动作", baseActor.Name)
 		result.Effects = append(result.Effects, EffectDetail{
@@ -489,7 +768,7 @@ func (e *Engine) ExecuteAction(ctx context.Context, gameID model.ID, actorID mod
 		game.Combat.CurrentTurn.ActionUsed = true
 
 	default:
-		result.Message = fmt.Sprintf("%s 执行动作: %s", baseActor.Name, action.Type)
+		result.Message = fmt.Sprintf("%s 执行动作: %s", baseActor.Name, req.Action.Type)
 		game.Combat.CurrentTurn.ActionUsed = true
 	}
 
@@ -497,15 +776,20 @@ func (e *Engine) ExecuteAction(ctx context.Context, gameID model.ID, actorID mod
 		return nil, err
 	}
 
-	return result, nil
+	combatCopy := *game.Combat
+	return &ExecuteActionResult{
+		ActionResult: result,
+		Combat:       combatStateToInfo(&combatCopy),
+	}, nil
 }
 
 // ExecuteAttack 执行攻击动作
-func (e *Engine) ExecuteAttack(ctx context.Context, gameID model.ID, attackerID model.ID, targetID model.ID, attack AttackInput) (*AttackResult, error) {
+// 对目标执行一次攻击，包括攻击掷骰和可能的伤害应用
+func (e *Engine) ExecuteAttack(ctx context.Context, req ExecuteAttackRequest) (*ExecuteAttackResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -515,13 +799,13 @@ func (e *Engine) ExecuteAttack(ctx context.Context, gameID model.ID, attackerID 
 	}
 
 	// 获取攻击者
-	attacker, ok := game.GetActor(attackerID)
+	attacker, ok := game.GetActor(req.AttackerID)
 	if !ok {
 		return nil, ErrNotFound
 	}
 
 	// 获取目标
-	target, ok := game.GetActor(targetID)
+	target, ok := game.GetActor(req.TargetID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -556,9 +840,9 @@ func (e *Engine) ExecuteAttack(ctx context.Context, gameID model.ID, attackerID 
 
 	// 掷攻击骰
 	var rollResult *model.DiceResult
-	if attack.Advantage.Advantage {
+	if req.Attack.Advantage.Advantage {
 		rollResult, _ = e.roller.RollAdvantage(0)
-	} else if attack.Advantage.Disadvantage {
+	} else if req.Attack.Advantage.Disadvantage {
 		rollResult, _ = e.roller.RollDisadvantage(0)
 	} else {
 		rollResult, _ = e.roller.Roll("1d20")
@@ -574,7 +858,7 @@ func (e *Engine) ExecuteAttack(ctx context.Context, gameID model.ID, attackerID 
 		hit = false
 	}
 
-	result := &AttackResult{
+	attackResult := &AttackResult{
 		Roll:        rollResult,
 		AttackTotal: attackTotal,
 		TargetAC:    targetActor.ArmorClass,
@@ -586,47 +870,69 @@ func (e *Engine) ExecuteAttack(ctx context.Context, gameID model.ID, attackerID 
 
 	// 如果命中，计算伤害
 	if hit {
-		damageResult, err := e.calculateAndApplyDamage(game, attackerID, targetID, attack, isNat20 && hit)
+		damageResult, err := e.calculateAndApplyDamage(game, req.AttackerID, req.TargetID, req.Attack, isNat20 && hit)
 		if err != nil {
 			return nil, err
 		}
-		result.Damage = damageResult
-		result.Message += fmt.Sprintf(" - 命中！造成 %d 点伤害", damageResult.FinalDamage)
+		attackResult.Damage = damageResult
+		attackResult.Message += fmt.Sprintf(" - 命中！造成 %d 点伤害", damageResult.FinalDamage)
 	} else {
-		result.Message += " - 未命中"
+		attackResult.Message += " - 未命中"
 	}
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	combatCopy := *game.Combat
+	return &ExecuteAttackResult{
+		AttackResult: attackResult,
+		Combat:       combatStateToInfo(&combatCopy),
+	}, nil
 }
 
 // ExecuteDamage 直接对角色施加伤害
-func (e *Engine) ExecuteDamage(ctx context.Context, gameID model.ID, targetID model.ID, damage DamageInput) (*DamageResult, error) {
+// 用于处理非攻击来源的伤害（如陷阱、环境、法术等）
+func (e *Engine) ExecuteDamage(ctx context.Context, req ExecuteDamageRequest) (*ExecuteDamageResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	return e.applyDamageToTarget(game, damage.Source, targetID, damage.Amount, damage.Type, false)
+	damageResult, err := e.applyDamageToTarget(game, req.Damage.Source, req.TargetID, req.Damage.Amount, req.Damage.Type, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := e.saveGame(ctx, game); err != nil {
+		return nil, err
+	}
+
+	result := &ExecuteDamageResult{
+		DamageResult: damageResult,
+	}
+	if game.Combat != nil {
+		combatCopy := *game.Combat
+		result.Combat = combatStateToInfo(&combatCopy)
+	}
+	return result, nil
 }
 
 // ExecuteHealing 对角色进行治疗
-func (e *Engine) ExecuteHealing(ctx context.Context, gameID model.ID, targetID model.ID, amount int) (*HealResult, error) {
+// 为目标角色恢复生命值
+func (e *Engine) ExecuteHealing(ctx context.Context, req ExecuteHealingRequest) (*ExecuteHealingResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(targetID)
+	actor, ok := game.GetActor(req.TargetID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -643,11 +949,10 @@ func (e *Engine) ExecuteHealing(ctx context.Context, gameID model.ID, targetID m
 		baseActor = &a.Actor
 	}
 
-	hpBefore := baseActor.HitPoints.Current
 	wasStable := baseActor.HasCondition(model.ConditionStabilized)
 
 	// 应用治疗
-	baseActor.HitPoints.Current += amount
+	baseActor.HitPoints.Current += req.Amount
 	if baseActor.HitPoints.Current > baseActor.HitPoints.Maximum {
 		baseActor.HitPoints.Current = baseActor.HitPoints.Maximum
 	}
@@ -667,26 +972,26 @@ func (e *Engine) ExecuteHealing(ctx context.Context, gameID model.ID, targetID m
 		return nil, err
 	}
 
-	return &HealResult{
-		Amount:    amount,
-		HPBefore:  hpBefore,
-		HPAfter:   baseActor.HitPoints.Current,
-		WasStable: wasStable,
-		Message:   fmt.Sprintf("恢复 %d 点HP", amount),
+	return &ExecuteHealingResult{
+		TargetID:  req.TargetID,
+		Healed:    req.Amount,
+		CurrentHP: baseActor.HitPoints.Current,
+		Message:   fmt.Sprintf("恢复 %d 点HP", req.Amount),
 	}, nil
 }
 
 // MoveActor 在场景中移动角色
-func (e *Engine) MoveActor(ctx context.Context, gameID model.ID, actorID model.ID, to model.Point) (*MoveResult, error) {
+// 将角色从当前位置移动到目标位置，处理战斗中的移动消耗
+func (e *Engine) MoveActor(ctx context.Context, req MoveActorRequest) (*MoveActorResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -709,7 +1014,7 @@ func (e *Engine) MoveActor(ctx context.Context, gameID model.ID, actorID model.I
 		from = &model.Point{X: 0, Y: 0}
 	}
 
-	distance := calculateDistance(from, &to)
+	distance := calculateDistance(from, &req.To)
 	speedRemaining := baseActor.Speed
 
 	if game.Combat != nil && game.Combat.Status == model.CombatStatusActive {
@@ -717,15 +1022,19 @@ func (e *Engine) MoveActor(ctx context.Context, gameID model.ID, actorID model.I
 	}
 
 	if distance > speedRemaining {
-		return &MoveResult{
-			Success:       false,
-			DistanceMoved: 0,
-			RemainingMove: speedRemaining,
-			Message:       "移动距离不足",
+		combatCopy := *game.Combat
+		return &MoveActorResult{
+			MoveResult: &MoveResult{
+				Success:       false,
+				DistanceMoved: 0,
+				RemainingMove: speedRemaining,
+				Message:       "移动距离不足",
+			},
+			Combat: combatStateToInfo(&combatCopy),
 		}, nil
 	}
 
-	baseActor.Position = &to
+	baseActor.Position = &req.To
 
 	if game.Combat != nil && game.Combat.Status == model.CombatStatusActive {
 		game.Combat.CurrentTurn.MovementUsed += distance
@@ -735,15 +1044,29 @@ func (e *Engine) MoveActor(ctx context.Context, gameID model.ID, actorID model.I
 		return nil, err
 	}
 
-	return &MoveResult{
-		Success:       true,
-		DistanceMoved: distance,
-		RemainingMove: speedRemaining - distance,
-		Message:       fmt.Sprintf("移动到 (%d, %d)", to.X, to.Y),
+	var combatInfo *CombatInfo
+	if game.Combat != nil {
+		combatCopy := *game.Combat
+		combatInfo = combatStateToInfo(&combatCopy)
+	}
+
+	return &MoveActorResult{
+		MoveResult: &MoveResult{
+			Success:       true,
+			DistanceMoved: distance,
+			RemainingMove: speedRemaining - distance,
+			Message:       fmt.Sprintf("移动到 (%d, %d)", req.To.X, req.To.Y),
+		},
+		Combat: combatInfo,
 	}, nil
 }
 
+// ============================================================================
+// 内部辅助函数
+// ============================================================================
+
 // rollInitiative 掷先攻
+// 为指定角色投掷先攻骰（1d20+敏捷修正+先攻加值）
 func (e *Engine) rollInitiative(game *model.GameState, actorID model.ID) (model.CombatantEntry, error) {
 	actor, ok := game.GetActor(actorID)
 	if !ok {
@@ -782,6 +1105,7 @@ func (e *Engine) rollInitiative(game *model.GameState, actorID model.ID) (model.
 }
 
 // calculateAndApplyDamage 计算并应用伤害
+// 计算攻击伤害并将其应用到目标角色
 func (e *Engine) calculateAndApplyDamage(game *model.GameState, attackerID, targetID model.ID, attack AttackInput, isCritical bool) (*DamageResult, error) {
 	_, ok := game.GetActor(targetID)
 	if !ok {
@@ -832,6 +1156,7 @@ func (e *Engine) calculateAndApplyDamage(game *model.GameState, attackerID, targ
 }
 
 // applyDamageToTarget 对目标应用伤害
+// 处理伤害的应用，包括抗性、易伤、临时HP和死亡判定
 func (e *Engine) applyDamageToTarget(game *model.GameState, sourceID, targetID model.ID, amount int, damageType model.DamageType, isCritical bool) (*DamageResult, error) {
 	target, ok := game.GetActor(targetID)
 	if !ok {
@@ -920,6 +1245,7 @@ func (e *Engine) applyDamageToTarget(game *model.GameState, sourceID, targetID m
 }
 
 // calculateDistance 计算两点间距离（网格移动）
+// 使用曼哈顿距离计算（简化版5-10-5规则）
 func calculateDistance(from, to *model.Point) int {
 	dx := to.X - from.X
 	dy := to.Y - from.Y

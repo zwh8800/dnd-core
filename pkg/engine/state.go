@@ -98,6 +98,22 @@ type EquipmentEntry struct {
 	Equipped bool   `json:"equipped"`
 }
 
+// GetStateSummaryRequest 获取状态摘要请求
+type GetStateSummaryRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
+// GetActorSheetRequest 获取角色卡请求
+type GetActorSheetRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID `json:"actor_id"` // 角色ID
+}
+
+// GetCombatSummaryRequest 获取战斗摘要请求
+type GetCombatSummaryRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
 // GetStateSummary 获取LLM友好的游戏状态摘要
 func (e *Engine) GetStateSummary(ctx context.Context, gameID model.ID) (*StateSummary, error) {
 	e.mu.RLock()

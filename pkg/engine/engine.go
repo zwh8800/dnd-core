@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"testing"
 
 	"github.com/zwh8800/dnd-core/internal/dice"
 	"github.com/zwh8800/dnd-core/internal/model"
@@ -180,4 +181,19 @@ func (e *Engine) saveGame(ctx context.Context, game *model.GameState) error {
 		}
 	}
 	return nil
+}
+
+// NewTestEngine creates an engine instance for testing
+// Uses a fixed seed to ensure reproducible tests
+func NewTestEngine(t *testing.T) *Engine {
+	cfg := DefaultConfig()
+	cfg.DiceSeed = 42
+	e, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		e.Close()
+	})
+	return e
 }

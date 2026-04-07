@@ -4,250 +4,647 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/zwh8800/dnd-core/internal/model"
 )
 
-// TestCreatePC 测试创建玩家角色
 func TestCreatePC(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
+	t.Run("creates player character successfully", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
 
-	ctx := context.Background()
+		// Create a game first
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for CreatePC",
+		})
+		require.NoError(t, err)
+		require.NotNil(t, gameResult)
+		require.NotNil(t, gameResult.Game)
+		gameID := gameResult.Game.ID
 
-	pc := &model.PlayerCharacter{
-		Actor: model.Actor{
-			Name:  "Test Hero",
-			Size:  model.SizeMedium,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 15, Dexterity: 12, Constitution: 14,
-				Intelligence: 10, Wisdom: 8, Charisma: 13,
-			},
-		},
-		Race: model.RaceReference{Name: "Human"},
-		Classes: []model.ClassLevel{
-			{ClassName: "Fighter", Level: 1},
-		},
-		TotalLevel: 1,
-	}
-
-	result, err := engine.CreatePC(ctx, gameID, pc)
-	if err != nil {
-		t.Fatalf("Failed to create PC: %v", err)
-	}
-
-	if result == nil {
-		t.Fatal("Result is nil")
-	}
-	if result.Name != "Test Hero" {
-		t.Errorf("Expected name 'Test Hero', got %s", result.Name)
-	}
-	if result.Race.Name != "Human" {
-		t.Errorf("Expected race 'Human', got %s", result.Race.Name)
-	}
-	if result.TotalLevel != 1 {
-		t.Errorf("Expected level 1, got %d", result.TotalLevel)
-	}
-}
-
-// TestCreateNPC 测试创建NPC
-func TestCreateNPC(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
-
-	ctx := context.Background()
-
-	npc := &model.NPC{
-		Actor: model.Actor{
-			Name:  "Village Elder",
-			Size:  model.SizeMedium,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 10, Dexterity: 10, Constitution: 10,
-				Intelligence: 12, Wisdom: 14, Charisma: 16,
-			},
-		},
-	}
-
-	result, err := engine.CreateNPC(ctx, gameID, npc)
-	if err != nil {
-		t.Fatalf("Failed to create NPC: %v", err)
-	}
-
-	if result == nil {
-		t.Fatal("Result is nil")
-	}
-	if result.Name != "Village Elder" {
-		t.Errorf("Expected name 'Village Elder', got %s", result.Name)
-	}
-}
-
-// TestCreateEnemy 测试创建敌人
-func TestCreateEnemy(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
-
-	ctx := context.Background()
-
-	enemy := &model.Enemy{
-		Actor: model.Actor{
-			Name:  "Goblin",
-			Size:  model.SizeSmall,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 8, Dexterity: 14, Constitution: 10,
-				Intelligence: 10, Wisdom: 8, Charisma: 8,
-			},
-			HitPoints:  model.HitPoints{Current: 7, Maximum: 7},
-			ArmorClass: 15,
-		},
-		ChallengeRating: 0.25,
-	}
-
-	result, err := engine.CreateEnemy(ctx, gameID, enemy)
-	if err != nil {
-		t.Fatalf("Failed to create enemy: %v", err)
-	}
-
-	if result == nil {
-		t.Fatal("Result is nil")
-	}
-	if result.Name != "Goblin" {
-		t.Errorf("Expected name 'Goblin', got %s", result.Name)
-	}
-	if result.ChallengeRating != 0.25 {
-		t.Errorf("Expected CR 0.25, got %f", result.ChallengeRating)
-	}
-}
-
-// TestGetActor 测试获取角色
-func TestGetActor(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
-
-	ctx := context.Background()
-
-	// 创建PC
-	pc := &model.PlayerCharacter{
-		Actor: model.Actor{
-			Name:  "Hero",
-			Size:  model.SizeMedium,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 16, Dexterity: 12, Constitution: 14,
-				Intelligence: 10, Wisdom: 8, Charisma: 13,
-			},
-		},
-		Race: model.RaceReference{Name: "Elf"},
-		Classes: []model.ClassLevel{
-			{ClassName: "Wizard", Level: 1},
-		},
-		TotalLevel: 1,
-	}
-
-	pcResult, err := engine.CreatePC(ctx, gameID, pc)
-	if err != nil {
-		t.Fatalf("Failed to create PC: %v", err)
-	}
-
-	// 获取角色
-	actor, err := engine.GetActor(ctx, gameID, pcResult.ID)
-	if err != nil {
-		t.Fatalf("Failed to get actor: %v", err)
-	}
-
-	if actor.ID != pcResult.ID {
-		t.Errorf("Expected actor ID %s, got %s", pcResult.ID, actor.ID)
-	}
-	if actor.Name != "Hero" {
-		t.Errorf("Expected name 'Hero', got %s", actor.Name)
-	}
-}
-
-// TestListActors 测试列出角色
-func TestListActors(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
-
-	ctx := context.Background()
-
-	// 创建多个PC
-	for i := 0; i < 3; i++ {
-		pc := &model.PlayerCharacter{
-			Actor: model.Actor{
-				Name:  "Hero",
-				Size:  model.SizeMedium,
-				Speed: 30,
-				AbilityScores: model.AbilityScores{
-					Strength: 16, Dexterity: 12, Constitution: 14,
-					Intelligence: 10, Wisdom: 8, Charisma: 13,
+		// Create a player character
+		result, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:      "Test Character",
+				Race:      "Human",
+				Class:     "Fighter",
+				Level:     1,
+				Alignment: "Neutral",
+				AbilityScores: AbilityScoresInput{
+					Strength:     15,
+					Dexterity:    14,
+					Constitution: 13,
+					Intelligence: 12,
+					Wisdom:       10,
+					Charisma:     8,
 				},
 			},
-			Race: model.RaceReference{Name: "Human"},
-			Classes: []model.ClassLevel{
-				{ClassName: "Fighter", Level: 1},
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.NotNil(t, result.Actor)
+		assert.Equal(t, "Test Character", result.Actor.Name)
+		assert.Equal(t, model.ActorTypePC, result.Actor.Type)
+	})
+
+	t.Run("creates PC with custom HP", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for CreatePC",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		result, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:      "High HP Character",
+				Race:      "Dwarf",
+				Class:     "Barbarian",
+				Level:     1,
+				HitPoints: 20,
+				AbilityScores: AbilityScoresInput{
+					Strength:     16,
+					Dexterity:    10,
+					Constitution: 16,
+					Intelligence: 8,
+					Wisdom:       12,
+					Charisma:     10,
+				},
 			},
-			TotalLevel: 1,
-		}
-		_, err := engine.CreatePC(ctx, gameID, pc)
-		if err != nil {
-			t.Fatalf("Failed to create PC %d: %v", i, err)
-		}
-	}
+		})
 
-	// 列出所有角色
-	actors, err := engine.ListActors(ctx, gameID, nil)
-	if err != nil {
-		t.Fatalf("Failed to list actors: %v", err)
-	}
-
-	if len(actors) != 3 {
-		t.Errorf("Expected 3 actors, got %d", len(actors))
-	}
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, 20, result.Actor.HitPoints.Maximum)
+	})
 }
 
-// TestRemoveActor 测试删除角色
-func TestRemoveActor(t *testing.T) {
-	engine, gameID := createTestGame(t)
-	defer engine.Close()
+func TestCreateNPC(t *testing.T) {
+	t.Run("creates NPC successfully", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
 
-	ctx := context.Background()
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for CreateNPC",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
 
-	// 创建PC
-	pc := &model.PlayerCharacter{
-		Actor: model.Actor{
-			Name:  "Hero",
-			Size:  model.SizeMedium,
-			Speed: 30,
-			AbilityScores: model.AbilityScores{
-				Strength: 16, Dexterity: 12, Constitution: 14,
-				Intelligence: 10, Wisdom: 8, Charisma: 13,
+		result, err := e.CreateNPC(ctx, CreateNPCRequest{
+			GameID: gameID,
+			NPC: &NPCInput{
+				Name:        "Village Elder",
+				Description: "An old and wise elder",
+				Size:        model.SizeMedium,
+				Speed:       30,
+				AbilityScores: AbilityScoresInput{
+					Strength:     10,
+					Dexterity:    12,
+					Constitution: 11,
+					Intelligence: 14,
+					Wisdom:       16,
+					Charisma:     13,
+				},
 			},
-		},
-		Race: model.RaceReference{Name: "Human"},
-		Classes: []model.ClassLevel{
-			{ClassName: "Fighter", Level: 1},
-		},
-		TotalLevel: 1,
-	}
+		})
 
-	pcResult, err := engine.CreatePC(ctx, gameID, pc)
-	if err != nil {
-		t.Fatalf("Failed to create PC: %v", err)
-	}
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.NotNil(t, result.Actor)
+		assert.Equal(t, "Village Elder", result.Actor.Name)
+		assert.Equal(t, model.ActorTypeNPC, result.Actor.Type)
+	})
+}
 
-	// 删除角色
-	err = engine.RemoveActor(ctx, gameID, pcResult.ID)
-	if err != nil {
-		t.Fatalf("Failed to remove actor: %v", err)
-	}
+func TestCreateEnemy(t *testing.T) {
+	t.Run("creates enemy successfully", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
 
-	// 验证角色已删除
-	_, err = engine.GetActor(ctx, gameID, pcResult.ID)
-	if err == nil {
-		t.Fatal("Expected error when getting deleted actor, got nil")
-	}
-	if err != ErrNotFound {
-		t.Errorf("Expected ErrNotFound, got %v", err)
-	}
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for CreateEnemy",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		result, err := e.CreateEnemy(ctx, CreateEnemyRequest{
+			GameID: gameID,
+			Enemy: &EnemyInput{
+				Name:        "Goblin",
+				Description: "A small green creature",
+				Size:        model.SizeSmall,
+				Speed:       30,
+				AbilityScores: AbilityScoresInput{
+					Strength:     8,
+					Dexterity:    14,
+					Constitution: 10,
+					Intelligence: 10,
+					Wisdom:       8,
+					Charisma:     8,
+				},
+				ChallengeRating: 0.25,
+				HitPoints:       7,
+				ArmorClass:      15,
+			},
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.NotNil(t, result.Actor)
+		assert.Equal(t, "Goblin", result.Actor.Name)
+		assert.Equal(t, model.ActorTypeEnemy, result.Actor.Type)
+	})
+}
+
+func TestGetActor(t *testing.T) {
+	t.Run("gets actor successfully", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for GetActor",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create an actor first
+		createResult, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Test Character",
+				Race:  "Human",
+				Class: "Rogue",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     12,
+					Dexterity:    16,
+					Constitution: 14,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     8,
+				},
+			},
+		})
+		require.NoError(t, err)
+		actorID := createResult.Actor.ID
+
+		// Get the actor
+		result, err := e.GetActor(ctx, GetActorRequest{
+			GameID:  gameID,
+			ActorID: actorID,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.NotNil(t, result.Actor)
+		assert.Equal(t, "Test Character", result.Actor.Name)
+		assert.Equal(t, actorID, result.Actor.ID)
+	})
+
+	t.Run("returns error for non-existent actor", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for GetActor",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		_, err = e.GetActor(ctx, GetActorRequest{
+			GameID:  gameID,
+			ActorID: model.NewID(),
+		})
+
+		assert.Error(t, err)
+		assert.Equal(t, ErrNotFound, err)
+	})
+}
+
+func TestGetPC(t *testing.T) {
+	t.Run("gets player character info", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for GetPC",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create a PC
+		createResult, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:       "Detailed Character",
+				Race:       "Elf",
+				Background: "Soldier",
+				Class:      "Wizard",
+				Level:      3,
+				AbilityScores: AbilityScoresInput{
+					Strength:     8,
+					Dexterity:    14,
+					Constitution: 12,
+					Intelligence: 16,
+					Wisdom:       10,
+					Charisma:     12,
+				},
+			},
+		})
+		require.NoError(t, err)
+		pcID := createResult.Actor.ID
+
+		// Get PC info
+		result, err := e.GetPC(ctx, GetPCRequest{
+			GameID: gameID,
+			PCID:   pcID,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.NotNil(t, result.PC)
+		assert.Equal(t, "Detailed Character", result.PC.Name)
+		assert.Equal(t, "Elf", result.PC.Race)
+		assert.Equal(t, "Soldier", result.PC.Background)
+		assert.Equal(t, 3, result.PC.TotalLevel)
+	})
+}
+
+func TestUpdateActor(t *testing.T) {
+	t.Run("updates actor HP", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for UpdateActor",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create an actor
+		createResult, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Test Character",
+				Race:  "Human",
+				Class: "Cleric",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     12,
+					Dexterity:    10,
+					Constitution: 14,
+					Intelligence: 8,
+					Wisdom:       16,
+					Charisma:     10,
+				},
+			},
+		})
+		require.NoError(t, err)
+		actorID := createResult.Actor.ID
+
+		// Update HP
+		currentHP := 5
+		err = e.UpdateActor(ctx, UpdateActorRequest{
+			GameID:  gameID,
+			ActorID: actorID,
+			Update: ActorUpdate{
+				HitPoints: &HitPointUpdate{
+					Current: &currentHP,
+				},
+			},
+		})
+
+		require.NoError(t, err)
+
+		// Verify the update
+		getResult, err := e.GetActor(ctx, GetActorRequest{
+			GameID:  gameID,
+			ActorID: actorID,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 5, getResult.Actor.HitPoints.Current)
+	})
+
+	t.Run("adds conditions to actor", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for UpdateActor",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create an actor
+		createResult, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Test Character",
+				Race:  "Halfling",
+				Class: "Rogue",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength:     10,
+					Dexterity:    16,
+					Constitution: 12,
+					Intelligence: 10,
+					Wisdom:       12,
+					Charisma:     14,
+				},
+			},
+		})
+		require.NoError(t, err)
+		actorID := createResult.Actor.ID
+
+		// Add condition
+		err = e.UpdateActor(ctx, UpdateActorRequest{
+			GameID:  gameID,
+			ActorID: actorID,
+			Update: ActorUpdate{
+				Conditions: &ConditionUpdate{
+					Add: []model.ConditionInstance{
+						{Type: model.ConditionPoisoned},
+					},
+				},
+			},
+		})
+
+		require.NoError(t, err)
+
+		// Verify the condition
+		getResult, err := e.GetActor(ctx, GetActorRequest{
+			GameID:  gameID,
+			ActorID: actorID,
+		})
+		require.NoError(t, err)
+		assert.Contains(t, getResult.Actor.Conditions, string(model.ConditionPoisoned))
+	})
+}
+
+func TestListActors(t *testing.T) {
+	t.Run("lists all actors", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for ListActors",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create multiple actors
+		_, err = e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Character 1",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength: 15, Dexterity: 13, Constitution: 14,
+					Intelligence: 10, Wisdom: 12, Charisma: 8,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = e.CreateNPC(ctx, CreateNPCRequest{
+			GameID: gameID,
+			NPC: &NPCInput{
+				Name:        "Merchant",
+				Description: "A friendly merchant",
+				Size:        model.SizeMedium,
+				Speed:       30,
+				AbilityScores: AbilityScoresInput{
+					Strength: 10, Dexterity: 12, Constitution: 11,
+					Intelligence: 14, Wisdom: 10, Charisma: 16,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		// List all actors
+		result, err := e.ListActors(ctx, ListActorsRequest{
+			GameID: gameID,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Len(t, result.Actors, 2)
+	})
+
+	t.Run("filters actors by type", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for ListActors",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create actors
+		_, err = e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Player",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength: 15, Dexterity: 13, Constitution: 14,
+					Intelligence: 10, Wisdom: 12, Charisma: 8,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = e.CreateNPC(ctx, CreateNPCRequest{
+			GameID: gameID,
+			NPC: &NPCInput{
+				Name:        "NPC",
+				Description: "An NPC",
+				Size:        model.SizeMedium,
+				Speed:       30,
+				AbilityScores: AbilityScoresInput{
+					Strength: 10, Dexterity: 12, Constitution: 11,
+					Intelligence: 14, Wisdom: 10, Charisma: 16,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		// Filter by PC type
+		alive := true
+		result, err := e.ListActors(ctx, ListActorsRequest{
+			GameID: gameID,
+			Filter: &ActorFilter{
+				Types: []model.ActorType{model.ActorTypePC},
+				Alive: &alive,
+			},
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Len(t, result.Actors, 1)
+		assert.Equal(t, model.ActorTypePC, result.Actors[0].Type)
+	})
+}
+
+func TestRemoveActor(t *testing.T) {
+	t.Run("removes actor successfully", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for RemoveActor",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create an actor
+		createResult, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "To Be Removed",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength: 15, Dexterity: 13, Constitution: 14,
+					Intelligence: 10, Wisdom: 12, Charisma: 8,
+				},
+			},
+		})
+		require.NoError(t, err)
+		actorID := createResult.Actor.ID
+
+		// Remove the actor
+		err = e.RemoveActor(ctx, RemoveActorRequest{
+			GameID:  gameID,
+			ActorID: actorID,
+		})
+
+		require.NoError(t, err)
+
+		// Verify actor is removed
+		_, err = e.GetActor(ctx, GetActorRequest{
+			GameID:  gameID,
+			ActorID: actorID,
+		})
+		assert.Error(t, err)
+		assert.Equal(t, ErrNotFound, err)
+	})
+}
+
+func TestAddExperience(t *testing.T) {
+	t.Run("adds experience to PC", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for AddExperience",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create a PC
+		createResult, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Adventurer",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength: 16, Dexterity: 12, Constitution: 15,
+					Intelligence: 10, Wisdom: 11, Charisma: 8,
+				},
+			},
+		})
+		require.NoError(t, err)
+		pcID := createResult.Actor.ID
+
+		// Switch to exploration phase
+		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "test")
+		require.NoError(t, err)
+
+		// Add experience
+		result, err := e.AddExperience(ctx, AddExperienceRequest{
+			GameID: gameID,
+			PCID:   pcID,
+			XP:     300,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result.LeveledUp) // Level 1 -> 2 requires 300 XP
+		assert.Equal(t, 1, result.OldLevel)
+		assert.Equal(t, 2, result.NewLevel)
+	})
+
+	t.Run("levels up PC", func(t *testing.T) {
+		e := NewTestEngine(t)
+		ctx := context.Background()
+
+		gameResult, err := e.NewGame(ctx, NewGameRequest{
+			Name:        "Test Game",
+			Description: "A test game for AddExperience",
+		})
+		require.NoError(t, err)
+		gameID := gameResult.Game.ID
+
+		// Create a PC
+		createResult, err := e.CreatePC(ctx, CreatePCRequest{
+			GameID: gameID,
+			PC: &PlayerCharacterInput{
+				Name:  "Veteran",
+				Race:  "Human",
+				Class: "Fighter",
+				Level: 1,
+				AbilityScores: AbilityScoresInput{
+					Strength: 16, Dexterity: 12, Constitution: 15,
+					Intelligence: 10, Wisdom: 11, Charisma: 8,
+				},
+			},
+		})
+		require.NoError(t, err)
+		pcID := createResult.Actor.ID
+
+		// Switch to exploration phase
+		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "test")
+		require.NoError(t, err)
+
+		// Add enough experience to level up
+		result, err := e.AddExperience(ctx, AddExperienceRequest{
+			GameID: gameID,
+			PCID:   pcID,
+			XP:     400,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result.LeveledUp)
+		assert.Equal(t, 1, result.OldLevel)
+		assert.Equal(t, 2, result.NewLevel)
+	})
 }

@@ -32,8 +32,19 @@ type RollAdvantageRequest struct {
 
 // RollDisadvantageRequest 劣势掷骰请求
 type RollDisadvantageRequest struct {
-	Modifier int    `json:"modifier"`
-	Reason   string `json:"reason"`
+	Modifier int    `json:"modifier"` // 额外修正值
+	Reason   string `json:"reason"`   // 掷骰原因
+}
+
+// RollAbilityRequest 属性掷骰请求（4d6去掉最低值）
+type RollAbilityRequest struct {
+	// 属性掷骰无需参数，使用空结构体以统一API签名
+}
+
+// RollHitDiceRequest 生命骰掷骰请求
+type RollHitDiceRequest struct {
+	DiceType int `json:"dice_type"` // 生命骰类型，如 6(d6), 8(d8), 10(d10), 12(d12)
+	Modifier int `json:"modifier"`  // 额外修正值（通常为体质修正）
 }
 
 // Roll 执行骰子投掷
@@ -94,7 +105,7 @@ func (e *Engine) RollDisadvantage(ctx context.Context, req RollDisadvantageReque
 }
 
 // RollAbility 属性掷骰（4d6去掉最低值）
-func (e *Engine) RollAbility(ctx context.Context) (*RollResult, error) {
+func (e *Engine) RollAbility(ctx context.Context, req RollAbilityRequest) (*RollResult, error) {
 	// 投掷4d6
 	result, err := e.roller.Roll("4d6")
 	if err != nil {
@@ -131,23 +142,23 @@ func (e *Engine) RollAbility(ctx context.Context) (*RollResult, error) {
 }
 
 // RollHitDice 生命骰掷骰
-func (e *Engine) RollHitDice(ctx context.Context, diceType int, modifier int) (*RollResult, error) {
-	expr := fmt.Sprintf("1d%d", diceType)
+func (e *Engine) RollHitDice(ctx context.Context, req RollHitDiceRequest) (*RollResult, error) {
+	expr := fmt.Sprintf("1d%d", req.DiceType)
 	result, err := e.roller.Roll(expr)
 	if err != nil {
 		return nil, err
 	}
 
-	if modifier != 0 {
-		result.Total += modifier
-		result.Modifier = modifier
+	if req.Modifier != 0 {
+		result.Total += req.Modifier
+		result.Modifier = req.Modifier
 	}
 
 	return &RollResult{
 		Expression: result.Expression,
 		Total:      result.Total,
 		Rolls:      result.Rolls,
-		Modifier:   modifier,
+		Modifier:   req.Modifier,
 		Message:    fmt.Sprintf("生命骰 %s = %d", expr, result.Total),
 	}, nil
 }

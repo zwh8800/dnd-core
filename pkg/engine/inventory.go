@@ -8,6 +8,102 @@ import (
 	"github.com/zwh8800/dnd-core/internal/rules"
 )
 
+// ItemInput 物品创建输入（替代 *model.Item 入参）
+type ItemInput struct {
+	Name               string         `json:"name"`                // 物品名称
+	Description        string         `json:"description"`         // 物品描述
+	Type               model.ItemType `json:"type"`                // 物品类型
+	Rarity             model.Rarity   `json:"rarity"`              // 稀有度
+	Weight             float64        `json:"weight"`              // 重量（磅）
+	Quantity           int            `json:"quantity"`            // 数量
+	Value              int            `json:"value"`               // 价值（铜币）
+	Attunement         string         `json:"attunement"`          // 调谐要求描述
+	RequiresAttunement bool           `json:"requires_attunement"` // 是否需要调谐
+	ArmorClass         int            `json:"armor_class"`         // 护甲等级（防具）
+	AttackBonus        int            `json:"attack_bonus"`        // 攻击加值
+	Damage             string         `json:"damage"`              // 伤害描述
+	Range              string         `json:"range"`               // 射程
+}
+
+// ItemSummary 物品摘要信息（替代 *model.Item 返回值）
+type ItemSummary struct {
+	ID          model.ID       `json:"id"`          // 物品唯一标识
+	Name        string         `json:"name"`        // 物品名称
+	Description string         `json:"description"` // 物品描述
+	Type        model.ItemType `json:"type"`        // 物品类型
+	Rarity      model.Rarity   `json:"rarity"`      // 稀有度
+	Weight      float64        `json:"weight"`      // 重量（磅）
+	Quantity    int            `json:"quantity"`    // 数量
+	Value       int            `json:"value"`       // 价值（铜币）
+	Attuned     bool           `json:"attuned"`     // 是否已调谐
+	MagicBonus  int            `json:"magic_bonus"` // 魔法加值
+}
+
+// AddItemRequest 添加物品请求
+type AddItemRequest struct {
+	GameID  model.ID   `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID   `json:"actor_id"` // 角色ID
+	Item    *ItemInput `json:"item"`     // 物品信息
+}
+
+// RemoveItemRequest 移除物品请求
+type RemoveItemRequest struct {
+	GameID   model.ID `json:"game_id"`  // 游戏会话ID
+	ActorID  model.ID `json:"actor_id"` // 角色ID
+	ItemID   model.ID `json:"item_id"`  // 物品ID
+	Quantity int      `json:"quantity"` // 移除数量
+}
+
+// GetInventoryRequest 获取库存请求
+type GetInventoryRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID `json:"actor_id"` // 角色ID
+}
+
+// EquipItemRequest 装备物品请求
+type EquipItemRequest struct {
+	GameID  model.ID            `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID            `json:"actor_id"` // 角色ID
+	ItemID  model.ID            `json:"item_id"`  // 物品ID
+	Slot    model.EquipmentSlot `json:"slot"`     // 装备槽位
+}
+
+// UnequipItemRequest 卸下装备请求
+type UnequipItemRequest struct {
+	GameID  model.ID            `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID            `json:"actor_id"` // 角色ID
+	Slot    model.EquipmentSlot `json:"slot"`     // 装备槽位
+}
+
+// GetEquipmentRequest 获取装备请求
+type GetEquipmentRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID `json:"actor_id"` // 角色ID
+}
+
+// AttuneItemRequest 调谐物品请求
+type AttuneItemRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID `json:"actor_id"` // 角色ID
+	ItemID  model.ID `json:"item_id"`  // 物品ID
+}
+
+// TransferItemRequest 转移物品请求
+type TransferItemRequest struct {
+	GameID      model.ID `json:"game_id"`       // 游戏会话ID
+	FromActorID model.ID `json:"from_actor_id"` // 源角色ID
+	ToActorID   model.ID `json:"to_actor_id"`   // 目标角色ID
+	ItemID      model.ID `json:"item_id"`       // 物品ID
+	Quantity    int      `json:"quantity"`      // 转移数量
+}
+
+// AddCurrencyRequest 添加货币请求
+type AddCurrencyRequest struct {
+	GameID   model.ID       `json:"game_id"`  // 游戏会话ID
+	ActorID  model.ID       `json:"actor_id"` // 角色ID
+	Currency model.Currency `json:"currency"` // 货币信息
+}
+
 // InventoryResult 库存操作结果
 type InventoryResult struct {
 	Success     bool     `json:"success"`
@@ -74,17 +170,80 @@ func getInventoryHelper(game *model.GameState, actorID model.ID) *model.Inventor
 	return nil
 }
 
+// itemToSummary 将 model.Item 转换为 ItemSummary
+func itemToSummary(item *model.Item) *ItemSummary {
+	if item == nil {
+		return nil
+	}
+	return &ItemSummary{
+		ID:          item.ID,
+		Name:        item.Name,
+		Description: item.Description,
+		Type:        item.Type,
+		Rarity:      item.Rarity,
+		Weight:      item.Weight,
+		Quantity:    item.Quantity,
+		Value:       item.Value,
+		Attuned:     item.Attuned,
+		MagicBonus:  item.MagicBonus,
+	}
+}
+
+// itemInputToItem 将 ItemInput 转换为 model.Item
+func itemInputToItem(input *ItemInput) *model.Item {
+	if input == nil {
+		return nil
+	}
+
+	item := &model.Item{
+		ID:          model.NewID(),
+		Name:        input.Name,
+		Description: input.Description,
+		Type:        input.Type,
+		Rarity:      input.Rarity,
+		Weight:      input.Weight,
+		Quantity:    input.Quantity,
+		Value:       input.Value,
+		Attunement:  input.Attunement,
+		Attuned:     false, // 新添加的物品默认未调谐
+		MagicBonus:  0,     // 默认无魔法加值
+	}
+
+	// 如果需要调谐但未提供描述，使用默认值
+	if input.RequiresAttunement && item.Attunement == "" {
+		item.Attunement = "需要调谐"
+	}
+
+	// 设置武器属性
+	if input.Type == model.ItemTypeWeapon {
+		item.WeaponProps = &model.WeaponProperties{}
+		// 魔法加值设置到物品级别
+		if input.AttackBonus != 0 {
+			item.MagicBonus = input.AttackBonus
+		}
+	}
+
+	// 设置护甲属性
+	if input.Type == model.ItemTypeArmor && input.ArmorClass != 0 {
+		item.ArmorProps = &model.ArmorProperties{
+			BaseAC: input.ArmorClass,
+		}
+	}
+
+	return item
+}
+
 // AddItem 添加物品到角色库存
-func (e *Engine) AddItem(ctx context.Context, gameID model.ID, actorID model.ID, item *model.Item) (*InventoryResult, error) {
+func (e *Engine) AddItem(ctx context.Context, req AddItemRequest) (*InventoryResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -107,6 +266,9 @@ func (e *Engine) AddItem(ctx context.Context, gameID model.ID, actorID model.ID,
 		inventory = model.NewInventory(baseActor.ID)
 		game.Inventories[baseActor.ID] = inventory
 	}
+
+	// 将 ItemInput 转换为 model.Item
+	item := itemInputToItem(req.Item)
 
 	// 检查负重
 	newWeight := calculateTotalWeight(inventory) + item.Weight*float64(item.Quantity)
@@ -141,16 +303,16 @@ func (e *Engine) AddItem(ctx context.Context, gameID model.ID, actorID model.ID,
 }
 
 // RemoveItem 从角色库存移除物品
-func (e *Engine) RemoveItem(ctx context.Context, gameID model.ID, actorID model.ID, itemID model.ID, quantity int) (*InventoryResult, error) {
+func (e *Engine) RemoveItem(ctx context.Context, req RemoveItemRequest) (*InventoryResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -174,14 +336,14 @@ func (e *Engine) RemoveItem(ctx context.Context, gameID model.ID, actorID model.
 
 	// 查找物品
 	for i, item := range inventory.Items {
-		if item.ID == itemID {
-			if item.Quantity <= quantity {
+		if item.ID == req.ItemID {
+			if item.Quantity <= req.Quantity {
 				// 移除整个物品
 				inventory.Items = append(inventory.Items[:i], inventory.Items[i+1:]...)
-				quantity = item.Quantity
+				req.Quantity = item.Quantity
 			} else {
 				// 减少数量
-				item.Quantity -= quantity
+				item.Quantity -= req.Quantity
 			}
 
 			if err := e.saveGame(ctx, game); err != nil {
@@ -190,10 +352,10 @@ func (e *Engine) RemoveItem(ctx context.Context, gameID model.ID, actorID model.
 
 			return &InventoryResult{
 				Success:     true,
-				ItemID:      itemID,
-				Quantity:    quantity,
+				ItemID:      req.ItemID,
+				Quantity:    req.Quantity,
 				TotalWeight: calculateTotalWeight(inventory),
-				Message:     fmt.Sprintf("移除了 %s x%d", item.Name, quantity),
+				Message:     fmt.Sprintf("移除了 %s x%d", item.Name, req.Quantity),
 			}, nil
 		}
 	}
@@ -202,16 +364,16 @@ func (e *Engine) RemoveItem(ctx context.Context, gameID model.ID, actorID model.
 }
 
 // GetInventory 获取角色库存信息
-func (e *Engine) GetInventory(ctx context.Context, gameID model.ID, actorID model.ID) (*InventoryInfo, error) {
+func (e *Engine) GetInventory(ctx context.Context, req GetInventoryRequest) (*InventoryInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -231,7 +393,7 @@ func (e *Engine) GetInventory(ctx context.Context, gameID model.ID, actorID mode
 	inventory := getInventoryHelper(game, baseActor.ID)
 	if inventory == nil {
 		return &InventoryInfo{
-			OwnerID:     actorID,
+			OwnerID:     req.ActorID,
 			Items:       make([]*model.Item, 0),
 			TotalWeight: 0,
 			MaxWeight:   calculateMaxWeight(baseActor),
@@ -247,7 +409,7 @@ func (e *Engine) GetInventory(ctx context.Context, gameID model.ID, actorID mode
 	}
 
 	return &InventoryInfo{
-		OwnerID:     actorID,
+		OwnerID:     req.ActorID,
 		Items:       inventory.Items,
 		TotalWeight: totalWeight,
 		MaxWeight:   maxWeight,
@@ -257,16 +419,16 @@ func (e *Engine) GetInventory(ctx context.Context, gameID model.ID, actorID mode
 }
 
 // EquipItem 装备物品
-func (e *Engine) EquipItem(ctx context.Context, gameID model.ID, actorID model.ID, itemID model.ID, slot model.EquipmentSlot) (*EquipResult, error) {
+func (e *Engine) EquipItem(ctx context.Context, req EquipItemRequest) (*EquipResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -291,7 +453,7 @@ func (e *Engine) EquipItem(ctx context.Context, gameID model.ID, actorID model.I
 	// 查找物品
 	var itemToEquip *model.Item
 	for _, item := range inventory.Items {
-		if item.ID == itemID {
+		if item.ID == req.ItemID {
 			itemToEquip = item
 			break
 		}
@@ -302,18 +464,18 @@ func (e *Engine) EquipItem(ctx context.Context, gameID model.ID, actorID model.I
 	}
 
 	// 验证物品可以装备到该槽位
-	if !canEquipToSlot(itemToEquip, slot) {
+	if !canEquipToSlot(itemToEquip, req.Slot) {
 		return &EquipResult{
 			Success: false,
-			Message: fmt.Sprintf("%s 不能装备到 %s 槽位", itemToEquip.Name, slot),
+			Message: fmt.Sprintf("%s 不能装备到 %s 槽位", itemToEquip.Name, req.Slot),
 		}, nil
 	}
 
 	// 获取当前装备
-	previousItem := inventory.Equipment.Slots[slot]
+	previousItem := inventory.Equipment.Slots[req.Slot]
 
 	// 装备新物品
-	inventory.Equipment.Slots[slot] = itemToEquip
+	inventory.Equipment.Slots[req.Slot] = itemToEquip
 
 	// 计算AC变化
 	oldAC := baseActor.ArmorClass
@@ -327,11 +489,11 @@ func (e *Engine) EquipItem(ctx context.Context, gameID model.ID, actorID model.I
 	result := &EquipResult{
 		Success:      true,
 		ItemName:     itemToEquip.Name,
-		Slot:         slot,
+		Slot:         req.Slot,
 		PreviousItem: previousItem,
 		ACChanged:    oldAC != newAC,
 		NewAC:        newAC,
-		Message:      fmt.Sprintf("装备了 %s 到 %s", itemToEquip.Name, slot),
+		Message:      fmt.Sprintf("装备了 %s 到 %s", itemToEquip.Name, req.Slot),
 	}
 
 	if previousItem != nil {
@@ -342,16 +504,16 @@ func (e *Engine) EquipItem(ctx context.Context, gameID model.ID, actorID model.I
 }
 
 // UnequipItem 卸下装备
-func (e *Engine) UnequipItem(ctx context.Context, gameID model.ID, actorID model.ID, slot model.EquipmentSlot) (*EquipResult, error) {
+func (e *Engine) UnequipItem(ctx context.Context, req UnequipItemRequest) (*EquipResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -374,16 +536,16 @@ func (e *Engine) UnequipItem(ctx context.Context, gameID model.ID, actorID model
 	}
 
 	// 获取当前装备
-	item := inventory.Equipment.Slots[slot]
+	item := inventory.Equipment.Slots[req.Slot]
 	if item == nil {
 		return &EquipResult{
 			Success: false,
-			Message: fmt.Sprintf("%s 槽位没有装备", slot),
+			Message: fmt.Sprintf("%s 槽位没有装备", req.Slot),
 		}, nil
 	}
 
 	// 卸下装备
-	delete(inventory.Equipment.Slots, slot)
+	delete(inventory.Equipment.Slots, req.Slot)
 
 	// 重新计算AC
 	newAC := calculateAC(baseActor, inventory.Equipment)
@@ -396,7 +558,7 @@ func (e *Engine) UnequipItem(ctx context.Context, gameID model.ID, actorID model
 	return &EquipResult{
 		Success:   true,
 		ItemName:  item.Name,
-		Slot:      slot,
+		Slot:      req.Slot,
 		ACChanged: true,
 		NewAC:     newAC,
 		Message:   fmt.Sprintf("卸下了 %s", item.Name),
@@ -404,16 +566,16 @@ func (e *Engine) UnequipItem(ctx context.Context, gameID model.ID, actorID model
 }
 
 // GetEquipment 获取角色装备信息
-func (e *Engine) GetEquipment(ctx context.Context, gameID model.ID, actorID model.ID) (*EquipmentInfo, error) {
+func (e *Engine) GetEquipment(ctx context.Context, req GetEquipmentRequest) (*EquipmentInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -433,7 +595,7 @@ func (e *Engine) GetEquipment(ctx context.Context, gameID model.ID, actorID mode
 	inventory := getInventoryHelper(game, baseActor.ID)
 	if inventory == nil {
 		return &EquipmentInfo{
-			OwnerID:       actorID,
+			OwnerID:       req.ActorID,
 			EquippedSlots: make(map[model.EquipmentSlot]*model.Item),
 			TotalACBonus:  0,
 			MagicBonuses:  make(map[string]int),
@@ -449,7 +611,7 @@ func (e *Engine) GetEquipment(ctx context.Context, gameID model.ID, actorID mode
 	}
 
 	return &EquipmentInfo{
-		OwnerID:       actorID,
+		OwnerID:       req.ActorID,
 		EquippedSlots: inventory.Equipment.Slots,
 		TotalACBonus:  calculateACBonus(inventory.Equipment),
 		MagicBonuses:  magicBonuses,
@@ -457,16 +619,16 @@ func (e *Engine) GetEquipment(ctx context.Context, gameID model.ID, actorID mode
 }
 
 // AttuneItem 调谐魔法物品
-func (e *Engine) AttuneItem(ctx context.Context, gameID model.ID, actorID model.ID, itemID model.ID) (*AttuneResult, error) {
+func (e *Engine) AttuneItem(ctx context.Context, req AttuneItemRequest) (*AttuneResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -491,7 +653,7 @@ func (e *Engine) AttuneItem(ctx context.Context, gameID model.ID, actorID model.
 	// 查找物品
 	var itemToAttune *model.Item
 	for _, item := range inventory.Items {
-		if item.ID == itemID {
+		if item.ID == req.ItemID {
 			itemToAttune = item
 			break
 		}
@@ -560,23 +722,23 @@ func (e *Engine) AttuneItem(ctx context.Context, gameID model.ID, actorID model.
 }
 
 // TransferItem 转移物品给另一个角色
-func (e *Engine) TransferItem(ctx context.Context, gameID model.ID, fromActorID model.ID, toActorID model.ID, itemID model.ID, quantity int) (*TransferResult, error) {
+func (e *Engine) TransferItem(ctx context.Context, req TransferItemRequest) (*TransferResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 获取源角色
-	fromActor, ok := game.GetActor(fromActorID)
+	fromActor, ok := game.GetActor(req.FromActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
 
 	// 获取目标角色
-	toActor, ok := game.GetActor(toActorID)
+	toActor, ok := game.GetActor(req.ToActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -620,7 +782,7 @@ func (e *Engine) TransferItem(ctx context.Context, gameID model.ID, fromActorID 
 	var itemToTransfer *model.Item
 	var itemIndex int
 	for i, item := range fromInventory.Items {
-		if item.ID == itemID {
+		if item.ID == req.ItemID {
 			itemToTransfer = item
 			itemIndex = i
 			break
@@ -632,7 +794,7 @@ func (e *Engine) TransferItem(ctx context.Context, gameID model.ID, fromActorID 
 	}
 
 	// 检查数量
-	if itemToTransfer.Quantity < quantity {
+	if itemToTransfer.Quantity < req.Quantity {
 		return &TransferResult{
 			Success: false,
 			Message: "物品数量不足",
@@ -647,7 +809,7 @@ func (e *Engine) TransferItem(ctx context.Context, gameID model.ID, fromActorID 
 		Type:        itemToTransfer.Type,
 		Rarity:      itemToTransfer.Rarity,
 		Weight:      itemToTransfer.Weight,
-		Quantity:    quantity,
+		Quantity:    req.Quantity,
 		Value:       itemToTransfer.Value,
 		Attuned:     false, // 转移后调谐解除
 		Attunement:  itemToTransfer.Attunement,
@@ -660,12 +822,12 @@ func (e *Engine) TransferItem(ctx context.Context, gameID model.ID, fromActorID 
 	toInventory.Items = append(toInventory.Items, transferredItem)
 
 	// 从源库存移除
-	if itemToTransfer.Quantity == quantity {
+	if itemToTransfer.Quantity == req.Quantity {
 		// 移除整个物品
 		fromInventory.Items = append(fromInventory.Items[:itemIndex], fromInventory.Items[itemIndex+1:]...)
 	} else {
 		// 减少数量
-		itemToTransfer.Quantity -= quantity
+		itemToTransfer.Quantity -= req.Quantity
 	}
 
 	if err := e.saveGame(ctx, game); err != nil {
@@ -675,24 +837,24 @@ func (e *Engine) TransferItem(ctx context.Context, gameID model.ID, fromActorID 
 	return &TransferResult{
 		Success:   true,
 		ItemID:    transferredItem.ID,
-		FromActor: fromActorID,
-		ToActor:   toActorID,
-		Quantity:  quantity,
-		Message:   fmt.Sprintf("转移了 %s x%d", transferredItem.Name, quantity),
+		FromActor: req.FromActorID,
+		ToActor:   req.ToActorID,
+		Quantity:  req.Quantity,
+		Message:   fmt.Sprintf("转移了 %s x%d", transferredItem.Name, req.Quantity),
 	}, nil
 }
 
 // AddCurrency 添加货币
-func (e *Engine) AddCurrency(ctx context.Context, gameID model.ID, actorID model.ID, currency model.Currency) (*InventoryResult, error) {
+func (e *Engine) AddCurrency(ctx context.Context, req AddCurrencyRequest) (*InventoryResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -716,11 +878,11 @@ func (e *Engine) AddCurrency(ctx context.Context, gameID model.ID, actorID model
 	}
 
 	// 添加货币
-	inventory.Currency.Platinum += currency.Platinum
-	inventory.Currency.Gold += currency.Gold
-	inventory.Currency.Electrum += currency.Electrum
-	inventory.Currency.Silver += currency.Silver
-	inventory.Currency.Copper += currency.Copper
+	inventory.Currency.Platinum += req.Currency.Platinum
+	inventory.Currency.Gold += req.Currency.Gold
+	inventory.Currency.Electrum += req.Currency.Electrum
+	inventory.Currency.Silver += req.Currency.Silver
+	inventory.Currency.Copper += req.Currency.Copper
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return nil, err

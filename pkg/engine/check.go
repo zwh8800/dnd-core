@@ -10,11 +10,12 @@ import (
 
 // AbilityCheckRequest 属性检定请求
 type AbilityCheckRequest struct {
-	ActorID   model.ID           `json:"actor_id"`
-	Ability   model.Ability      `json:"ability"`
+	GameID    model.ID           `json:"game_id"`             // 游戏会话ID
+	ActorID   model.ID           `json:"actor_id"`            // 角色ID
+	Ability   model.Ability      `json:"ability"`             // 检定的属性
 	DC        int                `json:"dc,omitempty"`        // 难度等级（可选）
 	Advantage model.RollModifier `json:"advantage,omitempty"` // 优势/劣势
-	Reason    string             `json:"reason,omitempty"`
+	Reason    string             `json:"reason,omitempty"`    // 检定原因
 }
 
 // AbilityCheckResult 属性检定结果
@@ -34,11 +35,12 @@ type AbilityCheckResult struct {
 
 // SkillCheckRequest 技能检定请求
 type SkillCheckRequest struct {
-	ActorID   model.ID           `json:"actor_id"`
-	Skill     model.Skill        `json:"skill"`
-	DC        int                `json:"dc,omitempty"`
-	Advantage model.RollModifier `json:"advantage,omitempty"`
-	Reason    string             `json:"reason,omitempty"`
+	GameID    model.ID           `json:"game_id"`             // 游戏会话ID
+	ActorID   model.ID           `json:"actor_id"`            // 角色ID
+	Skill     model.Skill        `json:"skill"`               // 检定的技能
+	DC        int                `json:"dc,omitempty"`        // 难度等级（可选）
+	Advantage model.RollModifier `json:"advantage,omitempty"` // 优势/劣势
+	Reason    string             `json:"reason,omitempty"`    // 检定原因
 }
 
 // SkillCheckResult 技能检定结果
@@ -59,11 +61,12 @@ type SkillCheckResult struct {
 
 // SavingThrowRequest 豁免检定请求
 type SavingThrowRequest struct {
-	ActorID   model.ID           `json:"actor_id"`
-	Ability   model.Ability      `json:"ability"`
-	DC        int                `json:"dc"`
-	Advantage model.RollModifier `json:"advantage,omitempty"`
-	Reason    string             `json:"reason,omitempty"`
+	GameID    model.ID           `json:"game_id"`             // 游戏会话ID
+	ActorID   model.ID           `json:"actor_id"`            // 角色ID
+	Ability   model.Ability      `json:"ability"`             // 豁免的属性
+	DC        int                `json:"dc"`                  // 难度等级
+	Advantage model.RollModifier `json:"advantage,omitempty"` // 优势/劣势
+	Reason    string             `json:"reason,omitempty"`    // 检定原因
 }
 
 // SavingThrowResult 豁免检定结果
@@ -81,11 +84,11 @@ type SavingThrowResult struct {
 }
 
 // PerformAbilityCheck 执行属性检定
-func (e *Engine) PerformAbilityCheck(ctx context.Context, gameID model.ID, req AbilityCheckRequest) (*AbilityCheckResult, error) {
+func (e *Engine) PerformAbilityCheck(ctx context.Context, req AbilityCheckRequest) (*AbilityCheckResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -160,11 +163,11 @@ func (e *Engine) PerformAbilityCheck(ctx context.Context, gameID model.ID, req A
 }
 
 // PerformSkillCheck 执行技能检定
-func (e *Engine) PerformSkillCheck(ctx context.Context, gameID model.ID, req SkillCheckRequest) (*SkillCheckResult, error) {
+func (e *Engine) PerformSkillCheck(ctx context.Context, req SkillCheckRequest) (*SkillCheckResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -260,11 +263,11 @@ func (e *Engine) PerformSkillCheck(ctx context.Context, gameID model.ID, req Ski
 }
 
 // PerformSavingThrow 执行豁免检定
-func (e *Engine) PerformSavingThrow(ctx context.Context, gameID model.ID, req SavingThrowRequest) (*SavingThrowResult, error) {
+func (e *Engine) PerformSavingThrow(ctx context.Context, req SavingThrowRequest) (*SavingThrowResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -350,19 +353,30 @@ func (e *Engine) GetSkillAbility(skill model.Skill) model.Ability {
 	return model.SkillAbilityMap[skill]
 }
 
+// GetPassivePerceptionRequest 获取被动感知请求
+type GetPassivePerceptionRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID `json:"actor_id"` // 角色ID
+}
+
+// GetPassivePerceptionResult 被动感知结果
+type GetPassivePerceptionResult struct {
+	PassivePerception int `json:"passive_perception"` // 被动感知值（10 + 感知修正 + 熟练加值）
+}
+
 // GetPassivePerception 获取被动感知（察觉）
-func (e *Engine) GetPassivePerception(ctx context.Context, gameID model.ID, actorID model.ID) (int, error) {
+func (e *Engine) GetPassivePerception(ctx context.Context, req GetPassivePerceptionRequest) (*GetPassivePerceptionResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
-		return 0, ErrNotFound
+		return nil, ErrNotFound
 	}
 
 	var baseActor *model.Actor
@@ -390,5 +404,7 @@ func (e *Engine) GetPassivePerception(ctx context.Context, gameID model.ID, acto
 		passive += rules.ProficiencyBonus(level)
 	}
 
-	return passive, nil
+	return &GetPassivePerceptionResult{
+		PassivePerception: passive,
+	}, nil
 }

@@ -75,12 +75,34 @@ const (
 
 // PhaseTransitionResult 阶段转换的结果
 type PhaseTransitionResult struct {
-	OldPhase    model.Phase `json:"old_phase"`
-	NewPhase    model.Phase `json:"new_phase"`
-	Reason      string      `json:"reason"`
-	Timestamp   time.Time   `json:"timestamp"`
-	AutoActions []string    `json:"auto_actions"`
-	Message     string      `json:"message"`
+	OldPhase    model.Phase `json:"old_phase"`    // 原阶段
+	NewPhase    model.Phase `json:"new_phase"`    // 新阶段
+	Reason      string      `json:"reason"`       // 转换原因
+	Timestamp   time.Time   `json:"timestamp"`    // 转换时间
+	AutoActions []string    `json:"auto_actions"` // 自动执行的操作列表
+	Message     string      `json:"message"`      // 人类可读的消息
+}
+
+// SetPhaseRequest 设置游戏阶段请求
+type SetPhaseRequest struct {
+	GameID model.ID    `json:"game_id"` // 游戏会话ID
+	Phase  model.Phase `json:"phase"`   // 目标游戏阶段
+	Reason string      `json:"reason"`  // 阶段转换原因
+}
+
+// GetPhaseRequest 获取游戏阶段请求
+type GetPhaseRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
+// GetPhaseResult 获取游戏阶段结果
+type GetPhaseResult struct {
+	Phase model.Phase `json:"phase"` // 当前游戏阶段
+}
+
+// GetAllowedOperationsRequest 获取允许的操作请求
+type GetAllowedOperationsRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
 }
 
 // phasePermissions 定义每个阶段允许的操作

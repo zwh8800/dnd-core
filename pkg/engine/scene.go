@@ -7,6 +7,115 @@ import (
 	"github.com/zwh8800/dnd-core/internal/model"
 )
 
+// CreateSceneRequest 创建场景请求
+type CreateSceneRequest struct {
+	GameID      model.ID        `json:"game_id"`     // 游戏会话ID
+	Name        string          `json:"name"`        // 场景名称
+	Description string          `json:"description"` // 场景描述
+	SceneType   model.SceneType `json:"scene_type"`  // 场景类型
+}
+
+// GetSceneRequest 获取场景请求
+type GetSceneRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	SceneID model.ID `json:"scene_id"` // 场景ID
+}
+
+// UpdateSceneRequest 更新场景请求
+type UpdateSceneRequest struct {
+	GameID  model.ID    `json:"game_id"`  // 游戏会话ID
+	SceneID model.ID    `json:"scene_id"` // 场景ID
+	Updates SceneUpdate `json:"updates"`  // 更新内容
+}
+
+// DeleteSceneRequest 删除场景请求
+type DeleteSceneRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	SceneID model.ID `json:"scene_id"` // 场景ID
+}
+
+// ListScenesRequest 列出场景请求
+type ListScenesRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
+// ListScenesResult 列出场景结果
+type ListScenesResult struct {
+	Scenes []SceneInfo `json:"scenes"` // 场景列表
+}
+
+// SetCurrentSceneRequest 设置当前场景请求
+type SetCurrentSceneRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	SceneID model.ID `json:"scene_id"` // 场景ID
+}
+
+// GetCurrentSceneRequest 获取当前场景请求
+type GetCurrentSceneRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
+// AddSceneConnectionRequest 添加场景连接请求
+type AddSceneConnectionRequest struct {
+	GameID        model.ID `json:"game_id"`         // 游戏会话ID
+	SceneID       model.ID `json:"scene_id"`        // 源场景ID
+	TargetSceneID model.ID `json:"target_scene_id"` // 目标场景ID
+	Description   string   `json:"description"`     // 连接描述
+	Locked        bool     `json:"locked"`          // 是否锁定
+	DC            int      `json:"dc"`              // 解锁难度等级
+	Hidden        bool     `json:"hidden"`          // 是否隐藏
+}
+
+// RemoveSceneConnectionRequest 移除场景连接请求
+type RemoveSceneConnectionRequest struct {
+	GameID        model.ID `json:"game_id"`         // 游戏会话ID
+	SceneID       model.ID `json:"scene_id"`        // 源场景ID
+	TargetSceneID model.ID `json:"target_scene_id"` // 目标场景ID
+}
+
+// MoveActorToSceneRequest 移动角色到场景请求
+type MoveActorToSceneRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	ActorID model.ID `json:"actor_id"` // 角色ID
+	SceneID model.ID `json:"scene_id"` // 目标场景ID
+}
+
+// GetSceneActorsRequest 获取场景角色请求
+type GetSceneActorsRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	SceneID model.ID `json:"scene_id"` // 场景ID
+}
+
+// GetSceneActorsResult 获取场景角色结果
+type GetSceneActorsResult struct {
+	Actors []SceneActorInfo `json:"actors"` // 场景中的角色列表
+}
+
+// AddItemToSceneRequest 添加物品到场景请求
+type AddItemToSceneRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	SceneID model.ID `json:"scene_id"` // 场景ID
+	ItemID  model.ID `json:"item_id"`  // 物品ID
+}
+
+// RemoveItemFromSceneRequest 从场景移除物品请求
+type RemoveItemFromSceneRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	SceneID model.ID `json:"scene_id"` // 场景ID
+	ItemID  model.ID `json:"item_id"`  // 物品ID
+}
+
+// GetSceneItemsRequest 获取场景物品请求
+type GetSceneItemsRequest struct {
+	GameID  model.ID `json:"game_id"`  // 游戏会话ID
+	SceneID model.ID `json:"scene_id"` // 场景ID
+}
+
+// GetSceneItemsResult 获取场景物品结果
+type GetSceneItemsResult struct {
+	Items []model.ID `json:"items"` // 物品ID列表
+}
+
 // CreateSceneResult 创建场景结果
 type CreateSceneResult struct {
 	Scene   *model.Scene `json:"scene"`
@@ -36,8 +145,8 @@ type ConnectionInfo struct {
 	Hidden        bool     `json:"hidden"`
 }
 
-// MoveActorResult 移动角色结果
-type MoveActorResult struct {
+// SceneMoveResult 场景移动结果
+type SceneMoveResult struct {
 	Success   bool     `json:"success"`
 	ActorID   model.ID `json:"actor_id"`
 	FromScene model.ID `json:"from_scene"`
@@ -53,17 +162,29 @@ type SceneActorInfo struct {
 	Position  *model.Point    `json:"position,omitempty"`
 }
 
+// SceneUpdate 场景更新
+type SceneUpdate struct {
+	Name        string `json:"name,omitempty"`        // 场景名称
+	Description string `json:"description,omitempty"` // 场景描述
+	Details     string `json:"details,omitempty"`     // 场景细节
+	IsDark      bool   `json:"is_dark"`               // 是否黑暗
+	IsDarkSet   bool   `json:"is_dark_set"`           // 是否设置了黑暗标志
+	LightLevel  string `json:"light_level,omitempty"` // 光照等级
+	Weather     string `json:"weather,omitempty"`     // 天气
+	Terrain     string `json:"terrain,omitempty"`     // 地形
+}
+
 // CreateScene 创建新场景
-func (e *Engine) CreateScene(ctx context.Context, gameID model.ID, name, description string, sceneType model.SceneType) (*CreateSceneResult, error) {
+func (e *Engine) CreateScene(ctx context.Context, req CreateSceneRequest) (*CreateSceneResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	scene := model.NewScene(name, description, sceneType)
+	scene := model.NewScene(req.Name, req.Description, req.SceneType)
 	game.Scenes[scene.ID] = scene
 
 	if err := e.saveGame(ctx, game); err != nil {
@@ -72,21 +193,21 @@ func (e *Engine) CreateScene(ctx context.Context, gameID model.ID, name, descrip
 
 	return &CreateSceneResult{
 		Scene:   scene,
-		Message: fmt.Sprintf("创建了场景: %s", name),
+		Message: fmt.Sprintf("创建了场景: %s", req.Name),
 	}, nil
 }
 
 // GetScene 获取场景信息
-func (e *Engine) GetScene(ctx context.Context, gameID model.ID, sceneID model.ID) (*SceneInfo, error) {
+func (e *Engine) GetScene(ctx context.Context, req GetSceneRequest) (*SceneInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	scene, ok := game.Scenes[sceneID]
+	scene, ok := game.Scenes[req.SceneID]
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -117,40 +238,40 @@ func (e *Engine) GetScene(ctx context.Context, gameID model.ID, sceneID model.ID
 }
 
 // UpdateScene 更新场景信息
-func (e *Engine) UpdateScene(ctx context.Context, gameID model.ID, sceneID model.ID, updates SceneUpdate) error {
+func (e *Engine) UpdateScene(ctx context.Context, req UpdateSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	scene, ok := game.Scenes[sceneID]
+	scene, ok := game.Scenes[req.SceneID]
 	if !ok {
 		return ErrNotFound
 	}
 
-	if updates.Name != "" {
-		scene.Name = updates.Name
+	if req.Updates.Name != "" {
+		scene.Name = req.Updates.Name
 	}
-	if updates.Description != "" {
-		scene.Description = updates.Description
+	if req.Updates.Description != "" {
+		scene.Description = req.Updates.Description
 	}
-	if updates.Details != "" {
-		scene.Details = updates.Details
+	if req.Updates.Details != "" {
+		scene.Details = req.Updates.Details
 	}
-	if updates.IsDarkSet {
-		scene.IsDark = updates.IsDark
+	if req.Updates.IsDarkSet {
+		scene.IsDark = req.Updates.IsDark
 	}
-	if updates.LightLevel != "" {
-		scene.LightLevel = updates.LightLevel
+	if req.Updates.LightLevel != "" {
+		scene.LightLevel = req.Updates.LightLevel
 	}
-	if updates.Weather != "" {
-		scene.Weather = updates.Weather
+	if req.Updates.Weather != "" {
+		scene.Weather = req.Updates.Weather
 	}
-	if updates.Terrain != "" {
-		scene.Terrain = updates.Terrain
+	if req.Updates.Terrain != "" {
+		scene.Terrain = req.Updates.Terrain
 	}
 
 	if err := e.saveGame(ctx, game); err != nil {
@@ -160,56 +281,44 @@ func (e *Engine) UpdateScene(ctx context.Context, gameID model.ID, sceneID model
 	return nil
 }
 
-// SceneUpdate 场景更新
-type SceneUpdate struct {
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Details     string `json:"details,omitempty"`
-	IsDark      bool   `json:"is_dark"`
-	IsDarkSet   bool   `json:"is_dark_set"`
-	LightLevel  string `json:"light_level,omitempty"`
-	Weather     string `json:"weather,omitempty"`
-	Terrain     string `json:"terrain,omitempty"`
-}
-
 // DeleteScene 删除场景
-func (e *Engine) DeleteScene(ctx context.Context, gameID model.ID, sceneID model.ID) error {
+func (e *Engine) DeleteScene(ctx context.Context, req DeleteSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	if _, ok := game.Scenes[sceneID]; !ok {
+	if _, ok := game.Scenes[req.SceneID]; !ok {
 		return ErrNotFound
 	}
 
 	// 检查是否有角色在该场景
 	for _, pc := range game.PCs {
-		if pc.SceneID == sceneID {
-			return fmt.Errorf("scene %s still has actors in it", sceneID)
+		if pc.SceneID == req.SceneID {
+			return fmt.Errorf("scene %s still has actors in it", req.SceneID)
 		}
 	}
 	for _, npc := range game.NPCs {
-		if npc.SceneID == sceneID {
-			return fmt.Errorf("scene %s still has actors in it", sceneID)
+		if npc.SceneID == req.SceneID {
+			return fmt.Errorf("scene %s still has actors in it", req.SceneID)
 		}
 	}
 	for _, enemy := range game.Enemies {
-		if enemy.SceneID == sceneID {
-			return fmt.Errorf("scene %s still has actors in it", sceneID)
+		if enemy.SceneID == req.SceneID {
+			return fmt.Errorf("scene %s still has actors in it", req.SceneID)
 		}
 	}
 	for _, companion := range game.Companions {
-		if companion.SceneID == sceneID {
-			return fmt.Errorf("scene %s still has actors in it", sceneID)
+		if companion.SceneID == req.SceneID {
+			return fmt.Errorf("scene %s still has actors in it", req.SceneID)
 		}
 	}
 
 	// 删除场景
-	delete(game.Scenes, sceneID)
+	delete(game.Scenes, req.SceneID)
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return err
@@ -219,11 +328,11 @@ func (e *Engine) DeleteScene(ctx context.Context, gameID model.ID, sceneID model
 }
 
 // ListScenes 列出所有场景
-func (e *Engine) ListScenes(ctx context.Context, gameID model.ID) ([]SceneInfo, error) {
+func (e *Engine) ListScenes(ctx context.Context, req ListScenesRequest) (*ListScenesResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -254,24 +363,24 @@ func (e *Engine) ListScenes(ctx context.Context, gameID model.ID) ([]SceneInfo, 
 		})
 	}
 
-	return result, nil
+	return &ListScenesResult{Scenes: result}, nil
 }
 
 // SetCurrentScene 设置当前场景
-func (e *Engine) SetCurrentScene(ctx context.Context, gameID model.ID, sceneID model.ID) error {
+func (e *Engine) SetCurrentScene(ctx context.Context, req SetCurrentSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	if _, ok := game.Scenes[sceneID]; !ok {
+	if _, ok := game.Scenes[req.SceneID]; !ok {
 		return ErrNotFound
 	}
 
-	game.CurrentScene = &sceneID
+	game.CurrentScene = &req.SceneID
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return err
@@ -281,11 +390,11 @@ func (e *Engine) SetCurrentScene(ctx context.Context, gameID model.ID, sceneID m
 }
 
 // GetCurrentScene 获取当前场景
-func (e *Engine) GetCurrentScene(ctx context.Context, gameID model.ID) (*SceneInfo, error) {
+func (e *Engine) GetCurrentScene(ctx context.Context, req GetCurrentSceneRequest) (*SceneInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -324,30 +433,30 @@ func (e *Engine) GetCurrentScene(ctx context.Context, gameID model.ID) (*SceneIn
 }
 
 // AddSceneConnection 添加场景连接
-func (e *Engine) AddSceneConnection(ctx context.Context, gameID model.ID, sceneID model.ID, targetSceneID model.ID, description string, locked bool, dc int, hidden bool) error {
+func (e *Engine) AddSceneConnection(ctx context.Context, req AddSceneConnectionRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	scene, ok := game.Scenes[sceneID]
+	scene, ok := game.Scenes[req.SceneID]
 	if !ok {
 		return ErrNotFound
 	}
 
-	if _, ok := game.Scenes[targetSceneID]; !ok {
+	if _, ok := game.Scenes[req.TargetSceneID]; !ok {
 		return ErrNotFound
 	}
 
-	scene.Connections[targetSceneID] = &model.SceneConnection{
-		TargetSceneID: targetSceneID,
-		Description:   description,
-		Locked:        locked,
-		DC:            dc,
-		Hidden:        hidden,
+	scene.Connections[req.TargetSceneID] = &model.SceneConnection{
+		TargetSceneID: req.TargetSceneID,
+		Description:   req.Description,
+		Locked:        req.Locked,
+		DC:            req.DC,
+		Hidden:        req.Hidden,
 	}
 
 	if err := e.saveGame(ctx, game); err != nil {
@@ -358,21 +467,21 @@ func (e *Engine) AddSceneConnection(ctx context.Context, gameID model.ID, sceneI
 }
 
 // RemoveSceneConnection 移除场景连接
-func (e *Engine) RemoveSceneConnection(ctx context.Context, gameID model.ID, sceneID model.ID, targetSceneID model.ID) error {
+func (e *Engine) RemoveSceneConnection(ctx context.Context, req RemoveSceneConnectionRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	scene, ok := game.Scenes[sceneID]
+	scene, ok := game.Scenes[req.SceneID]
 	if !ok {
 		return ErrNotFound
 	}
 
-	delete(scene.Connections, targetSceneID)
+	delete(scene.Connections, req.TargetSceneID)
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return err
@@ -382,22 +491,22 @@ func (e *Engine) RemoveSceneConnection(ctx context.Context, gameID model.ID, sce
 }
 
 // MoveActorToScene 移动角色到另一个场景
-func (e *Engine) MoveActorToScene(ctx context.Context, gameID model.ID, actorID model.ID, sceneID model.ID) (*MoveActorResult, error) {
+func (e *Engine) MoveActorToScene(ctx context.Context, req MoveActorToSceneRequest) (*MoveActorResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 验证目标场景存在
-	if _, ok := game.Scenes[sceneID]; !ok {
+	if _, ok := game.Scenes[req.SceneID]; !ok {
 		return nil, ErrNotFound
 	}
 
 	// 获取角色
-	actor, ok := game.GetActor(actorID)
+	actor, ok := game.GetActor(req.ActorID)
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -415,27 +524,29 @@ func (e *Engine) MoveActorToScene(ctx context.Context, gameID model.ID, actorID 
 	}
 
 	fromScene := baseActor.SceneID
-	baseActor.SceneID = sceneID
+	baseActor.SceneID = req.SceneID
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return nil, err
 	}
 
 	return &MoveActorResult{
-		Success:   true,
-		ActorID:   actorID,
-		FromScene: fromScene,
-		ToScene:   sceneID,
-		Message:   fmt.Sprintf("将 %s 移动到场景 %s", baseActor.Name, sceneID),
+		SceneMoveResult: &SceneMoveResult{
+			Success:   true,
+			ActorID:   req.ActorID,
+			FromScene: fromScene,
+			ToScene:   req.SceneID,
+			Message:   fmt.Sprintf("将 %s 移动到场景 %s", baseActor.Name, req.SceneID),
+		},
 	}, nil
 }
 
 // GetSceneActors 获取场景中的所有角色
-func (e *Engine) GetSceneActors(ctx context.Context, gameID model.ID, sceneID model.ID) ([]SceneActorInfo, error) {
+func (e *Engine) GetSceneActors(ctx context.Context, req GetSceneActorsRequest) (*GetSceneActorsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -443,7 +554,7 @@ func (e *Engine) GetSceneActors(ctx context.Context, gameID model.ID, sceneID mo
 	result := make([]SceneActorInfo, 0)
 
 	for _, pc := range game.PCs {
-		if pc.SceneID == sceneID {
+		if pc.SceneID == req.SceneID {
 			result = append(result, SceneActorInfo{
 				ActorID:   pc.ID,
 				ActorName: pc.Name,
@@ -453,7 +564,7 @@ func (e *Engine) GetSceneActors(ctx context.Context, gameID model.ID, sceneID mo
 		}
 	}
 	for _, npc := range game.NPCs {
-		if npc.SceneID == sceneID {
+		if npc.SceneID == req.SceneID {
 			result = append(result, SceneActorInfo{
 				ActorID:   npc.ID,
 				ActorName: npc.Name,
@@ -463,7 +574,7 @@ func (e *Engine) GetSceneActors(ctx context.Context, gameID model.ID, sceneID mo
 		}
 	}
 	for _, enemy := range game.Enemies {
-		if enemy.SceneID == sceneID {
+		if enemy.SceneID == req.SceneID {
 			result = append(result, SceneActorInfo{
 				ActorID:   enemy.ID,
 				ActorName: enemy.Name,
@@ -473,7 +584,7 @@ func (e *Engine) GetSceneActors(ctx context.Context, gameID model.ID, sceneID mo
 		}
 	}
 	for _, companion := range game.Companions {
-		if companion.SceneID == sceneID {
+		if companion.SceneID == req.SceneID {
 			result = append(result, SceneActorInfo{
 				ActorID:   companion.ID,
 				ActorName: companion.Name,
@@ -483,25 +594,25 @@ func (e *Engine) GetSceneActors(ctx context.Context, gameID model.ID, sceneID mo
 		}
 	}
 
-	return result, nil
+	return &GetSceneActorsResult{Actors: result}, nil
 }
 
 // AddItemToScene 添加物品到场景
-func (e *Engine) AddItemToScene(ctx context.Context, gameID model.ID, sceneID model.ID, itemID model.ID) error {
+func (e *Engine) AddItemToScene(ctx context.Context, req AddItemToSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	scene, ok := game.Scenes[sceneID]
+	scene, ok := game.Scenes[req.SceneID]
 	if !ok {
 		return ErrNotFound
 	}
 
-	scene.Items = append(scene.Items, itemID)
+	scene.Items = append(scene.Items, req.ItemID)
 
 	if err := e.saveGame(ctx, game); err != nil {
 		return err
@@ -511,22 +622,22 @@ func (e *Engine) AddItemToScene(ctx context.Context, gameID model.ID, sceneID mo
 }
 
 // RemoveItemFromScene 从场景移除物品
-func (e *Engine) RemoveItemFromScene(ctx context.Context, gameID model.ID, sceneID model.ID, itemID model.ID) error {
+func (e *Engine) RemoveItemFromScene(ctx context.Context, req RemoveItemFromSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return err
 	}
 
-	scene, ok := game.Scenes[sceneID]
+	scene, ok := game.Scenes[req.SceneID]
 	if !ok {
 		return ErrNotFound
 	}
 
 	for i, id := range scene.Items {
-		if id == itemID {
+		if id == req.ItemID {
 			scene.Items = append(scene.Items[:i], scene.Items[i+1:]...)
 			break
 		}
@@ -540,74 +651,19 @@ func (e *Engine) RemoveItemFromScene(ctx context.Context, gameID model.ID, scene
 }
 
 // GetSceneItems 获取场景中的物品
-func (e *Engine) GetSceneItems(ctx context.Context, gameID model.ID, sceneID model.ID) ([]model.ID, error) {
+func (e *Engine) GetSceneItems(ctx context.Context, req GetSceneItemsRequest) (*GetSceneItemsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	game, err := e.loadGame(ctx, gameID)
+	game, err := e.loadGame(ctx, req.GameID)
 	if err != nil {
 		return nil, err
 	}
 
-	scene, ok := game.Scenes[sceneID]
+	scene, ok := game.Scenes[req.SceneID]
 	if !ok {
 		return nil, ErrNotFound
 	}
 
-	return scene.Items, nil
-}
-
-// AddRegion 添加场景区域
-func (e *Engine) AddRegion(ctx context.Context, gameID model.ID, sceneID model.ID, name, description string, bounds *model.Rect) (*model.SceneRegion, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	game, err := e.loadGame(ctx, gameID)
-	if err != nil {
-		return nil, err
-	}
-
-	scene, ok := game.Scenes[sceneID]
-	if !ok {
-		return nil, ErrNotFound
-	}
-
-	region := &model.SceneRegion{
-		ID:          model.NewID(),
-		Name:        name,
-		Description: description,
-		Bounds:      bounds,
-	}
-
-	scene.Regions[region.ID] = region
-
-	if err := e.saveGame(ctx, game); err != nil {
-		return nil, err
-	}
-
-	return region, nil
-}
-
-// RemoveRegion 移除场景区域
-func (e *Engine) RemoveRegion(ctx context.Context, gameID model.ID, sceneID model.ID, regionID model.ID) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	game, err := e.loadGame(ctx, gameID)
-	if err != nil {
-		return err
-	}
-
-	scene, ok := game.Scenes[sceneID]
-	if !ok {
-		return ErrNotFound
-	}
-
-	delete(scene.Regions, regionID)
-
-	if err := e.saveGame(ctx, game); err != nil {
-		return err
-	}
-
-	return nil
+	return &GetSceneItemsResult{Items: scene.Items}, nil
 }
