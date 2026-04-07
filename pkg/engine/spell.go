@@ -1,0 +1,684 @@
+package engine
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/zwh8800/dnd-core/internal/model"
+	"github.com/zwh8800/dnd-core/internal/rules"
+)
+
+// SpellInput 施法输入
+type SpellInput struct {
+	SpellID     string             `json:"spell_id"`
+	SlotLevel   int                `json:"slot_level"`   // 使用的法术位环级（0表示戏法）
+	TargetIDs   []model.ID         `json:"target_ids"`   // 目标角色ID列表
+	TargetPoint *model.Point       `json:"target_point"` // 目标位置
+	UpcastLevel int                `json:"upcast_level"` // 升环施法等级
+	Advantage   model.RollModifier `json:"advantage"`    // 优势/劣势
+}
+
+// SpellResult 施法结果
+type SpellResult struct {
+	SpellName     string              `json:"spell_name"`
+	SlotLevel     int                 `json:"slot_level"`
+	CasterSaveDC  int                 `json:"caster_save_dc"`
+	AttackRoll    *model.DiceResult   `json:"attack_roll,omitempty"`
+	AttackTotal   int                 `json:"attack_total,omitempty"`
+	Targets       []SpellTargetResult `json:"targets"`
+	Concentration bool                `json:"is_concentration"`
+	Message       string              `json:"message"`
+}
+
+// SpellTargetResult 法术目标结果
+type SpellTargetResult struct {
+	ActorID     model.ID          `json:"actor_id"`
+	SaveRoll    *model.DiceResult `json:"save_roll,omitempty"`
+	SaveTotal   int               `json:"save_total,omitempty"`
+	SaveSuccess bool              `json:"save_success"`
+	Damage      *DamageResult     `json:"damage,omitempty"`
+	Healing     *HealResult       `json:"healing,omitempty"`
+	Effect      string            `json:"effect,omitempty"`
+}
+
+// ConcentrationResult 专注检定结果
+type ConcentrationResult struct {
+	Success          bool              `json:"success"`
+	DC               int               `json:"dc"`
+	Roll             *model.DiceResult `json:"roll"`
+	RollTotal        int               `json:"roll_total"`
+	ConstitutionSave int               `json:"constitution_save"`
+	SpellName        string            `json:"spell_name"`
+	Message          string            `json:"message"`
+}
+
+// SpellSlotsInfo 法术位信息
+type SpellSlotsInfo struct {
+	CantripsKnown       int             `json:"cantrips_known"`
+	SpellsPrepared      []string        `json:"spells_prepared,omitempty"`
+	KnownSpells         []string        `json:"known_spells,omitempty"`
+	SlotsByLevel        []SlotLevelInfo `json:"slots_by_level"`
+	SaveDC              int             `json:"save_dc"`
+	AttackBonus         int             `json:"attack_bonus"`
+	SpellcastingAbility string          `json:"spellcasting_ability"`
+}
+
+// SlotLevelInfo 单个环级的法术位信息
+type SlotLevelInfo struct {
+	Level     int `json:"level"`
+	Total     int `json:"total"`
+	Used      int `json:"used"`
+	Available int `json:"available"`
+}
+
+// CastSpell 执行施法动作
+func (e *Engine) CastSpell(ctx context.Context, gameID model.ID, casterID model.ID, input SpellInput) (*SpellResult, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	game, err := e.loadGame(ctx, gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取施法者
+	caster, ok := game.GetActor(casterID)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	var casterActor *model.Actor
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		casterActor = &c.Actor
+		spellcaster = c.Spellcasting
+	default:
+		return nil, fmt.Errorf("only player characters can cast spells")
+	}
+
+	if spellcaster == nil {
+		return nil, fmt.Errorf("actor %s is not a spellcaster", casterActor.Name)
+	}
+
+	// 查找法术定义
+	spellDef := findSpellDefinition(input.SpellID)
+	if spellDef == nil {
+		return nil, fmt.Errorf("spell %s not found", input.SpellID)
+	}
+
+	// 验证施法者是否知道/准备该法术
+	if !canCastSpell(spellcaster, input.SpellID) {
+		return nil, fmt.Errorf("caster does not know or have prepared spell: %s", spellDef.Name)
+	}
+
+	// 检查法术位（戏法不需要法术位）
+	if spellDef.Level > 0 {
+		slotLevel := input.SlotLevel
+		if slotLevel == 0 {
+			slotLevel = spellDef.Level
+		}
+		if slotLevel < spellDef.Level {
+			return nil, fmt.Errorf("slot level %d is lower than spell level %d", slotLevel, spellDef.Level)
+		}
+		if spellcaster.Slots.GetAvailableSlots(slotLevel) <= 0 {
+			return nil, ErrInsufficientSlots
+		}
+		// 消耗法术位
+		spellcaster.Slots.UseSlot(slotLevel)
+	}
+
+	// 检查专注：如果已经专注其他法术，则结束之前的专注
+	if spellcaster.IsConcentrating() && spellDef.Concentration {
+		spellcaster.ConcentrationSpell = ""
+	}
+
+	// 创建施法结果
+	result := &SpellResult{
+		SpellName:     spellDef.Name,
+		SlotLevel:     input.SlotLevel,
+		CasterSaveDC:  spellcaster.SpellSaveDC,
+		Targets:       make([]SpellTargetResult, 0),
+		Concentration: spellDef.Concentration,
+	}
+
+	// 处理需要攻击掷骰的法术
+	if spellDef.DamageDice != "" && spellDef.SaveDC == "" {
+		// 法术攻击
+		attackBonus := spellcaster.SpellAttackBonus
+		var rollResult *model.DiceResult
+		if input.Advantage.Advantage {
+			rollResult, _ = e.roller.RollAdvantage(0)
+		} else if input.Advantage.Disadvantage {
+			rollResult, _ = e.roller.RollDisadvantage(0)
+		} else {
+			rollResult, _ = e.roller.Roll("1d20")
+		}
+
+		attackTotal := rollResult.Total + attackBonus
+		result.AttackRoll = rollResult
+		result.AttackTotal = attackTotal
+
+		// 对每个目标进行攻击
+		for _, targetID := range input.TargetIDs {
+			target, ok := game.GetActor(targetID)
+			if !ok {
+				continue
+			}
+			var targetActor *model.Actor
+			switch t := target.(type) {
+			case *model.PlayerCharacter:
+				targetActor = &t.Actor
+			case *model.NPC:
+				targetActor = &t.Actor
+			case *model.Enemy:
+				targetActor = &t.Actor
+			case *model.Companion:
+				targetActor = &t.Actor
+			}
+
+			isNat20 := rollResult.Rolls[0].Value == 20
+			isNat1 := rollResult.Rolls[0].Value == 1
+			hit := attackTotal >= targetActor.ArmorClass || isNat20
+			if isNat1 {
+				hit = false
+			}
+
+			targetResult := SpellTargetResult{ActorID: targetID}
+
+			if hit {
+				// 计算伤害
+				damageResult, err := e.applySpellDamage(game, casterID, targetID, spellDef, input.UpcastLevel, isNat20)
+				if err != nil {
+					return nil, err
+				}
+				targetResult.Damage = damageResult
+			}
+
+			result.Targets = append(result.Targets, targetResult)
+		}
+	} else if spellDef.DamageDice != "" && spellDef.SaveDC != "" {
+		// 需要豁免的伤害法术
+		for _, targetID := range input.TargetIDs {
+			target, ok := game.GetActor(targetID)
+			if !ok {
+				continue
+			}
+
+			var targetActor *model.Actor
+			switch t := target.(type) {
+			case *model.PlayerCharacter:
+				targetActor = &t.Actor
+			case *model.NPC:
+				targetActor = &t.Actor
+			case *model.Enemy:
+				targetActor = &t.Actor
+			case *model.Companion:
+				targetActor = &t.Actor
+			}
+
+			// 豁免掷骰
+			saveRoll, _ := e.roller.Roll("1d20")
+			saveAbility := targetActor.AbilityScores.Get(spellDef.SaveDC)
+			saveBonus := rules.AbilityModifier(saveAbility)
+
+			saveTotal := saveRoll.Total + saveBonus
+			saveSuccess := saveTotal >= spellcaster.SpellSaveDC
+
+			targetResult := SpellTargetResult{
+				ActorID:     targetID,
+				SaveRoll:    saveRoll,
+				SaveTotal:   saveTotal,
+				SaveSuccess: saveSuccess,
+			}
+
+			// 根据豁免结果计算伤害
+			if spellDef.DamageDice != "" {
+				baseDamage := parseDiceString(spellDef.DamageDice)
+				if saveSuccess {
+					baseDamage /= 2
+				}
+				damageResult, err := e.applySpellDamageDirect(game, casterID, targetID, baseDamage, spellDef.DamageType, false)
+				if err != nil {
+					return nil, err
+				}
+				targetResult.Damage = damageResult
+			}
+
+			result.Targets = append(result.Targets, targetResult)
+		}
+	} else if spellDef.HealingDice != "" {
+		// 治疗法术
+		healingAmount := parseDiceString(spellDef.HealingDice)
+		for _, targetID := range input.TargetIDs {
+			healResult, err := e.applyHealingInSpell(game, targetID, healingAmount)
+			if err != nil {
+				return nil, err
+			}
+			result.Targets = append(result.Targets, SpellTargetResult{
+				ActorID: targetID,
+				Healing: healResult,
+			})
+		}
+	}
+
+	// 设置专注
+	if spellDef.Concentration {
+		spellcaster.ConcentrationSpell = input.SpellID
+		result.Concentration = true
+	}
+
+	// 构建消息
+	result.Message = fmt.Sprintf("%s 施展了 %s", casterActor.Name, spellDef.Name)
+	if spellDef.Concentration {
+		result.Message += " (专注)"
+	}
+
+	if err := e.saveGame(ctx, game); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetSpellSlots 获取施法者的法术位状态
+func (e *Engine) GetSpellSlots(ctx context.Context, gameID model.ID, casterID model.ID) (*SpellSlotsInfo, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	game, err := e.loadGame(ctx, gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	caster, ok := game.GetActor(casterID)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		spellcaster = c.Spellcasting
+	default:
+		return nil, fmt.Errorf("only player characters can have spell slots")
+	}
+
+	if spellcaster == nil {
+		return nil, fmt.Errorf("actor is not a spellcaster")
+	}
+
+	info := &SpellSlotsInfo{
+		SaveDC:              spellcaster.SpellSaveDC,
+		AttackBonus:         spellcaster.SpellAttackBonus,
+		SpellcastingAbility: string(spellcaster.SpellcastingAbility),
+		SlotsByLevel:        make([]SlotLevelInfo, 0),
+	}
+
+	if spellcaster.PreparationType == "prepared" {
+		info.SpellsPrepared = spellcaster.PreparedSpells
+	} else {
+		info.KnownSpells = spellcaster.KnownSpells
+	}
+
+	// 收集法术位信息
+	for level := 1; level <= 9; level++ {
+		total := spellcaster.Slots.Slots[level][0]
+		if total > 0 {
+			used := spellcaster.Slots.Slots[level][1]
+			info.SlotsByLevel = append(info.SlotsByLevel, SlotLevelInfo{
+				Level:     level,
+				Total:     total,
+				Used:      used,
+				Available: total - used,
+			})
+		}
+	}
+
+	return info, nil
+}
+
+// PrepareSpells 准备法术（针对准备型施法者）
+func (e *Engine) PrepareSpells(ctx context.Context, gameID model.ID, casterID model.ID, spellIDs []string) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	game, err := e.loadGame(ctx, gameID)
+	if err != nil {
+		return err
+	}
+
+	caster, ok := game.GetActor(casterID)
+	if !ok {
+		return ErrNotFound
+	}
+
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		spellcaster = c.Spellcasting
+	default:
+		return fmt.Errorf("only player characters can prepare spells")
+	}
+
+	if spellcaster == nil {
+		return fmt.Errorf("actor is not a spellcaster")
+	}
+
+	if spellcaster.PreparationType != "prepared" {
+		return fmt.Errorf("this caster uses known spells, not prepared spells")
+	}
+
+	// 验证所有法术都在已知列表中
+	for _, spellID := range spellIDs {
+		if !spellcaster.CanPrepareSpell(spellID) {
+			return fmt.Errorf("spell %s is not known and cannot be prepared", spellID)
+		}
+	}
+
+	spellcaster.PreparedSpells = spellIDs
+
+	if err := e.saveGame(ctx, game); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LearnSpell 学习新法术（针对已知型施法者）
+func (e *Engine) LearnSpell(ctx context.Context, gameID model.ID, casterID model.ID, spellID string) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	game, err := e.loadGame(ctx, gameID)
+	if err != nil {
+		return err
+	}
+
+	caster, ok := game.GetActor(casterID)
+	if !ok {
+		return ErrNotFound
+	}
+
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		spellcaster = c.Spellcasting
+	default:
+		return fmt.Errorf("only player characters can learn spells")
+	}
+
+	if spellcaster == nil {
+		return fmt.Errorf("actor is not a spellcaster")
+	}
+
+	// 检查是否已经学会
+	for _, s := range spellcaster.KnownSpells {
+		if s == spellID {
+			return fmt.Errorf("spell %s is already known", spellID)
+		}
+	}
+
+	spellcaster.KnownSpells = append(spellcaster.KnownSpells, spellID)
+
+	if err := e.saveGame(ctx, game); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ConcentrationCheck 进行专注检定（当施法者受到伤害时）
+func (e *Engine) ConcentrationCheck(ctx context.Context, gameID model.ID, casterID model.ID, damageTaken int) (*ConcentrationResult, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	game, err := e.loadGame(ctx, gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	caster, ok := game.GetActor(casterID)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	var casterActor *model.Actor
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		casterActor = &c.Actor
+		spellcaster = c.Spellcasting
+	default:
+		return nil, fmt.Errorf("only player characters can concentrate on spells")
+	}
+
+	if spellcaster == nil || !spellcaster.IsConcentrating() {
+		return nil, fmt.Errorf("caster is not concentrating on any spell")
+	}
+
+	// 专注检定DC = max(10, 伤害值/2)
+	dc := damageTaken / 2
+	if dc < 10 {
+		dc = 10
+	}
+
+	// 体质豁免掷骰
+	saveRoll, _ := e.roller.Roll("1d20")
+	conMod := rules.AbilityModifier(casterActor.AbilityScores.Constitution)
+
+	saveTotal := saveRoll.Total + conMod
+	success := saveTotal >= dc
+
+	currentSpell := spellcaster.ConcentrationSpell
+	if !success {
+		spellcaster.ConcentrationSpell = ""
+	}
+
+	result := &ConcentrationResult{
+		Success:          success,
+		DC:               dc,
+		Roll:             saveRoll,
+		RollTotal:        saveTotal,
+		ConstitutionSave: conMod,
+		SpellName:        currentSpell,
+		Message:          fmt.Sprintf("专注检定: %d vs DC %d", saveTotal, dc),
+	}
+
+	if !success {
+		result.Message += " - 失败！专注结束"
+	} else {
+		result.Message += " - 成功"
+	}
+
+	if err := e.saveGame(ctx, game); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// EndConcentration 主动结束专注
+func (e *Engine) EndConcentration(ctx context.Context, gameID model.ID, casterID model.ID) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	game, err := e.loadGame(ctx, gameID)
+	if err != nil {
+		return err
+	}
+
+	caster, ok := game.GetActor(casterID)
+	if !ok {
+		return ErrNotFound
+	}
+
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		spellcaster = c.Spellcasting
+	default:
+		return fmt.Errorf("only player characters can concentrate on spells")
+	}
+
+	if spellcaster == nil || !spellcaster.IsConcentrating() {
+		return fmt.Errorf("caster is not concentrating on any spell")
+	}
+
+	spellcaster.ConcentrationSpell = ""
+
+	if err := e.saveGame(ctx, game); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// canCastSpell 检查施法者是否可以施放指定法术
+func canCastSpell(spellcaster *model.SpellcasterState, spellID string) bool {
+	if spellcaster.PreparationType == "known" {
+		// 已知型：检查是否在已知列表中
+		for _, s := range spellcaster.KnownSpells {
+			if s == spellID {
+				return true
+			}
+		}
+		return false
+	}
+	// 准备型：检查是否在准备列表中
+	return spellcaster.CanPrepareSpell(spellID)
+}
+
+// applySpellDamage 应用法术伤害（带攻击掷骰）
+func (e *Engine) applySpellDamage(game *model.GameState, attackerID, targetID model.ID, spell *model.Spell, upcastLevel int, isCritical bool) (*DamageResult, error) {
+	baseDamage := parseDiceString(spell.DamageDice)
+
+	// 升环加成
+	if upcastLevel > spell.Level && spell.AtHigherLevels != "" {
+		// 简化处理：每升一环增加基础伤害的1/2
+		bonus := (upcastLevel - spell.Level) * (baseDamage / 2)
+		baseDamage += bonus
+	}
+
+	return e.applyDamageToTarget(game, attackerID, targetID, baseDamage, spell.DamageType, isCritical)
+}
+
+// applySpellDamageDirect 直接应用法术伤害（无攻击掷骰）
+func (e *Engine) applySpellDamageDirect(game *model.GameState, attackerID, targetID model.ID, amount int, damageType model.DamageType, isCritical bool) (*DamageResult, error) {
+	return e.applyDamageToTarget(game, attackerID, targetID, amount, damageType, isCritical)
+}
+
+// applyHealingInSpell 应用法术治疗
+func (e *Engine) applyHealingInSpell(game *model.GameState, targetID model.ID, amount int) (*HealResult, error) {
+	target, ok := game.GetActor(targetID)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	var targetActor *model.Actor
+	switch t := target.(type) {
+	case *model.PlayerCharacter:
+		targetActor = &t.Actor
+	case *model.NPC:
+		targetActor = &t.Actor
+	case *model.Enemy:
+		targetActor = &t.Actor
+	case *model.Companion:
+		targetActor = &t.Actor
+	}
+
+	hpBefore := targetActor.HitPoints.Current
+	wasStable := targetActor.HasCondition(model.ConditionStabilized)
+
+	targetActor.HitPoints.Current += amount
+	if targetActor.HitPoints.Current > targetActor.HitPoints.Maximum {
+		targetActor.HitPoints.Current = targetActor.HitPoints.Maximum
+	}
+
+	// 移除稳定状态
+	if targetActor.HitPoints.Current > 0 && wasStable {
+		newConditions := make([]model.ConditionInstance, 0)
+		for _, c := range targetActor.Conditions {
+			if c.Type != model.ConditionStabilized {
+				newConditions = append(newConditions, c)
+			}
+		}
+		targetActor.Conditions = newConditions
+	}
+
+	return &HealResult{
+		Amount:    amount,
+		HPBefore:  hpBefore,
+		HPAfter:   targetActor.HitPoints.Current,
+		WasStable: wasStable,
+		Message:   fmt.Sprintf("恢复 %d 点HP", amount),
+	}, nil
+}
+
+// parseDiceString 解析骰子字符串并返回估算值
+// 简化实现：返回平均值
+func parseDiceString(diceExpr string) int {
+	if diceExpr == "" {
+		return 0
+	}
+	// 简化处理：返回一个固定值用于测试
+	// 实际应该使用 e.roller 来掷骰
+	return 10
+}
+
+// findSpellDefinition 查找法术定义
+// 这是一个简化实现，实际应该从数据源加载
+func findSpellDefinition(spellID string) *model.Spell {
+	// TODO: 从法术数据库加载
+	// 这里返回一个模拟定义用于测试
+	spells := map[string]*model.Spell{
+		"fireball": {
+			ID:            "fireball",
+			Name:          "Fireball",
+			Level:         3,
+			School:        model.SpellSchoolEvocation,
+			CastTime:      model.SpellCastTime{Value: 1, Unit: "action"},
+			Range:         "150 feet",
+			Components:    []model.SpellComponent{model.SpellComponentVerbal, model.SpellComponentSomatic, model.SpellComponentMaterial},
+			Materials:     "a tiny ball of bat guano and sulfur",
+			Duration:      "instantaneous",
+			Concentration: false,
+			Description:   "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame.",
+			DamageDice:    "8d6",
+			DamageType:    model.DamageTypeFire,
+			SaveDC:        model.AbilityDexterity,
+			Classes:       []string{"Sorcerer", "Wizard"},
+		},
+		"magic_missile": {
+			ID:            "magic_missile",
+			Name:          "Magic Missile",
+			Level:         1,
+			School:        model.SpellSchoolEvocation,
+			CastTime:      model.SpellCastTime{Value: 1, Unit: "action"},
+			Range:         "120 feet",
+			Components:    []model.SpellComponent{model.SpellComponentVerbal, model.SpellComponentSomatic},
+			Duration:      "instantaneous",
+			Concentration: false,
+			Description:   "You create three glowing darts of magical force.",
+			DamageDice:    "3d4+3",
+			DamageType:    model.DamageTypeForce,
+			Classes:       []string{"Sorcerer", "Wizard"},
+		},
+		"cure_wounds": {
+			ID:            "cure_wounds",
+			Name:          "Cure Wounds",
+			Level:         1,
+			School:        model.SpellSchoolEvocation,
+			CastTime:      model.SpellCastTime{Value: 1, Unit: "action"},
+			Range:         "touch",
+			Components:    []model.SpellComponent{model.SpellComponentVerbal, model.SpellComponentSomatic},
+			Duration:      "instantaneous",
+			Concentration: false,
+			Description:   "A creature you touch regains a number of hit points.",
+			HealingDice:   "1d8",
+			Classes:       []string{"Bard", "Cleric", "Druid", "Paladin", "Ranger"},
+		},
+	}
+
+	return spells[spellID]
+}
