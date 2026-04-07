@@ -37,6 +37,51 @@ func PerformAttackRoll(roll int, attackBonus int, targetAC int) *AttackResult {
 	return result
 }
 
+// CalcAttachBonus 计算攻击加值
+func CalcAttachBonus(attacker any, attackerStrength int) int {
+	// 计算攻击加值（根据规则书：攻击加值 = 属性调整值 + 熟练加值）
+	// 首先获取攻击者的等级
+	var attackerLevel int
+	switch a := attacker.(type) {
+	case *model.PlayerCharacter:
+		attackerLevel = a.TotalLevel
+	case *model.NPC:
+		// NPC通常没有等级概念，默认为1
+		attackerLevel = 1
+	case *model.Enemy:
+		// 敌人使用挑战等级作为参考
+		attackerLevel = int(a.ChallengeRating)
+		if attackerLevel < 1 {
+			attackerLevel = 1
+		}
+	case *model.Companion:
+		// 同伴等级参考其领导者或默认为1
+		attackerLevel = 1
+	default:
+		attackerLevel = 1
+	}
+
+	// 确保等级至少为1
+	if attackerLevel < 1 {
+		attackerLevel = 1
+	}
+
+	// 计算熟练加值
+	profBonus := ProficiencyBonus(attackerLevel)
+
+	// 确定使用的属性调整值
+	// 根据规则书：
+	// - 近战武器攻击使用力量调整值
+	// - 远程武器攻击使用敏捷调整值
+	// - 具有灵巧属性的近战武器可以用敏捷调整值
+	// - 具有投掷特质的武器可以用力量调整值
+	//
+	// 当前实现：默认使用力量调整值（适用于大多数近战攻击）
+	// 如果需要支持远程武器或灵巧武器，需要在 AttackInput 中添加武器类型信息
+	attackBonus := profBonus + AbilityModifier(attackerStrength)
+	return attackBonus
+}
+
 // DamageCalculation 伤害计算结果
 type DamageCalculation struct {
 	BaseDamage      int                // 基础伤害

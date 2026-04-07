@@ -10,7 +10,7 @@ import (
 )
 
 // ============================================================================
-// 新增结构体定义
+// 战斗API结构体定义
 // ============================================================================
 
 // CombatInfo 战斗状态信息（替代 *model.CombatState）
@@ -180,10 +180,6 @@ type MoveActorResult struct {
 	Combat          *CombatInfo      `json:"combat"`            // 当前战斗状态（如果战斗中有移动）
 }
 
-// ============================================================================
-// 已存在的输入输出结构体
-// ============================================================================
-
 // ActionInput 动作输入
 type ActionInput struct {
 	Type    model.ActionType `json:"type"`              // 动作类型
@@ -295,55 +291,7 @@ type TurnInfo struct {
 }
 
 // ============================================================================
-// 辅助函数
-// ============================================================================
-
-// combatStateToInfo 将 CombatState 转换为 CombatInfo
-// 用于将内部模型转换为API返回格式
-func combatStateToInfo(combat *model.CombatState) *CombatInfo {
-	if combat == nil {
-		return nil
-	}
-
-	info := &CombatInfo{
-		ID:           combat.ID,
-		SceneID:      combat.SceneID,
-		Status:       combat.Status,
-		Round:        combat.Round,
-		CurrentIndex: combat.CurrentIndex,
-		Initiative:   make([]CombatantEntryInfo, 0, len(combat.Initiative)),
-	}
-
-	// 转换先攻列表
-	for _, entry := range combat.Initiative {
-		info.Initiative = append(info.Initiative, CombatantEntryInfo{
-			ActorID:         entry.ActorID,
-			ActorName:       entry.ActorName,
-			InitiativeRoll:  entry.InitiativeRoll,
-			InitiativeTotal: entry.InitiativeTotal,
-			IsSurprised:     entry.IsSurprised,
-			IsDefeated:      entry.IsDefeated,
-		})
-	}
-
-	// 转换当前回合信息
-	if combat.CurrentTurn != nil {
-		info.CurrentTurn = &TurnInfo{
-			ActorID:              combat.CurrentTurn.ActorID,
-			Round:                combat.CurrentTurn.Round,
-			InitiativePos:        combat.CurrentIndex + 1,
-			MovementLeft:         0, // 需要从game state获取
-			ActionAvailable:      !combat.CurrentTurn.ActionUsed,
-			BonusActionAvailable: !combat.CurrentTurn.BonusActionUsed,
-			ReactionAvailable:    !combat.CurrentTurn.ReactionUsed,
-		}
-	}
-
-	return info
-}
-
-// ============================================================================
-// 改造后的方法
+// 战斗API
 // ============================================================================
 
 // StartCombat 开始一场战斗遭遇
@@ -833,10 +781,8 @@ func (e *Engine) ExecuteAttack(ctx context.Context, req ExecuteAttackRequest) (*
 		targetActor = &a.Actor
 	}
 
-	// 计算攻击加值（简化：使用熟练加值+属性修正）
-	level := 1 // 简化
-	profBonus := rules.ProficiencyBonus(level)
-	attackBonus := profBonus + rules.AbilityModifier(attackerActor.AbilityScores.Strength)
+	// 计算攻击加值
+	attackBonus := rules.CalcAttachBonus(attacker, attackerActor.AbilityScores.Strength)
 
 	// 掷攻击骰
 	var rollValue int
@@ -1256,4 +1202,48 @@ func calculateDistance(from, to *model.Point) int {
 	}
 	// 简化的5-10-5规则
 	return dx*5 + dy*5
+}
+
+// combatStateToInfo 将 CombatState 转换为 CombatInfo
+// 用于将内部模型转换为API返回格式
+func combatStateToInfo(combat *model.CombatState) *CombatInfo {
+	if combat == nil {
+		return nil
+	}
+
+	info := &CombatInfo{
+		ID:           combat.ID,
+		SceneID:      combat.SceneID,
+		Status:       combat.Status,
+		Round:        combat.Round,
+		CurrentIndex: combat.CurrentIndex,
+		Initiative:   make([]CombatantEntryInfo, 0, len(combat.Initiative)),
+	}
+
+	// 转换先攻列表
+	for _, entry := range combat.Initiative {
+		info.Initiative = append(info.Initiative, CombatantEntryInfo{
+			ActorID:         entry.ActorID,
+			ActorName:       entry.ActorName,
+			InitiativeRoll:  entry.InitiativeRoll,
+			InitiativeTotal: entry.InitiativeTotal,
+			IsSurprised:     entry.IsSurprised,
+			IsDefeated:      entry.IsDefeated,
+		})
+	}
+
+	// 转换当前回合信息
+	if combat.CurrentTurn != nil {
+		info.CurrentTurn = &TurnInfo{
+			ActorID:              combat.CurrentTurn.ActorID,
+			Round:                combat.CurrentTurn.Round,
+			InitiativePos:        combat.CurrentIndex + 1,
+			MovementLeft:         0, // 需要从game state获取
+			ActionAvailable:      !combat.CurrentTurn.ActionUsed,
+			BonusActionAvailable: !combat.CurrentTurn.BonusActionUsed,
+			ReactionAvailable:    !combat.CurrentTurn.ReactionUsed,
+		}
+	}
+
+	return info
 }
