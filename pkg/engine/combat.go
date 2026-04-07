@@ -839,38 +839,37 @@ func (e *Engine) ExecuteAttack(ctx context.Context, req ExecuteAttackRequest) (*
 	attackBonus := profBonus + rules.AbilityModifier(attackerActor.AbilityScores.Strength)
 
 	// 掷攻击骰
-	var rollResult *model.DiceResult
+	var rollValue int
 	if req.Attack.Advantage.Advantage {
-		rollResult, _ = e.roller.RollAdvantage(0)
+		rollResult, _ := e.roller.RollAdvantage(0)
+		rollValue = rollResult.Rolls[0].Value
 	} else if req.Attack.Advantage.Disadvantage {
-		rollResult, _ = e.roller.RollDisadvantage(0)
+		rollResult, _ := e.roller.RollDisadvantage(0)
+		rollValue = rollResult.Rolls[0].Value
 	} else {
-		rollResult, _ = e.roller.Roll("1d20")
+		rollResult, _ := e.roller.Roll("1d20")
+		rollValue = rollResult.Rolls[0].Value
 	}
 
-	attackTotal := rollResult.Total + attackBonus
-	isNat20 := rollResult.Rolls[0].Value == 20
-	isNat1 := rollResult.Rolls[0].Value == 1
-
-	// 判断命中
-	hit := attackTotal >= targetActor.ArmorClass || isNat20
-	if isNat1 {
-		hit = false
-	}
+	// 使用 rules.PerformAttackRoll 执行攻击检定
+	attackCheck := rules.PerformAttackRoll(rollValue, attackBonus, targetActor.ArmorClass)
 
 	attackResult := &AttackResult{
-		Roll:        rollResult,
-		AttackTotal: attackTotal,
-		TargetAC:    targetActor.ArmorClass,
-		Hit:         hit,
-		IsCritical:  isNat20 && hit,
-		IsFumble:    isNat1,
-		Message:     fmt.Sprintf("攻击掷骰 %d (总计 %d) vs AC %d", rollResult.Rolls[0].Value, attackTotal, targetActor.ArmorClass),
+		Roll: &model.DiceResult{
+			Rolls: []model.DiceRoll{{Value: rollValue}},
+			Total: rollValue,
+		},
+		AttackTotal: attackCheck.Total,
+		TargetAC:    attackCheck.TargetAC,
+		Hit:         attackCheck.Hit,
+		IsCritical:  attackCheck.IsCritical,
+		IsFumble:    attackCheck.IsFumble,
+		Message:     fmt.Sprintf("攻击掷骰 %d (总计 %d) vs AC %d", rollValue, attackCheck.Total, targetActor.ArmorClass),
 	}
 
 	// 如果命中，计算伤害
-	if hit {
-		damageResult, err := e.calculateAndApplyDamage(game, req.AttackerID, req.TargetID, req.Attack, isNat20 && hit)
+	if attackCheck.Hit {
+		damageResult, err := e.calculateAndApplyDamage(game, req.AttackerID, req.TargetID, req.Attack, attackCheck.IsCritical)
 		if err != nil {
 			return nil, err
 		}
