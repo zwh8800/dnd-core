@@ -74,7 +74,17 @@ type TriggerTrapResult struct {
 	Message       string             `json:"message"`
 }
 
-// PlaceTrap 放置陷阱
+// PlaceTrap 在指定场景位置放置一个陷阱
+// 根据陷阱ID从数据注册表中获取陷阱定义，创建陷阱状态实例并将其放置在指定位置。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 放置陷阱请求，包含游戏ID、场景ID、陷阱ID和放置位置
+//
+// 返回:
+//
+//	*PlaceTrapResult - 包含创建的陷阱状态和成功消息
+//	error - 游戏加载失败或陷阱数据不存在时返回错误
 func (e *Engine) PlaceTrap(ctx context.Context, req PlaceTrapRequest) (*PlaceTrapResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -109,7 +119,18 @@ func (e *Engine) PlaceTrap(ctx context.Context, req PlaceTrapRequest) (*PlaceTra
 	return result, nil
 }
 
-// DetectTrap 检测陷阱
+// DetectTrap 检测场景中的陷阱
+// 返回陷阱的检测DC，角色需要进行感知（察觉）检定来发现陷阱。
+// 当检定结果大于或等于检测DC时，陷阱被发现。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 检测陷阱请求，包含游戏ID、角色ID、场景ID和陷阱ID
+//
+// 返回:
+//
+//	*DetectTrapResult - 包含检测DC、是否发现陷阱等信息
+//	error - 游戏加载失败时返回错误
 func (e *Engine) DetectTrap(ctx context.Context, req DetectTrapRequest) (*DetectTrapResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -137,7 +158,18 @@ func (e *Engine) DetectTrap(ctx context.Context, req DetectTrapRequest) (*Detect
 	return result, nil
 }
 
-// DisarmTrap 解除陷阱
+// DisarmTrap 解除场景中的陷阱
+// 返回陷阱的解除DC，角色需要进行敏捷（巧手）检定并使用盗贼工具来解除陷阱。
+// 当检定结果大于或等于解除DC时，陷阱被成功解除且不再触发。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 解除陷阱请求，包含游戏ID、角色ID、场景ID和陷阱ID
+//
+// 返回:
+//
+//	*DisarmTrapResult - 包含解除DC、是否解除陷阱等信息
+//	error - 游戏加载失败时返回错误
 func (e *Engine) DisarmTrap(ctx context.Context, req DisarmTrapRequest) (*DisarmTrapResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -165,7 +197,18 @@ func (e *Engine) DisarmTrap(ctx context.Context, req DisarmTrapRequest) (*Disarm
 	return result, nil
 }
 
-// TriggerTrap 触发陷阱
+// TriggerTrap 触发陷阱并应用其效果
+// 当角色进入陷阱区域或触发陷阱机关时调用此方法。
+// 返回陷阱的伤害效果、豁免DC和豁免属性，受影响的角色需要进行相应的豁免检定。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 触发陷阱请求，包含游戏ID、角色ID、场景ID和陷阱ID
+//
+// 返回:
+//
+//	*TriggerTrapResult - 包含陷阱效果列表、豁免DC和描述信息
+//	error - 游戏加载失败或陷阱数据不存在时返回错误
 func (e *Engine) TriggerTrap(ctx context.Context, req TriggerTrapRequest) (*TriggerTrapResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

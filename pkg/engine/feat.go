@@ -59,6 +59,17 @@ type FeatInfo struct {
 }
 
 // SelectFeat 为角色选择并获得一个专长
+// 验证先决条件后，将指定专长添加到角色的专长列表中，并应用专长效果。
+// 如果专长不可重复且角色已拥有该专长，则返回错误。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 选择专长请求参数，包含游戏会话ID、角色ID和专长ID
+//
+// 返回:
+//
+//	*SelectFeatResult - 包含角色当前专长列表的结果
+//	error - 当专长不存在、先决条件不满足、角色已拥有不可重复专长或保存失败时返回错误
 func (e *Engine) SelectFeat(ctx context.Context, req SelectFeatRequest) (*SelectFeatResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -125,6 +136,16 @@ func (e *Engine) SelectFeat(ctx context.Context, req SelectFeatRequest) (*Select
 }
 
 // ListFeats 列出可选专长
+// 从全局注册表中获取所有专长定义，支持按专长类型进行过滤。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 列出专长请求参数，包含可选的专长类型过滤条件
+//
+// 返回:
+//
+//	*ListFeatsResult - 包含符合条件的专长列表
+//	error - 错误（当前实现不会返回错误）
 func (e *Engine) ListFeats(ctx context.Context, req ListFeatsRequest) (*ListFeatsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -172,6 +193,16 @@ func (e *Engine) GetFeatDetails(ctx context.Context, req GetFeatDetailsRequest) 
 }
 
 // RemoveFeat 从角色移除专长（用于角色重建）
+// 从角色的专长列表中移除指定专长。注意：此操作不会撤销专长已应用的效果，
+// 因为效果可能已与其他系统交织。完整的撤销需要更复杂的逻辑。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 移除专长请求参数，包含游戏会话ID、角色ID和专长ID
+//
+// 返回:
+//
+//	error - 当角色不存在、角色未拥有该专长或保存失败时返回错误
 func (e *Engine) RemoveFeat(ctx context.Context, req RemoveFeatRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()

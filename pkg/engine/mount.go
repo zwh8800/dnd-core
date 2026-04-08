@@ -22,6 +22,16 @@ type MountCreatureResult struct {
 }
 
 // MountCreature 骑上坐骑
+// 验证骑手和坐骑是否存在，建立骑乘关系并保存游戏状态。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 骑乘请求，包含游戏ID、骑手ID和坐骑ID
+//
+// 返回:
+//
+//	*MountCreatureResult - 骑乘结果，包含成功状态和提示信息
+//	error - 错误信息，如游戏加载失败、骑手或坐骑不存在
 func (e *Engine) MountCreature(ctx context.Context, req MountCreatureRequest) (*MountCreatureResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -66,6 +76,16 @@ type DismountResult struct {
 }
 
 // Dismount 下马
+// 验证骑手是否存在，解除骑乘关系并保存游戏状态。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 下马请求，包含游戏ID和骑手ID
+//
+// 返回:
+//
+//	*DismountResult - 下马结果，包含成功状态和提示信息
+//	error - 错误信息，如游戏加载失败或骑手不存在
 func (e *Engine) Dismount(ctx context.Context, req DismountRequest) (*DismountResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -108,6 +128,16 @@ type CalculateMountSpeedResult struct {
 }
 
 // CalculateMountSpeed 计算坐骑速度
+// 根据坐骑数据获取基础速度和载重能力，返回坐骑的移动速度信息。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 计算坐骑速度请求，包含游戏ID和坐骑ID
+//
+// 返回:
+//
+//	*CalculateMountSpeedResult - 计算结果，包含基础速度、最终速度、载重能力和当前负载
+//	error - 错误信息，如游戏加载失败或坐骑数据不存在
 func (e *Engine) CalculateMountSpeed(ctx context.Context, req CalculateMountSpeedRequest) (*CalculateMountSpeedResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

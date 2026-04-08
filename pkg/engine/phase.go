@@ -223,6 +223,16 @@ func (e *Engine) GetPhase(ctx context.Context, gameID model.ID) (model.Phase, er
 }
 
 // GetAllowedOperations 获取当前阶段允许的所有操作
+// 根据游戏当前所处的阶段，返回该阶段下所有可执行的操作列表。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求生命周期和取消操作
+//	gameID - 游戏会话ID，用于查找对应的游戏状态
+//
+// 返回:
+//
+//	[]Operation - 当前阶段允许执行的操作列表
+//	error - 获取失败时返回错误（如游戏不存在）
 func (e *Engine) GetAllowedOperations(ctx context.Context, gameID model.ID) ([]Operation, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

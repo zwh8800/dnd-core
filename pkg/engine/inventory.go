@@ -234,6 +234,16 @@ func itemInputToItem(input *ItemInput) *model.Item {
 }
 
 // AddItem 添加物品到角色库存
+// 自动检查负重限制，超重则无法添加。如果角色没有库存会自动创建
+// 参数:
+//
+//	ctx - 上下文
+//	req - 添加物品请求，包含游戏ID、角色ID和物品信息
+//
+// 返回:
+//
+//	*InventoryResult - 操作结果，包含物品ID、数量和总重量
+//	error - 错误信息（如游戏不存在、角色不存在等）
 func (e *Engine) AddItem(ctx context.Context, req AddItemRequest) (*InventoryResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -303,6 +313,16 @@ func (e *Engine) AddItem(ctx context.Context, req AddItemRequest) (*InventoryRes
 }
 
 // RemoveItem 从角色库存移除物品
+// 如果移除数量大于等于物品数量则完全移除，否则只减少数量
+// 参数:
+//
+//	ctx - 上下文
+//	req - 移除物品请求，包含游戏ID、角色ID、物品ID和移除数量
+//
+// 返回:
+//
+//	*InventoryResult - 操作结果，包含移除的物品ID、数量和更新后的总重量
+//	error - 错误信息（如游戏不存在、角色或物品不存在等）
 func (e *Engine) RemoveItem(ctx context.Context, req RemoveItemRequest) (*InventoryResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -364,6 +384,16 @@ func (e *Engine) RemoveItem(ctx context.Context, req RemoveItemRequest) (*Invent
 }
 
 // GetInventory 获取角色库存信息
+// 返回角色的所有物品、总重量、最大负重、是否超载以及货币信息
+// 参数:
+//
+//	ctx - 上下文
+//	req - 获取库存请求，包含游戏ID和角色ID
+//
+// 返回:
+//
+//	*InventoryInfo - 库存信息，包含物品列表、重量、货币等
+//	error - 错误信息（如游戏不存在、角色不存在等）
 func (e *Engine) GetInventory(ctx context.Context, req GetInventoryRequest) (*InventoryInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -418,7 +448,17 @@ func (e *Engine) GetInventory(ctx context.Context, req GetInventoryRequest) (*In
 	}, nil
 }
 
-// EquipItem 装备物品
+// EquipItem 装备物品到指定槽位
+// 装备物品后会自动重新计算角色的AC值，如果槽位已有物品则替换
+// 参数:
+//
+//	ctx - 上下文
+//	req - 装备物品请求，包含游戏ID、角色ID、物品ID和装备槽位
+//
+// 返回:
+//
+//	*EquipResult - 装备结果，包含物品名称、槽位、AC变化等信息
+//	error - 错误信息（如游戏不存在、角色或物品不存在、物品无法装备到该槽位等）
 func (e *Engine) EquipItem(ctx context.Context, req EquipItemRequest) (*EquipResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -503,7 +543,17 @@ func (e *Engine) EquipItem(ctx context.Context, req EquipItemRequest) (*EquipRes
 	return result, nil
 }
 
-// UnequipItem 卸下装备
+// UnequipItem 卸下指定槽位的装备
+// 卸下装备后会自动重新计算角色的AC值
+// 参数:
+//
+//	ctx - 上下文
+//	req - 卸下装备请求，包含游戏ID、角色ID和装备槽位
+//
+// 返回:
+//
+//	*EquipResult - 卸下结果，包含卸下的物品名称和新的AC值
+//	error - 错误信息（如游戏不存在、角色不存在、槽位没有装备等）
 func (e *Engine) UnequipItem(ctx context.Context, req UnequipItemRequest) (*EquipResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -565,7 +615,17 @@ func (e *Engine) UnequipItem(ctx context.Context, req UnequipItemRequest) (*Equi
 	}, nil
 }
 
-// GetEquipment 获取角色装备信息
+// GetEquipment 获取角色当前装备信息
+// 返回各槽位装备的物品、总AC加值以及已调谐物品的魔法加值
+// 参数:
+//
+//	ctx - 上下文
+//	req - 获取装备请求，包含游戏ID和角色ID
+//
+// 返回:
+//
+//	*EquipmentInfo - 装备信息，包含槽位装备、AC加值和魔法加值
+//	error - 错误信息（如游戏不存在、角色不存在等）
 func (e *Engine) GetEquipment(ctx context.Context, req GetEquipmentRequest) (*EquipmentInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -618,7 +678,17 @@ func (e *Engine) GetEquipment(ctx context.Context, req GetEquipmentRequest) (*Eq
 	}, nil
 }
 
-// AttuneItem 调谐魔法物品
+// AttuneItem 调谐或解除调谐魔法物品
+// D&D 5e规则：每个角色最多同时调谐3个物品。此方法切换物品的调谐状态
+// 参数:
+//
+//	ctx - 上下文
+//	req - 调谐物品请求，包含游戏ID、角色ID和物品ID
+//
+// 返回:
+//
+//	*AttuneResult - 调谐结果，包含物品名称、调谐状态和当前调谐数量
+//	error - 错误信息（如游戏不存在、角色或物品不存在等）
 func (e *Engine) AttuneItem(ctx context.Context, req AttuneItemRequest) (*AttuneResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -721,7 +791,17 @@ func (e *Engine) AttuneItem(ctx context.Context, req AttuneItemRequest) (*Attune
 	}, nil
 }
 
-// TransferItem 转移物品给另一个角色
+// TransferItem 将物品从一个角色转移给另一个角色
+// 转移后物品的调谐状态会被解除。如果目标角色没有库存会自动创建
+// 参数:
+//
+//	ctx - 上下文
+//	req - 转移物品请求，包含游戏ID、源角色ID、目标角色ID、物品ID和转移数量
+//
+// 返回:
+//
+//	*TransferResult - 转移结果，包含新物品ID、双方角色ID和转移数量
+//	error - 错误信息（如游戏不存在、角色不存在、物品数量不足等）
 func (e *Engine) TransferItem(ctx context.Context, req TransferItemRequest) (*TransferResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

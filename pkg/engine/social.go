@@ -38,7 +38,18 @@ type GetNPCAttitudeResult struct {
 	Interaction *model.SocialInteractionState `json:"interaction,omitempty"`
 }
 
-// InteractWithNPC 执行社交互动
+// InteractWithNPC 执行与 NPC 的社交互动
+// 根据指定的社交检定类型（如游说、威吓、欺瞒等）执行社交检定，
+// 并根据检定结果更新 NPC 的态度。如果 NPC 尚未初始化社交状态，会自动创建。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 互动请求参数，包含游戏会话ID、NPC ID、检定类型、属性值、熟练加值及是否熟练
+//
+// 返回:
+//
+//	*InteractWithNPCResult - 包含社交检定结果、NPC 新态度及描述消息
+//	error - 当游戏不存在、NPC 不存在或社交检定失败时返回错误
 func (e *Engine) InteractWithNPC(ctx context.Context, req InteractWithNPCRequest) (*InteractWithNPCResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -96,6 +107,16 @@ func (e *Engine) InteractWithNPC(ctx context.Context, req InteractWithNPCRequest
 }
 
 // GetNPCAttitude 获取 NPC 当前态度
+// 查询指定 NPC 的社交状态信息，包括当前态度、性格倾向和交互历史。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 获取态度请求参数，包含游戏会话ID和NPC ID
+//
+// 返回:
+//
+//	*GetNPCAttitudeResult - 包含 NPC 当前态度、性格倾向和社交交互状态
+//	error - 当游戏不存在或 NPC 不存在时返回错误
 func (e *Engine) GetNPCAttitude(ctx context.Context, req GetNPCAttitudeRequest) (*GetNPCAttitudeResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

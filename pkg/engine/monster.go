@@ -8,6 +8,15 @@ import (
 )
 
 // LoadMonster 从模板创建怪物实例
+// 根据怪物模板ID从全局注册表中获取怪物数据块，并创建Enemy实例。
+// 参数:
+//
+//	templateID - 怪物模板ID，用于从注册表中查找对应的怪物数据
+//
+// 返回:
+//
+//	*model.Enemy - 创建好的怪物实例
+//	error - 怪物模板不存在时返回错误
 func (e *Engine) LoadMonster(templateID string) (*model.Enemy, error) {
 	statBlock, exists := data.GlobalRegistry.GetMonster(templateID)
 	if !exists {
@@ -18,6 +27,16 @@ func (e *Engine) LoadMonster(templateID string) (*model.Enemy, error) {
 }
 
 // CreateEnemyFromStatBlock 从怪物数据块创建 Enemy 实例
+// 根据MonsterStatBlock中的完整数据创建Enemy实例，包括属性值、生命值、
+// 免疫/抗性/易伤、传说动作和充能动作等所有战斗相关信息。
+// 参数:
+//
+//	statBlock - 怪物数据块，包含怪物的完整属性定义
+//
+// 返回:
+//
+//	*model.Enemy - 创建好的Enemy实例
+//	error - 创建过程中发生错误时返回
 func CreateEnemyFromStatBlock(statBlock *model.MonsterStatBlock) (*model.Enemy, error) {
 	// 创建 Enemy 实例
 	enemy := &model.Enemy{
@@ -77,6 +96,15 @@ func CreateEnemyFromStatBlock(statBlock *model.MonsterStatBlock) (*model.Enemy, 
 }
 
 // GetMonsterActions 获取怪物可用的动作列表
+// 收集怪物当前可以使用的所有动作，包括常规动作、附赠动作、反应和传说动作。
+// 对于充能动作，仅当充能完成时才会包含在返回列表中。
+// 参数:
+//
+//	monster - 怪物实例
+//
+// 返回:
+//
+//	[]model.MonsterAction - 怪物当前可用的动作列表
 func GetMonsterActions(monster *model.Enemy) []model.MonsterAction {
 	actions := make([]model.MonsterAction, 0)
 

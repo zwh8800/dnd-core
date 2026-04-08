@@ -175,6 +175,16 @@ type SceneUpdate struct {
 }
 
 // CreateScene 创建新场景
+// 在指定的游戏会话中创建一个新的场景，并将其保存到游戏状态中。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 创建场景请求，包含游戏会话ID、场景名称、描述和类型
+//
+// 返回:
+//
+//	*CreateSceneResult - 创建成功时返回场景对象和成功消息
+//	error - 当游戏会话不存在或保存失败时返回错误
 func (e *Engine) CreateScene(ctx context.Context, req CreateSceneRequest) (*CreateSceneResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -198,6 +208,16 @@ func (e *Engine) CreateScene(ctx context.Context, req CreateSceneRequest) (*Crea
 }
 
 // GetScene 获取场景信息
+// 根据游戏会话ID和场景ID获取指定场景的详细信息，包括连接、区域和物品等。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 获取场景请求，包含游戏会话ID和场景ID
+//
+// 返回:
+//
+//	*SceneInfo - 场景的详细信息，包括名称、类型、描述、连接等
+//	error - 当游戏会话或场景不存在时返回 ErrNotFound
 func (e *Engine) GetScene(ctx context.Context, req GetSceneRequest) (*SceneInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -238,6 +258,16 @@ func (e *Engine) GetScene(ctx context.Context, req GetSceneRequest) (*SceneInfo,
 }
 
 // UpdateScene 更新场景信息
+// 更新指定场景中的一项或多项属性，包括名称、描述、细节、光照、天气和地形等。
+// 只有请求中提供的非空字段才会被更新，其他字段保持不变。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 更新场景请求，包含游戏会话ID、场景ID和要更新的字段
+//
+// 返回:
+//
+//	error - 当游戏会话或场景不存在，或保存失败时返回错误
 func (e *Engine) UpdateScene(ctx context.Context, req UpdateSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -282,6 +312,16 @@ func (e *Engine) UpdateScene(ctx context.Context, req UpdateSceneRequest) error 
 }
 
 // DeleteScene 删除场景
+// 从游戏会话中删除指定的场景。删除前会检查是否有角色（PC、NPC、敌人或同伴）仍在该场景中，
+// 如果有角色存在则拒绝删除，以防止数据不一致。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 删除场景请求，包含游戏会话ID和场景ID
+//
+// 返回:
+//
+//	error - 当场景不存在、场景中仍有角色或保存失败时返回错误
 func (e *Engine) DeleteScene(ctx context.Context, req DeleteSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -328,6 +368,16 @@ func (e *Engine) DeleteScene(ctx context.Context, req DeleteSceneRequest) error 
 }
 
 // ListScenes 列出所有场景
+// 获取指定游戏会话中的所有场景及其基本信息，包括场景名称、类型、描述、连接等。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 列出场景请求，包含游戏会话ID
+//
+// 返回:
+//
+//	*ListScenesResult - 包含所有场景信息的列表
+//	error - 当游戏会话不存在时返回错误
 func (e *Engine) ListScenes(ctx context.Context, req ListScenesRequest) (*ListScenesResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -367,6 +417,15 @@ func (e *Engine) ListScenes(ctx context.Context, req ListScenesRequest) (*ListSc
 }
 
 // SetCurrentScene 设置当前场景
+// 将指定场景设置为游戏会话的当前活跃场景。当前场景通常表示玩家正在探索的场景。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 设置当前场景请求，包含游戏会话ID和要设置的场景ID
+//
+// 返回:
+//
+//	error - 当游戏会话不存在、场景不存在或保存失败时返回错误
 func (e *Engine) SetCurrentScene(ctx context.Context, req SetCurrentSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -390,6 +449,16 @@ func (e *Engine) SetCurrentScene(ctx context.Context, req SetCurrentSceneRequest
 }
 
 // GetCurrentScene 获取当前场景
+// 获取游戏会话中当前活跃场景的详细信息。如果没有设置当前场景则返回错误。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 获取当前场景请求，包含游戏会话ID
+//
+// 返回:
+//
+//	*SceneInfo - 当前场景的详细信息
+//	error - 当游戏会话不存在、未设置当前场景或场景不存在时返回错误
 func (e *Engine) GetCurrentScene(ctx context.Context, req GetCurrentSceneRequest) (*SceneInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -433,6 +502,16 @@ func (e *Engine) GetCurrentScene(ctx context.Context, req GetCurrentSceneRequest
 }
 
 // AddSceneConnection 添加场景连接
+// 在两个场景之间创建一个连接，允许角色在场景之间移动。可以设置连接是否锁定、
+// 解锁难度等级（DC）以及是否隐藏。源场景和目标场景都必须存在。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 添加场景连接请求，包含游戏会话ID、源场景ID、目标场景ID、描述、锁定状态、DC值和隐藏状态
+//
+// 返回:
+//
+//	error - 当游戏会话不存在、源场景或目标场景不存在，或保存失败时返回错误
 func (e *Engine) AddSceneConnection(ctx context.Context, req AddSceneConnectionRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -467,6 +546,15 @@ func (e *Engine) AddSceneConnection(ctx context.Context, req AddSceneConnectionR
 }
 
 // RemoveSceneConnection 移除场景连接
+// 删除两个场景之间的连接。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 移除场景连接请求，包含游戏会话ID、源场景ID和目标场景ID
+//
+// 返回:
+//
+//	error - 当游戏会话不存在、源场景不存在或保存失败时返回错误
 func (e *Engine) RemoveSceneConnection(ctx context.Context, req RemoveSceneConnectionRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -491,6 +579,17 @@ func (e *Engine) RemoveSceneConnection(ctx context.Context, req RemoveSceneConne
 }
 
 // MoveActorToScene 移动角色到另一个场景
+// 将指定的角色（PC、NPC、敌人或同伴）移动到目标场景。返回移动结果，
+// 包含角色ID、源场景ID、目标场景ID和成功消息。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 移动角色请求，包含游戏会话ID、角色ID和目标场景ID
+//
+// 返回:
+//
+//	*MoveActorResult - 移动结果，包含场景移动详情
+//	error - 当游戏会话不存在、目标场景不存在、角色不存在或保存失败时返回错误
 func (e *Engine) MoveActorToScene(ctx context.Context, req MoveActorToSceneRequest) (*MoveActorResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -542,6 +641,17 @@ func (e *Engine) MoveActorToScene(ctx context.Context, req MoveActorToSceneReque
 }
 
 // GetSceneActors 获取场景中的所有角色
+// 获取指定场景中的所有角色，包括玩家角色（PC）、NPC、敌人和同伴。
+// 返回每个角色的ID、名称、类型和位置信息。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 获取场景角色请求，包含游戏会话ID和场景ID
+//
+// 返回:
+//
+//	*GetSceneActorsResult - 包含场景中所有角色信息的列表
+//	error - 当游戏会话不存在时返回错误
 func (e *Engine) GetSceneActors(ctx context.Context, req GetSceneActorsRequest) (*GetSceneActorsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -598,6 +708,15 @@ func (e *Engine) GetSceneActors(ctx context.Context, req GetSceneActorsRequest) 
 }
 
 // AddItemToScene 添加物品到场景
+// 将指定的物品添加到场景中，使该物品可以在场景中被拾取或交互。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 添加物品到场景请求，包含游戏会话ID、场景ID和物品ID
+//
+// 返回:
+//
+//	error - 当游戏会话不存在、场景不存在或保存失败时返回错误
 func (e *Engine) AddItemToScene(ctx context.Context, req AddItemToSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -622,6 +741,15 @@ func (e *Engine) AddItemToScene(ctx context.Context, req AddItemToSceneRequest) 
 }
 
 // RemoveItemFromScene 从场景移除物品
+// 从场景中移除指定的物品。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 从场景移除物品请求，包含游戏会话ID、场景ID和物品ID
+//
+// 返回:
+//
+//	error - 当游戏会话不存在、场景不存在或保存失败时返回错误
 func (e *Engine) RemoveItemFromScene(ctx context.Context, req RemoveItemFromSceneRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -651,6 +779,16 @@ func (e *Engine) RemoveItemFromScene(ctx context.Context, req RemoveItemFromScen
 }
 
 // GetSceneItems 获取场景中的物品
+// 获取指定场景中的所有物品ID列表。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 获取场景物品请求，包含游戏会话ID和场景ID
+//
+// 返回:
+//
+//	*GetSceneItemsResult - 包含场景中所有物品ID的列表
+//	error - 当游戏会话不存在或场景不存在时返回错误
 func (e *Engine) GetSceneItems(ctx context.Context, req GetSceneItemsRequest) (*GetSceneItemsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

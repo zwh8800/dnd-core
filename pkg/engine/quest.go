@@ -157,6 +157,16 @@ type ObjectiveInfo struct {
 }
 
 // CreateQuest 创建新任务
+// 在指定的游戏会话中创建一个新的任务，包含任务名称、描述、发布者、目标列表和奖励。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 创建任务请求，包含游戏会话ID、任务名称、描述、发布者ID、发布者名称、目标列表和奖励
+//
+// 返回:
+//
+//	*QuestResult - 创建成功时返回任务对象和成功消息
+//	error - 当游戏会话不存在或保存失败时返回错误
 func (e *Engine) CreateQuest(ctx context.Context, req CreateQuestRequest) (*QuestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -197,6 +207,16 @@ func (e *Engine) CreateQuest(ctx context.Context, req CreateQuestRequest) (*Ques
 }
 
 // GetQuest 获取任务信息
+// 根据游戏会话ID和任务ID获取指定任务的详细信息，包括目标、奖励、状态等。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 获取任务请求，包含游戏会话ID和任务ID
+//
+// 返回:
+//
+//	*QuestInfo - 任务的详细信息
+//	error - 当游戏会话不存在或任务不存在时返回 ErrNotFound
 func (e *Engine) GetQuest(ctx context.Context, req GetQuestRequest) (*QuestInfo, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -215,6 +235,16 @@ func (e *Engine) GetQuest(ctx context.Context, req GetQuestRequest) (*QuestInfo,
 }
 
 // ListQuests 列出所有任务
+// 获取指定游戏会话中的所有任务，可以按状态进行过滤。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 列出任务请求，包含游戏会话ID和可选的状态过滤条件
+//
+// 返回:
+//
+//	*ListQuestsResult - 包含符合条件的所有任务信息的列表
+//	error - 当游戏会话不存在时返回错误
 func (e *Engine) ListQuests(ctx context.Context, req ListQuestsRequest) (*ListQuestsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -236,6 +266,17 @@ func (e *Engine) ListQuests(ctx context.Context, req ListQuestsRequest) (*ListQu
 }
 
 // AcceptQuest 接受任务
+// 使指定的角色接受一个任务。角色接受任务后，任务的接受者列表会更新，
+// 并记录接受时间。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 接受任务请求，包含游戏会话ID、任务ID和接受任务的角色ID
+//
+// 返回:
+//
+//	*QuestResult - 接受成功时返回任务对象和成功消息
+//	error - 当游戏会话不存在、任务不存在、角色不存在或保存失败时返回错误
 func (e *Engine) AcceptQuest(ctx context.Context, req AcceptQuestRequest) (*QuestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -268,6 +309,17 @@ func (e *Engine) AcceptQuest(ctx context.Context, req AcceptQuestRequest) (*Ques
 }
 
 // UpdateQuestObjective 更新任务目标进度
+// 更新指定任务目标的进度。如果更新后所有目标都完成且任务处于活跃状态，
+// 则自动将任务标记为完成。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 更新任务目标请求，包含游戏会话ID、任务ID、目标ID和进度增量
+//
+// 返回:
+//
+//	*QuestResult - 更新成功时返回任务对象和进度更新消息（如果任务完成则返回完成消息）
+//	error - 当游戏会话不存在、任务不存在或保存失败时返回错误
 func (e *Engine) UpdateQuestObjective(ctx context.Context, req UpdateQuestObjectiveRequest) (*QuestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -305,6 +357,17 @@ func (e *Engine) UpdateQuestObjective(ctx context.Context, req UpdateQuestObject
 }
 
 // CompleteQuest 完成任务并发放奖励
+// 将任务标记为完成，并向所有接受该任务的角色发放奖励（经验值、金币、物品等）。
+// 任务必须已完成所有目标才能调用此方法。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 完成任务请求，包含游戏会话ID和任务ID
+//
+// 返回:
+//
+//	*QuestResult - 完成成功时返回任务对象和完成消息
+//	error - 当游戏会话不存在、任务不存在、任务尚未完成所有目标或保存失败时返回错误
 func (e *Engine) CompleteQuest(ctx context.Context, req CompleteQuestRequest) (*QuestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -352,6 +415,16 @@ func (e *Engine) CompleteQuest(ctx context.Context, req CompleteQuestRequest) (*
 }
 
 // FailQuest 标记任务失败
+// 将指定任务标记为失败状态。通常在任务条件无法满足或超时时使用。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 任务失败请求，包含游戏会话ID和任务ID
+//
+// 返回:
+//
+//	*QuestResult - 标记成功时返回任务对象和失败消息
+//	error - 当游戏会话不存在、任务不存在或保存失败时返回错误
 func (e *Engine) FailQuest(ctx context.Context, req FailQuestRequest) (*QuestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -379,6 +452,15 @@ func (e *Engine) FailQuest(ctx context.Context, req FailQuestRequest) (*QuestRes
 }
 
 // DeleteQuest 删除任务
+// 从游戏会话中永久删除指定的任务。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 删除任务请求，包含游戏会话ID和任务ID
+//
+// 返回:
+//
+//	error - 当游戏会话不存在、任务不存在或保存失败时返回错误
 func (e *Engine) DeleteQuest(ctx context.Context, req DeleteQuestRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -402,6 +484,16 @@ func (e *Engine) DeleteQuest(ctx context.Context, req DeleteQuestRequest) error 
 }
 
 // GetActorQuests 获取角色的任务列表
+// 获取指定角色接受的所有任务，可以按任务状态进行过滤。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 获取角色任务请求，包含游戏会话ID、角色ID和可选的状态过滤条件
+//
+// 返回:
+//
+//	*GetActorQuestsResult - 包含该角色接受的所有任务信息的列表
+//	error - 当游戏会话不存在时返回错误
 func (e *Engine) GetActorQuests(ctx context.Context, req GetActorQuestsRequest) (*GetActorQuestsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -437,6 +529,16 @@ func (e *Engine) GetActorQuests(ctx context.Context, req GetActorQuestsRequest) 
 }
 
 // GetQuestGiverQuests 获取NPC发布的任务列表
+// 获取指定任务发布者（通常是NPC）发布的所有任务。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求的生命周期和取消
+//	req - 获取任务发布者任务请求，包含游戏会话ID和任务发布者ID
+//
+// 返回:
+//
+//	*GetQuestGiverQuestsResult - 包含该发布者发布的所有任务信息的列表
+//	error - 当游戏会话不存在时返回错误
 func (e *Engine) GetQuestGiverQuests(ctx context.Context, req GetQuestGiverQuestsRequest) (*GetQuestGiverQuestsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

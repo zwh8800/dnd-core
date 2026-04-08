@@ -38,7 +38,18 @@ type ResolveEnvironmentalDamageResult struct {
 	Message       string `json:"message"`
 }
 
-// SetEnvironment 设置环境
+// SetEnvironment 设置指定场景的环境效果
+// 环境效果会影响角色的行动和能力，如强光、黑暗、浓雾等
+//
+// 参数:
+//
+//	ctx - 上下文
+//	req - 设置环境请求参数，包含游戏ID、场景ID和环境类型
+//
+// 返回:
+//
+//	*SetEnvironmentResult - 包含环境效果信息和设置消息的结果
+//	error - 加载游戏失败时返回错误
 func (e *Engine) SetEnvironment(ctx context.Context, req SetEnvironmentRequest) (*SetEnvironmentResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -58,7 +69,18 @@ func (e *Engine) SetEnvironment(ctx context.Context, req SetEnvironmentRequest) 
 	return result, nil
 }
 
-// ResolveEnvironmentalDamage 解析环境伤害
+// ResolveEnvironmentalDamage 解析并计算环境对角色造成的伤害
+// 根据环境类型和暴露时间，计算角色是否受到伤害以及相应的豁免检定
+//
+// 参数:
+//
+//	ctx - 上下文
+//	req - 解析环境伤害请求参数，包含游戏ID、角色ID、环境类型和暴露时间（分钟）
+//
+// 返回:
+//
+//	*ResolveEnvironmentalDamageResult - 包含伤害掷骰、豁免DC、豁免是否成功、施加的状态和消息的结果
+//	error - 加载游戏失败时返回错误
 func (e *Engine) ResolveEnvironmentalDamage(ctx context.Context, req ResolveEnvironmentalDamageRequest) (*ResolveEnvironmentalDamageResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

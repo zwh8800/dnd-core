@@ -23,7 +23,18 @@ type StartTravelResult struct {
 	Message     string             `json:"message"`
 }
 
-// StartTravel 开始旅行
+// StartTravel 开始一段新的旅行
+// 初始化旅行状态，设置目的地、行进速度、地形类型和总距离等信息
+//
+// 参数:
+//
+//	ctx - 上下文
+//	req - 开始旅行请求参数，包含游戏ID、目的地、行进速度、地形类型和总距离
+//
+// 返回:
+//
+//	*StartTravelResult - 包含旅行状态和开始消息的结果
+//	error - 加载游戏或保存游戏失败时返回错误
 func (e *Engine) StartTravel(ctx context.Context, req StartTravelRequest) (*StartTravelResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -72,7 +83,19 @@ type AdvanceTravelResult struct {
 	Message          string                 `json:"message"`
 }
 
-// AdvanceTravel 推进旅行
+// AdvanceTravel 推进旅行进度
+// 根据指定的时间推进旅行，计算行进距离，并在每日结束时进行觅食、导航和遭遇检定
+// 如果旅行完成，则标记旅行状态为非活跃
+//
+// 参数:
+//
+//	ctx - 上下文
+//	req - 推进旅行请求参数，包含游戏ID和行进小时数
+//
+// 返回:
+//
+//	*AdvanceTravelResult - 包含行进距离、经过天数、觅食结果、导航结果、遭遇结果和消息的结果
+//	error - 加载游戏、保存游戏失败或没有活跃的旅行时返回错误
 func (e *Engine) AdvanceTravel(ctx context.Context, req AdvanceTravelRequest) (*AdvanceTravelResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -145,7 +168,18 @@ type ForageResultEngine struct {
 	Result *model.ForageResult `json:"result"`
 }
 
-// Forage 执行觅食
+// Forage 执行觅食行动
+// 角色在野外环境中寻找食物和水源，根据检定结果确定觅食是否成功
+//
+// 参数:
+//
+//	ctx - 上下文
+//	req - 觅食请求参数，包含游戏ID
+//
+// 返回:
+//
+//	*ForageResultEngine - 包含觅食检定结果的结果
+//	error - 加载游戏或觅食检定时返回错误
 func (e *Engine) Forage(ctx context.Context, req ForageRequest) (*ForageResultEngine, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -174,6 +208,18 @@ type NavigateResult struct {
 }
 
 // Navigate 执行导航检定
+// 角色在旅途中进行导航检定，以确定是否能够在当前地形中正确辨认方向
+// 如果当前有活跃的旅行，则使用旅行的地形类型，否则使用清晰地形
+//
+// 参数:
+//
+//	ctx - 上下文
+//	req - 导航请求参数，包含游戏ID
+//
+// 返回:
+//
+//	*NavigateResult - 包含导航检定结果的结果
+//	error - 加载游戏或导航检定时返回错误
 func (e *Engine) Navigate(ctx context.Context, req NavigateRequest) (*NavigateResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

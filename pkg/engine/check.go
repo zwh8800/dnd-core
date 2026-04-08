@@ -349,6 +349,15 @@ func (e *Engine) PerformSavingThrow(ctx context.Context, req SavingThrowRequest)
 }
 
 // GetSkillAbility 获取技能对应的属性
+// 根据D&D规则中技能与属性的映射关系，返回指定技能所关联的基础属性
+// 例如：运动对应力量、隐匿对应敏捷、察觉对应感知等
+// 参数:
+//
+//	skill - 要查询的技能类型
+//
+// 返回:
+//
+//	model.Ability - 该技能对应的基础属性值
 func (e *Engine) GetSkillAbility(skill model.Skill) model.Ability {
 	return model.SkillAbilityMap[skill]
 }
@@ -365,6 +374,17 @@ type GetPassivePerceptionResult struct {
 }
 
 // GetPassivePerception 获取被动感知（察觉）
+// 计算角色的被动感知值，用于DM在不进行掷骰的情况下判断角色是否察觉隐藏事物。
+// 计算公式：10 + 感知修正 +（如果察觉技能熟练则加熟练加值）
+// 参数:
+//
+//	ctx - 上下文
+//	req - 被动感知请求，包含游戏会话ID和角色ID
+//
+// 返回:
+//
+//	*GetPassivePerceptionResult - 被动感知结果，包含计算后的被动感知值
+//	error - 角色不存在或加载游戏失败时返回错误
 func (e *Engine) GetPassivePerception(ctx context.Context, req GetPassivePerceptionRequest) (*GetPassivePerceptionResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

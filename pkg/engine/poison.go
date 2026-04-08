@@ -52,6 +52,17 @@ type RemovePoisonResult struct {
 }
 
 // ApplyPoison 涂抹毒药到武器
+// 将指定毒药涂抹到角色的武器上，创建毒药实例并设置有效时长。
+// 毒药在涂抹后会在一定时间后失效。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 涂抹毒药请求参数，包含游戏会话ID、角色ID、毒药ID和目标武器ID
+//
+// 返回:
+//
+//	*ApplyPoisonResult - 包含毒药实例和描述消息
+//	error - 当毒药数据不存在时返回错误
 func (e *Engine) ApplyPoison(ctx context.Context, req ApplyPoisonRequest) (*ApplyPoisonResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -84,6 +95,17 @@ func (e *Engine) ApplyPoison(ctx context.Context, req ApplyPoisonRequest) (*Appl
 }
 
 // ResolvePoisonEffect 解析毒药效果
+// 当角色受到毒药影响时，计算豁免检定结果并应用毒药效果，
+// 包括伤害投骰和状态效果。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 解析毒药效果请求参数，包含游戏会话ID和受影响的角色ID
+//
+// 返回:
+//
+//	*ResolvePoisonEffectResult - 包含豁免投骰值、豁免DC、是否成功、伤害和状态效果
+//	error - 当游戏不存在或毒药数据不存在时返回错误
 func (e *Engine) ResolvePoisonEffect(ctx context.Context, req ResolvePoisonEffectRequest) (*ResolvePoisonEffectResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -109,6 +131,16 @@ func (e *Engine) ResolvePoisonEffect(ctx context.Context, req ResolvePoisonEffec
 }
 
 // RemovePoison 移除武器上的毒药
+// 清除指定武器上已涂抹的毒药，使其不再具有毒性效果。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 移除毒药请求参数，包含游戏会话ID、角色ID和目标武器ID
+//
+// 返回:
+//
+//	*RemovePoisonResult - 包含操作是否成功及描述消息
+//	error - 当游戏不存在时返回错误
 func (e *Engine) RemovePoison(ctx context.Context, req RemovePoisonRequest) (*RemovePoisonResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

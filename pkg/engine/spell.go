@@ -117,7 +117,17 @@ type SlotLevelInfo struct {
 	Available int `json:"available"` // 可用数量
 }
 
-// CastSpell 执行施法动作
+// CastSpell 执行施法动作，消耗法术位并对目标产生效果
+// 支持攻击掷骰、豁免掷骰和治疗法术，自动处理专注状态切换
+// 参数:
+//
+//	ctx - 上下文
+//	req - 施法请求，包含游戏ID、施法者ID、法术信息及目标等
+//
+// 返回:
+//
+//	*SpellResult - 施法结果，包含法术名称、攻击/豁免掷骰、目标效果等
+//	error - 错误信息（如施法者不存在、无法施法、法术位不足等）
 func (e *Engine) CastSpell(ctx context.Context, req CastSpellRequest) (*SpellResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -328,6 +338,16 @@ func (e *Engine) CastSpell(ctx context.Context, req CastSpellRequest) (*SpellRes
 }
 
 // GetSpellSlots 获取施法者的法术位状态
+// 返回各环级法术位的总数、已使用数量和可用数量，以及施法关键属性信息
+// 参数:
+//
+//	ctx - 上下文
+//	req - 获取法术位请求，包含游戏ID和施法者ID
+//
+// 返回:
+//
+//	*GetSpellSlotsResult - 法术位信息，包含各环级法术位状态和施法属性
+//	error - 错误信息（如游戏不存在、角色不是施法者等）
 func (e *Engine) GetSpellSlots(ctx context.Context, req GetSpellSlotsRequest) (*GetSpellSlotsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -384,7 +404,16 @@ func (e *Engine) GetSpellSlots(ctx context.Context, req GetSpellSlotsRequest) (*
 	return &GetSpellSlotsResult{Info: info}, nil
 }
 
-// PrepareSpells 准备法术（针对准备型施法者）
+// PrepareSpells 准备法术（针对准备型施法者，如牧师、法师等）
+// 替换施法者当前已准备的全部法术列表，所有法术必须在已知法术范围内
+// 参数:
+//
+//	ctx - 上下文
+//	req - 准备法术请求，包含游戏ID、施法者ID和要准备的法术ID列表
+//
+// 返回:
+//
+//	error - 错误信息（如角色不是准备型施法者、法术不在已知列表等）
 func (e *Engine) PrepareSpells(ctx context.Context, req PrepareSpellsRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -431,7 +460,16 @@ func (e *Engine) PrepareSpells(ctx context.Context, req PrepareSpellsRequest) er
 	return nil
 }
 
-// LearnSpell 学习新法术（针对已知型施法者）
+// LearnSpell 学习新法术（针对已知型施法者，如吟游诗人、术士等）
+// 将新法术添加到施法者的已知法术列表中
+// 参数:
+//
+//	ctx - 上下文
+//	req - 学习法术请求，包含游戏ID、施法者ID和要学习的法术ID
+//
+// 返回:
+//
+//	error - 错误信息（如角色不是施法者、法术已学会等）
 func (e *Engine) LearnSpell(ctx context.Context, req LearnSpellRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -474,7 +512,17 @@ func (e *Engine) LearnSpell(ctx context.Context, req LearnSpellRequest) error {
 	return nil
 }
 
-// ConcentrationCheck 进行专注检定（当施法者受到伤害时）
+// ConcentrationCheck 进行专注检定（当施法者受到伤害时触发）
+// 检定DC为 max(10, 伤害值/2)，使用体质豁免。检定失败则专注结束
+// 参数:
+//
+//	ctx - 上下文
+//	req - 专注检定请求，包含游戏ID、施法者ID和受到的伤害值
+//
+// 返回:
+//
+//	*ConcentrationResult - 检定结果，包含成功与否、掷骰详情和专注法术名称
+//	error - 错误信息（如角色未专注、不是施法者等）
 func (e *Engine) ConcentrationCheck(ctx context.Context, req ConcentrationCheckRequest) (*ConcentrationResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -545,6 +593,15 @@ func (e *Engine) ConcentrationCheck(ctx context.Context, req ConcentrationCheckR
 }
 
 // EndConcentration 主动结束专注
+// 施法者可以主动终止当前正在专注的法术效果
+// 参数:
+//
+//	ctx - 上下文
+//	req - 结束专注请求，包含游戏ID和施法者ID
+//
+// 返回:
+//
+//	error - 错误信息（如角色未专注、不是施法者等）
 func (e *Engine) EndConcentration(ctx context.Context, req EndConcentrationRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -688,7 +745,17 @@ type CastSpellRitualRequest struct {
 	SpellID  string   `json:"spell_id"`
 }
 
-// CastSpellRitual 仪式施法（不消耗法术位，但需要额外 10 分钟施法时间）
+// CastSpellRitual 仪式施法（不消耗法术位，但需要额外10分钟施法时间）
+// 只有具有仪式施法能力的准备型施法者才能使用，法术必须带有仪式标签
+// 参数:
+//
+//	ctx - 上下文
+//	req - 仪式施法请求，包含游戏ID、施法者ID和法术ID
+//
+// 返回:
+//
+//	*SpellResult - 施法结果，包含法术名称和施法消息
+//	error - 错误信息（如施法者不支持仪式施法、法术没有仪式标签等）
 func (e *Engine) CastSpellRitual(ctx context.Context, req CastSpellRitualRequest) (*SpellResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -764,15 +831,32 @@ type RestorePactMagicSlotsRequest struct {
 	CasterID model.ID `json:"caster_id"`
 }
 
-// GetPactMagicSlots 获取魔契师 Pact Magic 法术位
-// Note: Pact Magic 使用标准法术位系统，此方法返回所有可用的法术位
+// GetPactMagicSlots 获取魔契师（Warlock）Pact Magic 法术位
+// Pact Magic 使用标准法术位系统，此方法返回所有可用的法术位
+// 参数:
+//
+//	ctx - 上下文
+//	req - 获取法术位请求，包含游戏ID和施法者ID
+//
+// 返回:
+//
+//	*GetSpellSlotsResult - 法术位信息，包含各环级法术位状态和施法属性
+//	error - 错误信息（如游戏不存在、角色不是施法者等）
 func (e *Engine) GetPactMagicSlots(ctx context.Context, req GetPactMagicSlotsRequest) (*GetSpellSlotsResult, error) {
 	// 使用标准 GetSpellSlots 方法
 	return e.GetSpellSlots(ctx, GetSpellSlotsRequest(req))
 }
 
-// RestorePactMagicSlots 恢复魔契师法术位（短休即可恢复）
-// Note: Pact Magic 恢复需要短休，这个方法应该在 ShortRest 后调用
+// RestorePactMagicSlots 恢复魔契师（Warlock）法术位
+// Pact Magic 法术位在短休后即可全部恢复，此方法应在短休后调用
+// 参数:
+//
+//	ctx - 上下文
+//	req - 恢复法术位请求，包含游戏ID和施法者ID
+//
+// 返回:
+//
+//	error - 错误信息（如游戏不存在、角色不是施法者等）
 func (e *Engine) RestorePactMagicSlots(ctx context.Context, req RestorePactMagicSlotsRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -828,6 +912,16 @@ type IsConcentratingResult struct {
 }
 
 // IsConcentrating 检查施法者是否正在专注
+// 返回专注状态及当前专注的法术名称（如有）
+// 参数:
+//
+//	ctx - 上下文
+//	req - 检查专注请求，包含游戏ID和施法者ID
+//
+// 返回:
+//
+//	*IsConcentratingResult - 专注状态结果，包含是否专注和法术名称
+//	error - 错误信息（如游戏不存在、角色不是玩家角色等）
 func (e *Engine) IsConcentrating(ctx context.Context, req IsConcentratingRequest) (*IsConcentratingResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -870,7 +964,16 @@ type GetConcentrationSpellRequest struct {
 	CasterID model.ID `json:"caster_id"`
 }
 
-// GetConcentrationSpell 获取当前专注的法术
+// GetConcentrationSpell 获取施法者当前正在专注的法术详情
+// 参数:
+//
+//	ctx - 上下文
+//	req - 获取专注法术请求，包含游戏ID和施法者ID
+//
+// 返回:
+//
+//	*SpellResult - 专注的法术信息，包含法术名称和专注标记
+//	error - 错误信息（如角色未专注、法术定义不存在等）
 func (e *Engine) GetConcentrationSpell(ctx context.Context, req GetConcentrationSpellRequest) (*SpellResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

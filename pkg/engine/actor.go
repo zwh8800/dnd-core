@@ -290,7 +290,17 @@ type EndLongRestRequest struct {
 	GameID model.ID `json:"game_id"` // 游戏会话ID
 }
 
-// CreatePC 创建一个新的玩家角色
+// CreatePC 创建一个新的玩家角色（Player Character）
+// 根据提供的角色配置创建PC，包括种族、职业、背景、属性等，并自动计算HP、AC等派生值。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 创建请求，包含游戏会话ID和玩家角色配置
+//
+// 返回:
+//
+//	*CreatePCResult - 包含创建的角色信息
+//	error - 可能返回 ErrNotFound（游戏不存在）、权限错误或职业无效等错误
 func (e *Engine) CreatePC(ctx context.Context, req CreatePCRequest) (*CreatePCResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -398,7 +408,17 @@ func (e *Engine) CreatePC(ctx context.Context, req CreatePCRequest) (*CreatePCRe
 	}, nil
 }
 
-// CreateNPC 创建一个新的非玩家角色
+// CreateNPC 创建一个新的非玩家角色（NPC）
+// 用于创建中立的NPC，如商人、村民、任务发布者等。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 创建请求，包含游戏会话ID和NPC配置
+//
+// 返回:
+//
+//	*CreateNPCResult - 包含创建的角色信息
+//	error - 可能返回游戏不存在或权限错误
 func (e *Engine) CreateNPC(ctx context.Context, req CreateNPCRequest) (*CreateNPCResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -443,7 +463,17 @@ func (e *Engine) CreateNPC(ctx context.Context, req CreateNPCRequest) (*CreateNP
 	}, nil
 }
 
-// CreateEnemy 创建一个新的敌人/怪物
+// CreateEnemy 创建一个新的敌人/怪物（Enemy）
+// 用于创建战斗中的敌对角色，包含挑战等级、生命值、护甲等级等战斗属性。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 创建请求，包含游戏会话ID和敌人配置（名称、描述、体型、速度、属性值、挑战等级、生命值、护甲等级）
+//
+// 返回:
+//
+//	*CreateEnemyResult - 包含创建的敌人角色信息
+//	error - 可能返回游戏不存在或权限错误
 func (e *Engine) CreateEnemy(ctx context.Context, req CreateEnemyRequest) (*CreateEnemyResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -486,7 +516,17 @@ func (e *Engine) CreateEnemy(ctx context.Context, req CreateEnemyRequest) (*Crea
 	}, nil
 }
 
-// CreateCompanion 创建一个同伴角色
+// CreateCompanion 创建一个同伴角色（Companion）
+// 用于创建跟随玩家的同伴，如动物伙伴、构装体或追随者等。同伴归属于指定的领导者。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 创建请求，包含游戏会话ID和同伴配置（名称、描述、体型、速度、属性值、领导者ID）
+//
+// 返回:
+//
+//	*CreateCompanionResult - 包含创建的同伴角色信息
+//	error - 可能返回游戏不存在或权限错误
 func (e *Engine) CreateCompanion(ctx context.Context, req CreateCompanionRequest) (*CreateCompanionResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -530,7 +570,17 @@ func (e *Engine) CreateCompanion(ctx context.Context, req CreateCompanionRequest
 	}, nil
 }
 
-// GetActor 获取任意类型的角色信息
+// GetActor 获取任意类型角色的基本信息
+// 根据角色ID查找并返回角色的基本信息，支持PC、NPC、Enemy、Companion所有类型。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 获取请求，包含游戏会话ID和要查询的角色ID
+//
+// 返回:
+//
+//	*GetActorResult - 包含角色的基本信息（ID、类型、名称、HP、AC、速度、状态效果等）
+//	error - 可能返回 ErrNotFound（角色不存在）、游戏不存在或权限错误
 func (e *Engine) GetActor(ctx context.Context, req GetActorRequest) (*GetActorResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -567,6 +617,16 @@ func (e *Engine) GetActor(ctx context.Context, req GetActorRequest) (*GetActorRe
 }
 
 // GetPC 获取玩家角色的完整数据
+// 返回玩家角色的详细信息，包括职业、等级、经验值、属性值、熟练加值、种族特性等完整数据。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 获取请求，包含游戏会话ID和玩家角色ID
+//
+// 返回:
+//
+//	*GetPCResult - 包含玩家角色的完整信息（职业、等级、经验、属性、特性等）
+//	error - 可能返回 ErrNotFound（角色不存在）或游戏不存在错误
 func (e *Engine) GetPC(ctx context.Context, req GetPCRequest) (*GetPCResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -587,6 +647,15 @@ func (e *Engine) GetPC(ctx context.Context, req GetPCRequest) (*GetPCResult, err
 }
 
 // UpdateActor 更新角色的部分状态
+// 用于更新角色的属性值、生命值、状态效果、位置、所在场景等信息。支持所有类型的角色。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 更新请求，包含游戏会话ID、角色ID和更新内容（属性值、HP、状态效果、位置、场景ID、自定义字段）
+//
+// 返回:
+//
+//	error - 可能返回 ErrNotFound（角色不存在）、游戏不存在或权限错误
 func (e *Engine) UpdateActor(ctx context.Context, req UpdateActorRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -665,6 +734,15 @@ func (e *Engine) UpdateActor(ctx context.Context, req UpdateActorRequest) error 
 }
 
 // RemoveActor 从游戏中移除一个角色
+// 将指定角色从游戏会话中删除。如果角色当前处于战斗状态且未被击败，则不允许移除。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 移除请求，包含游戏会话ID和要移除的角色ID
+//
+// 返回:
+//
+//	error - 可能返回 ErrNotFound（角色不存在）、ErrInvalidState（战斗中未击败的角色无法移除）、游戏不存在或权限错误
 func (e *Engine) RemoveActor(ctx context.Context, req RemoveActorRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -697,7 +775,17 @@ func (e *Engine) RemoveActor(ctx context.Context, req RemoveActorRequest) error 
 	return nil
 }
 
-// ListActors 列出游戏中的角色，可按条件过滤
+// ListActors 列出游戏中的所有角色，支持按条件过滤
+// 返回游戏会话中所有角色的基本信息，可按角色类型、所在场景、存活状态进行过滤。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 列表请求，包含游戏会话ID和可选的过滤条件（角色类型、场景ID、存活状态）
+//
+// 返回:
+//
+//	*ListActorsResult - 包含符合条件的角色列表
+//	error - 可能返回游戏不存在错误
 func (e *Engine) ListActors(ctx context.Context, req ListActorsRequest) (*ListActorsResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -753,6 +841,16 @@ func (e *Engine) ListActors(ctx context.Context, req ListActorsRequest) (*ListAc
 }
 
 // AddExperience 为玩家角色添加经验值
+// 向指定的玩家角色添加经验值，并自动检查是否达到升级条件。如果经验值足够则自动升级。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 添加经验值请求，包含游戏会话ID、玩家角色ID和要添加的经验值数量
+//
+// 返回:
+//
+//	*AddExperienceResult - 包含是否升级、原等级和新等级信息
+//	error - 可能返回 ErrNotFound（角色不存在）、游戏不存在或权限错误
 func (e *Engine) AddExperience(ctx context.Context, req AddExperienceRequest) (*AddExperienceResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -793,6 +891,16 @@ func (e *Engine) AddExperience(ctx context.Context, req AddExperienceRequest) (*
 }
 
 // LevelUp 手动触发玩家角色升级
+// 在经验值足够的的情况下，手动将玩家角色提升一级。会计算HP增长、更新熟练加值、检查法术位更新等。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 升级请求，包含游戏会话ID、玩家角色ID和升级时选择的职业（为空则默认第一个职业）
+//
+// 返回:
+//
+//	*LevelUpResult - 包含升级详情（原等级、新等级、HP增长、新特性、熟练加值变化等）
+//	error - 可能返回 ErrNotFound（角色不存在）、经验值不足、游戏不存在或权限错误
 func (e *Engine) LevelUp(ctx context.Context, req LevelUpRequest) (*LevelUpResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -871,6 +979,16 @@ func (e *Engine) LevelUp(ctx context.Context, req LevelUpRequest) (*LevelUpResul
 }
 
 // ShortRest 为指定角色执行短休
+// 短休允许角色使用生命骰恢复HP。PC角色可以掷一个生命骰并加上体质修正值来恢复生命值。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 短休请求，包含游戏会话ID和参与短休的角色ID列表
+//
+// 返回:
+//
+//	*RestResult - 包含各角色的休息结果（恢复的HP、使用的生命骰等）
+//	error - 可能返回游戏不存在、权限错误或某个角色处理失败错误
 func (e *Engine) ShortRest(ctx context.Context, req ShortRestRequest) (*RestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -905,6 +1023,16 @@ func (e *Engine) ShortRest(ctx context.Context, req ShortRestRequest) (*RestResu
 }
 
 // StartLongRest 开始长休过程
+// 创建长休状态并切换到休息阶段。长休需要8小时才能完成，完成后需调用 EndLongRest 应用恢复效果。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 开始长休请求，包含游戏会话ID和参与长休的角色ID列表
+//
+// 返回:
+//
+//	*RestResult - 包含长休开始的消息
+//	error - 可能返回游戏不存在或权限错误
 func (e *Engine) StartLongRest(ctx context.Context, req StartLongRestRequest) (*RestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -936,6 +1064,16 @@ func (e *Engine) StartLongRest(ctx context.Context, req StartLongRestRequest) (*
 }
 
 // EndLongRest 结束长休并应用恢复效果
+// 完成长休过程，为所有参与角色恢复全部HP、恢复法术位、恢复部分生命骰、减少力竭等级，并移除中毒、恐惧、魅惑等状态效果。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 结束长休请求，包含游戏会话ID
+//
+// 返回:
+//
+//	*RestResult - 包含各角色的恢复结果（恢复的HP、恢复的法术位、移除的状态效果等）
+//	error - 可能返回 ErrInvalidState（没有活跃的长休）、游戏不存在或权限错误
 func (e *Engine) EndLongRest(ctx context.Context, req EndLongRestRequest) (*RestResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

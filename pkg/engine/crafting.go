@@ -51,7 +51,17 @@ type CompleteCraftingResult struct {
 	Message string `json:"message"`
 }
 
-// StartCrafting 开始制作
+// StartCrafting 开始制作物品
+// 验证角色等级、工具熟练度、法术能力和金币后，创建制作进度并扣除材料费用。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 开始制作请求，包含游戏ID、角色ID和配方ID
+//
+// 返回:
+//
+//	*StartCraftingResult - 开始结果，包含制作进度和提示信息
+//	error - 错误信息，如角色不存在、等级不足、缺少熟练或金币不足等
 func (e *Engine) StartCrafting(ctx context.Context, req StartCraftingRequest) (*StartCraftingResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -173,6 +183,16 @@ func (e *Engine) StartCrafting(ctx context.Context, req StartCraftingRequest) (*
 }
 
 // AdvanceCrafting 推进制作进度
+// 增加角色的制作工作天数，并检查是否完成制作。自动找到第一个未完成的制作项目。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 推进制作请求，包含游戏ID、角色ID和推进天数
+//
+// 返回:
+//
+//	*AdvanceCraftingResult - 推进结果，包含最新进度、完成状态和提示信息
+//	error - 错误信息，如角色不存在或没有正在进行的制作
 func (e *Engine) AdvanceCrafting(ctx context.Context, req AdvanceCraftingRequest) (*AdvanceCraftingResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -238,7 +258,17 @@ func (e *Engine) AdvanceCrafting(ctx context.Context, req AdvanceCraftingRequest
 	return result, nil
 }
 
-// CompleteCrafting 完成制作
+// CompleteCrafting 完成制作并获取物品
+// 验证制作进度是否完成，根据配方创建对应物品并添加到角色库存中，然后移除制作进度。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 完成制作请求，包含游戏ID、角色ID和配方ID
+//
+// 返回:
+//
+//	*CompleteCraftingResult - 完成结果，包含成功状态、物品ID和提示信息
+//	error - 错误信息，如角色不存在、制作进度不存在或制作尚未完成
 func (e *Engine) CompleteCrafting(ctx context.Context, req CompleteCraftingRequest) (*CompleteCraftingResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()

@@ -135,6 +135,17 @@ type GetCombatSummaryRequest struct {
 }
 
 // GetStateSummary 获取LLM友好的游戏状态摘要
+// 返回当前游戏会话的完整状态概览，包括游戏名称、当前阶段、场景信息、
+// 队伍成员、活跃战斗状态、进行中的任务以及游戏内时间。
+// 参数:
+//
+//	ctx - 上下文
+//	gameID - 游戏会话ID
+//
+// 返回:
+//
+//	*StateSummary - 包含游戏状态的完整摘要信息
+//	error - 游戏加载失败时返回错误
 func (e *Engine) GetStateSummary(ctx context.Context, gameID model.ID) (*StateSummary, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -192,6 +203,19 @@ func (e *Engine) GetStateSummary(ctx context.Context, gameID model.ID) (*StateSu
 }
 
 // GetActorSheet 获取角色的完整角色卡
+// 返回指定角色的详细属性信息，包括六项属性值、技能修正值、豁免检定、
+// 战斗数据（生命值、护甲等级、速度等）、法术信息（PC角色）以及状态效果。
+// 支持PC、NPC、怪物和同伴四种角色类型。
+// 参数:
+//
+//	ctx - 上下文
+//	gameID - 游戏会话ID
+//	actorID - 角色ID
+//
+// 返回:
+//
+//	*ActorSheet - 包含角色完整属性信息的角色卡
+//	error - 游戏加载失败或角色不存在时返回错误
 func (e *Engine) GetActorSheet(ctx context.Context, gameID model.ID, actorID model.ID) (*ActorSheet, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

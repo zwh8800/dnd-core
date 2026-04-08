@@ -125,8 +125,18 @@ func (e *Engine) saveGame(ctx context.Context, game *model.GameState) error {
 	return nil
 }
 
-// NewTestEngine creates an engine instance for testing
-// Uses a fixed seed to ensure reproducible tests
+// NewTestEngine 创建用于测试的引擎实例
+// 使用固定骰子种子（42）确保测试结果可重复。自动注册清理函数，
+// 在测试结束时自动关闭引擎。
+// 参数:
+//
+//	t - 测试对象，用于报告错误和注册清理函数
+//
+// 返回:
+//
+//	*Engine - 配置为测试环境的引擎实例
+//
+// 使用场景: 仅在单元测试中使用，确保测试的确定性和资源自动清理
 func NewTestEngine(t *testing.T) *Engine {
 	cfg := DefaultConfig()
 	cfg.DiceSeed = 42

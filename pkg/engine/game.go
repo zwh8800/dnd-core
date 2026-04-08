@@ -96,6 +96,16 @@ func gameStateToInfo(game *model.GameState) *GameInfo {
 }
 
 // NewGame 创建一个新的游戏会话
+// 在内存中初始化 GameState 对象，并持久化到存储后端。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求生命周期和取消操作
+//	req - 创建游戏请求，包含游戏名称和描述
+//
+// 返回:
+//
+//	*NewGameResult - 包含新创建游戏的信息摘要
+//	error - 创建失败时返回错误（如存储写入失败）
 func (e *Engine) NewGame(ctx context.Context, req NewGameRequest) (*NewGameResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -112,6 +122,16 @@ func (e *Engine) NewGame(ctx context.Context, req NewGameRequest) (*NewGameResul
 }
 
 // LoadGame 从存储加载一个已存在的游戏会话
+// 根据游戏ID从存储后端读取游戏状态，并返回游戏信息摘要。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求生命周期和取消操作
+//	req - 加载游戏请求，包含要加载的游戏ID
+//
+// 返回:
+//
+//	*LoadGameResult - 包含加载的游戏信息摘要
+//	error - 加载失败时返回错误（如游戏不存在或存储读取失败）
 func (e *Engine) LoadGame(ctx context.Context, req LoadGameRequest) (*LoadGameResult, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -127,6 +147,15 @@ func (e *Engine) LoadGame(ctx context.Context, req LoadGameRequest) (*LoadGameRe
 }
 
 // SaveGame 将当前游戏状态持久化到存储后端
+// 加载指定游戏状态，更新最后修改时间，并保存到存储。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求生命周期和取消操作
+//	req - 保存游戏请求，包含要保存的游戏ID
+//
+// 返回:
+//
+//	error - 保存失败时返回错误（如游戏不存在或存储写入失败）
 func (e *Engine) SaveGame(ctx context.Context, req SaveGameRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -141,6 +170,15 @@ func (e *Engine) SaveGame(ctx context.Context, req SaveGameRequest) error {
 }
 
 // DeleteGame 从存储中删除一个游戏会话
+// 永久删除指定游戏及其所有关联数据。如果游戏不存在，返回 ErrNotFound。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求生命周期和取消操作
+//	req - 删除游戏请求，包含要删除的游戏ID
+//
+// 返回:
+//
+//	error - 删除失败时返回错误（如游戏不存在或存储删除失败）
 func (e *Engine) DeleteGame(ctx context.Context, req DeleteGameRequest) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()

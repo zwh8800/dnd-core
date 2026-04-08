@@ -741,7 +741,17 @@ func (e *Engine) ExecuteAction(ctx context.Context, req ExecuteActionRequest) (*
 }
 
 // ExecuteAttack 执行攻击动作
-// 对目标执行一次攻击，包括攻击掷骰和可能的伤害应用
+// 对目标执行一次完整的攻击，包括攻击掷骰（支持优势/劣势）、命中判定、伤害计算、
+// 暴击/大失败判定、武器掌控效果应用，以及未命中时的擦伤处理
+// 参数:
+//
+//	ctx - 上下文
+//	req - 攻击请求，包含游戏会话ID、攻击者ID、目标ID和攻击输入（武器、优劣势、额外伤害等）
+//
+// 返回:
+//
+//	*ExecuteAttackResult - 攻击结果，包含攻击掷骰详情、命中状态、伤害结果、武器掌控效果和当前战斗状态
+//	error - 战斗未激活、角色不存在或保存失败时返回错误
 func (e *Engine) ExecuteAttack(ctx context.Context, req ExecuteAttackRequest) (*ExecuteAttackResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -874,7 +884,17 @@ func (e *Engine) ExecuteAttack(ctx context.Context, req ExecuteAttackRequest) (*
 }
 
 // ExecuteDamage 直接对角色施加伤害
-// 用于处理非攻击来源的伤害（如陷阱、环境、法术等）
+// 用于处理非攻击来源的伤害（如陷阱、环境伤害、法术伤害等），
+// 自动处理伤害抗性、易伤、临时HP扣除、专注检定和死亡判定
+// 参数:
+//
+//	ctx - 上下文
+//	req - 伤害请求，包含游戏会话ID、目标ID和伤害输入（伤害量、类型、来源等）
+//
+// 返回:
+//
+//	*ExecuteDamageResult - 伤害结果，包含原始伤害、抗性/易伤应用、最终伤害、目标HP变化和死亡豁免状态
+//	error - 角色不存在、伤害计算失败或保存失败时返回错误
 func (e *Engine) ExecuteDamage(ctx context.Context, req ExecuteDamageRequest) (*ExecuteDamageResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -904,7 +924,17 @@ func (e *Engine) ExecuteDamage(ctx context.Context, req ExecuteDamageRequest) (*
 }
 
 // ExecuteHealing 对角色进行治疗
-// 为目标角色恢复生命值
+// 为目标角色恢复生命值，治疗量不会超过角色最大HP。
+// 如果角色处于稳定状态（Stabilized）且治疗后HP大于0，则自动移除稳定状态
+// 参数:
+//
+//	ctx - 上下文
+//	req - 治疗请求，包含游戏会话ID、目标ID和治疗量
+//
+// 返回:
+//
+//	*ExecuteHealingResult - 治疗结果，包含目标ID、实际治疗量、治疗后当前HP和消息
+//	error - 角色不存在或保存失败时返回错误
 func (e *Engine) ExecuteHealing(ctx context.Context, req ExecuteHealingRequest) (*ExecuteHealingResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
