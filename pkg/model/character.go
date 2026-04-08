@@ -104,6 +104,9 @@ type NPC struct {
 	KnownInfo   []string `json:"known_info"`  // 知道的信息
 	QuestGiver  bool     `json:"quest_giver"` // 是否能给予任务
 	Merchant    bool     `json:"merchant"`    // 是否是商人
+
+	// 社交互动状态
+	SocialState *SocialInteractionState `json:"social_state,omitempty"`
 }
 
 // Enemy 代表敌人/怪物

@@ -60,6 +60,12 @@ type GameState struct {
 	// 休息
 	ActiveRest *RestState `json:"active_rest,omitempty"`
 
+	// 旅行
+	CurrentTravel *TravelState `json:"current_travel,omitempty"`
+
+	// 生活方式
+	Lifestyle *LifestyleState `json:"lifestyle,omitempty"`
+
 	// 游戏时间
 	GameTime GameTime `json:"game_time"`
 }
