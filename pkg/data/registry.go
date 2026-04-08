@@ -37,6 +37,12 @@ type DataRegistry struct {
 
 	// 魔法物品数据
 	magicItems map[string]*model.Item
+
+	// 冒险装备数据
+	gears map[string]*model.Item
+
+	// 工具数据
+	tools map[string]*model.Item
 }
 
 // GlobalRegistry 全局数据注册中心实例
@@ -54,6 +60,8 @@ func NewDataRegistry() *DataRegistry {
 		weapons:     make(map[string]*model.Item),
 		armors:      make(map[string]*model.Item),
 		magicItems:  make(map[string]*model.Item),
+		gears:       make(map[string]*model.Item),
+		tools:       make(map[string]*model.Item),
 	}
 }
 
@@ -334,4 +342,66 @@ func (r *DataRegistry) ListMagicItems() []*model.Item {
 		items = append(items, item)
 	}
 	return items
+}
+
+// RegisterGear 注册冒险装备数据
+func (r *DataRegistry) RegisterGear(gear *model.Item) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.gears[gear.ID.String()]; exists {
+		return fmt.Errorf("gear already registered: %s", gear.ID)
+	}
+	r.gears[gear.ID.String()] = gear
+	return nil
+}
+
+// GetGear 获取冒险装备数据
+func (r *DataRegistry) GetGear(id string) (*model.Item, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	gear, exists := r.gears[id]
+	return gear, exists
+}
+
+// ListGears 列出所有冒险装备
+func (r *DataRegistry) ListGears() []*model.Item {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	gears := make([]*model.Item, 0, len(r.gears))
+	for _, gear := range r.gears {
+		gears = append(gears, gear)
+	}
+	return gears
+}
+
+// RegisterTool 注册工具数据
+func (r *DataRegistry) RegisterTool(tool *model.Item) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.tools[tool.ID.String()]; exists {
+		return fmt.Errorf("tool already registered: %s", tool.ID)
+	}
+	r.tools[tool.ID.String()] = tool
+	return nil
+}
+
+// GetTool 获取工具数据
+func (r *DataRegistry) GetTool(id string) (*model.Item, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	tool, exists := r.tools[id]
+	return tool, exists
+}
+
+// ListTools 列出所有工具
+func (r *DataRegistry) ListTools() []*model.Item {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	tools := make([]*model.Item, 0, len(r.tools))
+	for _, tool := range r.tools {
+		tools = append(tools, tool)
+	}
+	return tools
 }

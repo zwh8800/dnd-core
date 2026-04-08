@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/zwh8800/dnd-core/pkg/data"
 	"github.com/zwh8800/dnd-core/pkg/model"
 	"github.com/zwh8800/dnd-core/pkg/rules"
 )
@@ -672,58 +673,238 @@ func parseDiceString(diceExpr string) int {
 }
 
 // findSpellDefinition 查找法术定义
-// 这是一个简化实现，实际应该从数据源加载
 func findSpellDefinition(spellID string) *model.Spell {
-	// TODO: 从法术数据库加载
-	// 这里返回一个模拟定义用于测试
-	spells := map[string]*model.Spell{
-		"fireball": {
-			ID:            "fireball",
-			Name:          "Fireball",
-			Level:         3,
-			School:        model.SpellSchoolEvocation,
-			CastTime:      model.SpellCastTime{Value: 1, Unit: "action"},
-			Range:         "150 feet",
-			Components:    []model.SpellComponent{model.SpellComponentVerbal, model.SpellComponentSomatic, model.SpellComponentMaterial},
-			Materials:     "a tiny ball of bat guano and sulfur",
-			Duration:      "instantaneous",
-			Concentration: false,
-			Description:   "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame.",
-			DamageDice:    "8d6",
-			DamageType:    model.DamageTypeFire,
-			SaveDC:        model.AbilityDexterity,
-			Classes:       []string{"Sorcerer", "Wizard"},
-		},
-		"magic_missile": {
-			ID:            "magic_missile",
-			Name:          "Magic Missile",
-			Level:         1,
-			School:        model.SpellSchoolEvocation,
-			CastTime:      model.SpellCastTime{Value: 1, Unit: "action"},
-			Range:         "120 feet",
-			Components:    []model.SpellComponent{model.SpellComponentVerbal, model.SpellComponentSomatic},
-			Duration:      "instantaneous",
-			Concentration: false,
-			Description:   "You create three glowing darts of magical force.",
-			DamageDice:    "3d4+3",
-			DamageType:    model.DamageTypeForce,
-			Classes:       []string{"Sorcerer", "Wizard"},
-		},
-		"cure_wounds": {
-			ID:            "cure_wounds",
-			Name:          "Cure Wounds",
-			Level:         1,
-			School:        model.SpellSchoolEvocation,
-			CastTime:      model.SpellCastTime{Value: 1, Unit: "action"},
-			Range:         "touch",
-			Components:    []model.SpellComponent{model.SpellComponentVerbal, model.SpellComponentSomatic},
-			Duration:      "instantaneous",
-			Concentration: false,
-			Description:   "A creature you touch regains a number of hit points.",
-			HealingDice:   "1d8",
-			Classes:       []string{"Bard", "Cleric", "Druid", "Paladin", "Ranger"},
-		},
+	// 从全局注册中心查找法术定义
+	if spell, ok := data.GlobalRegistry.GetSpell(spellID); ok {
+		return spell
+	}
+	return nil
+}
+
+// CastSpellRitualRequest 仪式施法请求
+type CastSpellRitualRequest struct {
+	GameID   model.ID `json:"game_id"`
+	CasterID model.ID `json:"caster_id"`
+	SpellID  string   `json:"spell_id"`
+}
+
+// CastSpellRitual 仪式施法（不消耗法术位，但需要额外 10 分钟施法时间）
+func (e *Engine) CastSpellRitual(ctx context.Context, req CastSpellRitualRequest) (*SpellResult, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	game, err := e.loadGame(ctx, req.GameID)
+	if err != nil {
+		return nil, err
 	}
 
-	return spells[spellID]
+	caster, ok := game.GetActor(req.CasterID)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		spellcaster = c.Spellcasting
+	default:
+		return nil, fmt.Errorf("only player characters can cast spells")
+	}
+
+	if spellcaster == nil {
+		return nil, fmt.Errorf("actor is not a spellcaster")
+	}
+
+	// 检查施法者是否支持仪式施法
+	if spellcaster.PreparationType != "prepared" {
+		return nil, fmt.Errorf("this caster cannot perform ritual casting")
+	}
+
+	// 查找法术定义
+	spellDef := findSpellDefinition(req.SpellID)
+	if spellDef == nil {
+		return nil, fmt.Errorf("spell %s not found", req.SpellID)
+	}
+
+	// 检查法术是否有仪式标签
+	if !spellDef.Ritual {
+		return nil, fmt.Errorf("spell %s does not have the ritual tag", spellDef.Name)
+	}
+
+	// 检查施法者是否知道/准备该法术
+	if !canCastSpell(spellcaster, req.SpellID) {
+		return nil, fmt.Errorf("caster does not know or have prepared spell: %s", spellDef.Name)
+	}
+
+	// 仪式施法不消耗法术位
+	result := &SpellResult{
+		SpellName:    spellDef.Name,
+		SlotLevel:    0, // 仪式施法不消耗法术位
+		CasterSaveDC: spellcaster.SpellSaveDC,
+		Targets:      make([]SpellTargetResult, 0),
+		Message:      fmt.Sprintf("通过仪式施法施展了 %s（不消耗法术位）", spellDef.Name),
+	}
+
+	if err := e.saveGame(ctx, game); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetPactMagicSlotsRequest 获取魔契师法术位请求
+type GetPactMagicSlotsRequest struct {
+	GameID   model.ID `json:"game_id"`
+	CasterID model.ID `json:"caster_id"`
+}
+
+// RestorePactMagicSlotsRequest 恢复魔契师法术位请求
+type RestorePactMagicSlotsRequest struct {
+	GameID   model.ID `json:"game_id"`
+	CasterID model.ID `json:"caster_id"`
+}
+
+// GetPactMagicSlots 获取魔契师 Pact Magic 法术位
+// Note: Pact Magic 使用标准法术位系统，此方法返回所有可用的法术位
+func (e *Engine) GetPactMagicSlots(ctx context.Context, req GetPactMagicSlotsRequest) (*GetSpellSlotsResult, error) {
+	// 使用标准 GetSpellSlots 方法
+	return e.GetSpellSlots(ctx, GetSpellSlotsRequest(req))
+}
+
+// RestorePactMagicSlots 恢复魔契师法术位（短休即可恢复）
+// Note: Pact Magic 恢复需要短休，这个方法应该在 ShortRest 后调用
+func (e *Engine) RestorePactMagicSlots(ctx context.Context, req RestorePactMagicSlotsRequest) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	game, err := e.loadGame(ctx, req.GameID)
+	if err != nil {
+		return err
+	}
+
+	caster, ok := game.GetActor(req.CasterID)
+	if !ok {
+		return ErrNotFound
+	}
+
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		spellcaster = c.Spellcasting
+	default:
+		return fmt.Errorf("only player characters can have spell slots")
+	}
+
+	if spellcaster == nil {
+		return fmt.Errorf("actor is not a spellcaster")
+	}
+
+	// 重置所有法术位（Pact Magic 短休后恢复）
+	if spellcaster.Slots != nil {
+		for level := 1; level <= 9; level++ {
+			if spellcaster.Slots.Slots[level][0] > 0 {
+				spellcaster.Slots.Slots[level][1] = 0
+			}
+		}
+	}
+
+	if err := e.saveGame(ctx, game); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// IsConcentratingRequest 检查是否正在专注
+type IsConcentratingRequest struct {
+	GameID   model.ID `json:"game_id"`
+	CasterID model.ID `json:"caster_id"`
+}
+
+// IsConcentratingResult 专注状态结果
+type IsConcentratingResult struct {
+	IsConcentrating bool   `json:"is_concentrating"`
+	SpellName       string `json:"spell_name,omitempty"`
+}
+
+// IsConcentrating 检查施法者是否正在专注
+func (e *Engine) IsConcentrating(ctx context.Context, req IsConcentratingRequest) (*IsConcentratingResult, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	game, err := e.loadGame(ctx, req.GameID)
+	if err != nil {
+		return nil, err
+	}
+
+	caster, ok := game.GetActor(req.CasterID)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		spellcaster = c.Spellcasting
+	default:
+		return nil, fmt.Errorf("only player characters can concentrate on spells")
+	}
+
+	if spellcaster == nil {
+		return &IsConcentratingResult{IsConcentrating: false}, nil
+	}
+
+	result := &IsConcentratingResult{
+		IsConcentrating: spellcaster.IsConcentrating(),
+	}
+	if result.IsConcentrating {
+		result.SpellName = spellcaster.ConcentrationSpell
+	}
+
+	return result, nil
+}
+
+// GetConcentrationSpellRequest 获取当前专注的法术
+type GetConcentrationSpellRequest struct {
+	GameID   model.ID `json:"game_id"`
+	CasterID model.ID `json:"caster_id"`
+}
+
+// GetConcentrationSpell 获取当前专注的法术
+func (e *Engine) GetConcentrationSpell(ctx context.Context, req GetConcentrationSpellRequest) (*SpellResult, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	game, err := e.loadGame(ctx, req.GameID)
+	if err != nil {
+		return nil, err
+	}
+
+	caster, ok := game.GetActor(req.CasterID)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	var spellcaster *model.SpellcasterState
+	switch c := caster.(type) {
+	case *model.PlayerCharacter:
+		spellcaster = c.Spellcasting
+	default:
+		return nil, fmt.Errorf("only player characters can concentrate on spells")
+	}
+
+	if spellcaster == nil || !spellcaster.IsConcentrating() {
+		return nil, fmt.Errorf("caster is not concentrating on any spell")
+	}
+
+	spellDef := findSpellDefinition(spellcaster.ConcentrationSpell)
+	if spellDef == nil {
+		return nil, fmt.Errorf("concentration spell %s not found", spellcaster.ConcentrationSpell)
+	}
+
+	return &SpellResult{
+		SpellName:     spellDef.Name,
+		Concentration: true,
+		Message:       fmt.Sprintf("当前专注的法术: %s", spellDef.Name),
+	}, nil
 }
