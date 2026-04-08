@@ -9,6 +9,9 @@ func init() {
 	for _, spell := range Spells {
 		GlobalRegistry.RegisterSpell(&spell.Spell)
 	}
+	for _, spell := range AdditionalSpells {
+		GlobalRegistry.RegisterSpell(&spell.Spell)
+	}
 }
 
 // Spells 核心法术数据库（50个法术）

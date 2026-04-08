@@ -9,6 +9,9 @@ func init() {
 	for _, item := range MagicItems {
 		GlobalRegistry.RegisterMagicItem(item)
 	}
+	for _, item := range AdditionalMagicItems {
+		GlobalRegistry.RegisterMagicItem(item)
+	}
 }
 
 // MagicItems 魔法物品数据库（30+ 魔法物品）

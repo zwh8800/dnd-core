@@ -2,6 +2,16 @@ package data
 
 import "github.com/zwh8800/dnd-core/pkg/model"
 
+// init 注册所有专长
+func init() {
+	for _, feat := range Feats {
+		GlobalRegistry.RegisterFeat(feat)
+	}
+	for _, feat := range AdditionalFeats {
+		GlobalRegistry.RegisterFeat(feat)
+	}
+}
+
 // Feats 包含 6 个 SRD 起源专长数据
 var Feats = []*model.FeatDefinition{
 	{
