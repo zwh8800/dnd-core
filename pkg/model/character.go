@@ -74,6 +74,10 @@ type PlayerCharacter struct {
 	// 专长系统
 	Feats []FeatInstance `json:"feats,omitempty"` // 角色已获得的专长
 
+	// 制作系统
+	CraftingProgress map[string]*CraftingProgress `json:"crafting_progress,omitempty"` // 制作进度
+	Gold             int                          `json:"gold"`                        // 金币数量（铜币单位）
+
 	// 职业特性系统
 	FeatureHooks map[ClassID]FeatureHook `json:"-"`                       // 运行时特性钩子(不序列化)
 	FighterState *FighterFeatures        `json:"fighter_state,omitempty"` // 战士特性状态

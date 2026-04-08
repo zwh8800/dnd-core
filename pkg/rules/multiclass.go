@@ -167,7 +167,7 @@ func ValidateLevelUpChoice(pc *model.PlayerCharacter, newClass model.ClassID) er
 // 辅助函数
 
 func getExtraAttacksForClass(classID model.ClassID, level int) int {
-	// 简化实现：战士在 5 级获得 1 次额外攻击，11 级 2 次，20 级 3 次
+	// 战士: 5级1次, 11级2次, 20级3次
 	if classID == model.ClassFighter {
 		if level >= 20 {
 			return 3
@@ -177,7 +177,28 @@ func getExtraAttacksForClass(classID model.ClassID, level int) int {
 			return 1
 		}
 	}
-	// 其他职业的 Extra Attack...
+
+	// 野蛮人: 5级1次额外攻击(通过额外攻击特性)
+	if classID == model.ClassBarbarian {
+		if level >= 5 {
+			return 1
+		}
+	}
+
+	// 游侠: 5级1次额外攻击
+	if classID == model.ClassRanger {
+		if level >= 5 {
+			return 1
+		}
+	}
+
+	// 武僧: 5级通过武术获得额外攻击
+	if classID == model.ClassMonk {
+		if level >= 5 {
+			return 1
+		}
+	}
+
 	return 0
 }
 

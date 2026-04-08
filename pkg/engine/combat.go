@@ -205,25 +205,34 @@ type EffectDetail struct {
 // AttackInput 攻击输入
 // 描述一次攻击的所有参数
 type AttackInput struct {
-	WeaponID    *model.ID          `json:"weapon_id,omitempty"`    // 武器ID（如果使用武器攻击）
-	SpellID     *string            `json:"spell_id,omitempty"`     // 法术ID（如果施法攻击）
-	IsUnarmed   bool               `json:"is_unarmed"`             // 是否徒手攻击
-	IsOffHand   bool               `json:"is_off_hand"`            // 是否为副手攻击
-	Advantage   model.RollModifier `json:"advantage"`              // 攻击掷骰的优劣势修正
-	ExtraDamage []DamageInput      `json:"extra_damage,omitempty"` // 额外伤害（如偷袭、爆发等）
+	WeaponID      *model.ID          `json:"weapon_id,omitempty"`    // 武器ID（如果使用武器攻击）
+	SpellID       *string            `json:"spell_id,omitempty"`     // 法术ID（如果施法攻击）
+	IsUnarmed     bool               `json:"is_unarmed"`             // 是否徒手攻击
+	IsOffHand     bool               `json:"is_off_hand"`            // 是否为副手攻击
+	WeaponMastery string             `json:"weapon_mastery"`         // 武器掌控类型
+	Advantage     model.RollModifier `json:"advantage"`              // 攻击掷骰的优劣势修正
+	ExtraDamage   []DamageInput      `json:"extra_damage,omitempty"` // 额外伤害（如偷袭、爆发等）
 }
 
 // AttackResult 攻击结果
 // 描述一次攻击的完整结果
 type AttackResult struct {
-	Roll        *model.DiceResult `json:"roll"`             // 攻击掷骰结果
-	AttackTotal int               `json:"attack_total"`     // 攻击总值
-	TargetAC    int               `json:"target_ac"`        // 目标护甲等级
-	Hit         bool              `json:"hit"`              // 是否命中
-	IsCritical  bool              `json:"is_critical"`      // 是否为重击（自然20）
-	IsFumble    bool              `json:"is_fumble"`        // 是否为大失败（自然1）
-	Damage      *DamageResult     `json:"damage,omitempty"` // 伤害结果（如果命中）
-	Message     string            `json:"message"`          // 人类可读消息
+	Roll        *model.DiceResult `json:"roll"`              // 攻击掷骰结果
+	AttackTotal int               `json:"attack_total"`      // 攻击总值
+	TargetAC    int               `json:"target_ac"`         // 目标护甲等级
+	Hit         bool              `json:"hit"`               // 是否命中
+	IsCritical  bool              `json:"is_critical"`       // 是否为重击（自然20）
+	IsFumble    bool              `json:"is_fumble"`         // 是否为大失败（自然1）
+	Damage      *DamageResult     `json:"damage,omitempty"`  // 伤害结果（如果命中）
+	Effects     []AttackEffect    `json:"effects,omitempty"` // 额外效果（如武器掌控）
+	GrazeDamage int               `json:"graze_damage"`      // 擦伤伤害（未命中时）
+	Message     string            `json:"message"`           // 人类可读消息
+}
+
+// AttackEffect 攻击额外效果
+type AttackEffect struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
 }
 
 // DamageInput 伤害输入
@@ -821,8 +830,36 @@ func (e *Engine) ExecuteAttack(ctx context.Context, req ExecuteAttackRequest) (*
 		}
 		attackResult.Damage = damageResult
 		attackResult.Message += fmt.Sprintf(" - 命中！造成 %d 点伤害", damageResult.FinalDamage)
+
+		// 应用武器掌控效果
+		if req.Attack.WeaponMastery != "" {
+			attackResult = e.applyWeaponMastery(attackResult, req.Attack.WeaponMastery, target)
+		}
 	} else {
 		attackResult.Message += " - 未命中"
+
+		// 未命中时应用擦伤效果
+		if req.Attack.WeaponMastery == string(model.MasteryGraze) {
+			// 擦伤：未命中时仍造成属性修正伤害
+			abilityMod := 0
+			if attacker, ok := game.GetActor(req.AttackerID); ok {
+				var actor *model.Actor
+				switch a := attacker.(type) {
+				case *model.PlayerCharacter:
+					actor = &a.Actor
+				case *model.Enemy:
+					actor = &a.Actor
+				default:
+					actor = &model.Actor{}
+				}
+				abilityMod = rules.AbilityModifier(actor.AbilityScores.Strength)
+			}
+			attackResult.GrazeDamage = abilityMod
+			attackResult.Message += fmt.Sprintf("，擦伤造成 %d 点伤害", abilityMod)
+
+			// 应用擦伤伤害
+			_, _ = e.applyDamageToTarget(game, req.AttackerID, req.TargetID, abilityMod, model.DamageTypeSlashing, false)
+		}
 	}
 
 	if err := e.saveGame(ctx, game); err != nil {
@@ -1057,36 +1094,57 @@ func (e *Engine) calculateAndApplyDamage(game *model.GameState, attackerID, targ
 		return nil, ErrNotFound
 	}
 
-	// 简化伤害计算：2d6+属性修正
-	roll, _ := e.roller.Roll("2d6")
-	strMod := 0
-	if attacker, ok := game.GetActor(attackerID); ok {
-		var attackerActor *model.Actor
-		switch a := attacker.(type) {
-		case *model.PlayerCharacter:
-			attackerActor = &a.Actor
-		case *model.NPC:
-			attackerActor = &a.Actor
-		case *model.Enemy:
-			attackerActor = &a.Actor
-		case *model.Companion:
-			attackerActor = &a.Actor
-		}
-		strMod = rules.AbilityModifier(attackerActor.AbilityScores.Strength)
+	// 获取攻击者信息
+	attacker, ok := game.GetActor(attackerID)
+	if !ok {
+		return nil, ErrNotFound
 	}
 
+	var attackerActor *model.Actor
+	var attackerPC *model.PlayerCharacter
+	switch a := attacker.(type) {
+	case *model.PlayerCharacter:
+		attackerActor = &a.Actor
+		attackerPC = a
+	case *model.NPC:
+		attackerActor = &a.Actor
+	case *model.Enemy:
+		attackerActor = &a.Actor
+	case *model.Companion:
+		attackerActor = &a.Actor
+	}
+
+	// 基础伤害掷骰
+	roll, _ := e.roller.Roll("2d6")
+	strMod := rules.AbilityModifier(attackerActor.AbilityScores.Strength)
 	baseDamage := roll.Total + strMod
+
+	// 应用职业特性伤害钩子
+	if attackerPC != nil && attackerPC.FeatureHooks != nil {
+		ctx := &model.DamageContext{
+			BaseDamage: roll.Total,
+			Bonus:      strMod,
+			DamageType: model.DamageTypeSlashing, // TODO: 从武器获取
+			IsMelee:    true,
+			IsRanged:   false,
+		}
+		for _, hook := range attackerPC.FeatureHooks {
+			hook.OnDamageCalc(ctx)
+		}
+		baseDamage = roll.Total + ctx.Bonus
+	}
+
 	if isCritical {
 		baseDamage *= 2 // 暴击伤害翻倍
 	}
 
-	// 创建伤害抗性（简化）
+	// 创建伤害抗性
 	resistances := model.NewDamageResistances()
 
 	// 计算最终伤害
 	calc := rules.CalculateDamage(baseDamage, 0, model.DamageTypeSlashing, resistances, isCritical)
 
-	// 应用伤害
+	// 应用伤害（包含专注检查）
 	result, err := e.applyDamageToTarget(game, attackerID, targetID, calc.FinalDamage, model.DamageTypeSlashing, false)
 	if err != nil {
 		return nil, err
@@ -1162,6 +1220,25 @@ func (e *Engine) applyDamageToTarget(game *model.GameState, sourceID, targetID m
 		Message:        fmt.Sprintf("造成 %d 点伤害", calc.FinalDamage),
 	}
 
+	// 专注检查：如果目标正在专注，受伤时需要进行专注检定
+	if pc != nil && pc.Spellcasting != nil && pc.Spellcasting.IsConcentrating() {
+		concResult, err := e.ConcentrationCheck(context.Background(), ConcentrationCheckRequest{
+			GameID:      game.ID,
+			CasterID:    pc.ID,
+			DamageTaken: calc.FinalDamage,
+		})
+		if err == nil && !concResult.Success {
+			// 专注失败，结束专注法术
+			_ = e.EndConcentration(context.Background(), EndConcentrationRequest{
+				GameID:   game.ID,
+				CasterID: pc.ID,
+			})
+			result.Message += "，专注被打断"
+		} else if err == nil {
+			result.Message += fmt.Sprintf("，专注检定成功 (DC %d)", concResult.DC)
+		}
+	}
+
 	// 检查是否死亡
 	if newHP <= 0 {
 		// PC需要死亡豁免
@@ -1193,6 +1270,69 @@ func (e *Engine) applyDamageToTarget(game *model.GameState, sourceID, targetID m
 	}
 
 	return result, nil
+}
+
+// applyWeaponMastery 应用武器掌控效果
+func (e *Engine) applyWeaponMastery(attackResult *AttackResult, masteryType string, target any) *AttackResult {
+	mastery := model.WeaponMasteryType(masteryType)
+	masteryEffect := model.GetMasteryEffect(mastery)
+
+	switch mastery {
+	case model.MasteryTopple:
+		// 击倒：目标进行STR或DEX豁免，失败则倒地
+		attackResult.Effects = append(attackResult.Effects, AttackEffect{
+			Type:        "topple",
+			Description: masteryEffect.Description,
+		})
+		// TODO: 实现豁免检定和倒地状态应用
+
+	case model.MasteryPush:
+		// 推击：将目标推离5尺
+		attackResult.Effects = append(attackResult.Effects, AttackEffect{
+			Type:        "push",
+			Description: masteryEffect.Description,
+		})
+		// TODO: 实现推离逻辑
+
+	case model.MasteryVex:
+		// 烦扰：对目标下次攻击有优势
+		attackResult.Effects = append(attackResult.Effects, AttackEffect{
+			Type:        "vex",
+			Description: masteryEffect.Description,
+		})
+		// TODO: 追踪 vex 状态
+
+	case model.MasterySlow:
+		// 减缓：目标速度降低10尺
+		attackResult.Effects = append(attackResult.Effects, AttackEffect{
+			Type:        "slow",
+			Description: masteryEffect.Description,
+		})
+		// TODO: 应用速度降低效果
+
+	case model.MasterySap:
+		// 钝击：目标下次攻击有劣势
+		attackResult.Effects = append(attackResult.Effects, AttackEffect{
+			Type:        "sap",
+			Description: masteryEffect.Description,
+		})
+		// TODO: 应用攻击劣势状态
+
+	case model.MasteryCleave:
+		// 劈砍：击杀后可攻击邻近生物
+		if attackResult.Damage != nil && attackResult.Damage.IsDead {
+			attackResult.Effects = append(attackResult.Effects, AttackEffect{
+				Type:        "cleave",
+				Description: masteryEffect.Description,
+			})
+		}
+
+	case model.MasteryNick:
+		// 轻捷：额外攻击可作为附赠动作
+		// 由战斗系统特殊处理，不添加效果标记
+	}
+
+	return attackResult
 }
 
 // calculateDistance 计算两点间距离（网格移动）

@@ -77,7 +77,20 @@ func handleDamageEffect(spellDef *model.SpellDefinition, effect model.SpellEffec
 
 	// 处理升环伤害
 	if spellDef.Level > 0 && effect.Damage.UpcastDicePerLevel != "" && effect.Damage.UpcastStartLevel > 0 {
-		// 简化的升环处理，实际应该根据法术位等级计算
+		// 计算升环增加的骰子数
+		// 例如火球术: 3环8d6, 每升一环增加1d6
+		// 如果 spellDef.Level 是当前施放环级
+		upcastLevels := spellDef.Level - effect.Damage.UpcastStartLevel
+		if upcastLevels > 0 {
+			// 解析基础骰子数量
+			baseDiceCount := parseDiceCount(damageDice)
+			// 每升一级增加的骰子数
+			upcastDiceCount := parseDiceCount(effect.Damage.UpcastDicePerLevel)
+			// 总骰子数 = 基础 + 升环增加
+			totalDiceCount := baseDiceCount + (upcastDiceCount * upcastLevels)
+			// 重新构建骰子表达式
+			damageDice = fmt.Sprintf("%dd6", totalDiceCount)
+		}
 	}
 
 	roller := dice.New(0)
@@ -316,6 +329,25 @@ func parseDice(diceExpr string) int {
 	roller := dice.New(0)
 	result, _ := roller.Roll(diceExpr)
 	return result.Total
+}
+
+// parseDiceCount 解析骰子表达式中的骰子数量 (如 "8d6" -> 8)
+func parseDiceCount(diceExpr string) int {
+	if diceExpr == "" {
+		return 0
+	}
+
+	parts := strings.Split(diceExpr, "d")
+	if len(parts) != 2 {
+		return 0
+	}
+
+	count, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0
+	}
+
+	return count
 }
 
 // getAbilityScore 获取演员的指定属性值

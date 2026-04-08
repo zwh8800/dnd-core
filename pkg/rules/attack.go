@@ -131,6 +131,12 @@ func CalcAttachBonus(attacker any, attackerStrength int) int {
 		attackBonus = ctx.BaseBonus + ctx.Bonus
 	}
 
+	// 应用专长加值
+	if pc != nil {
+		featBonuses := GetFeatBonuses(pc)
+		attackBonus += featBonuses.AttackBonus
+	}
+
 	return attackBonus
 }
 
