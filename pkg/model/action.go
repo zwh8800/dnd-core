@@ -15,6 +15,8 @@ const (
 	ActionReady     ActionType = "ready"      // 准备
 	ActionSearch    ActionType = "search"     // 搜索
 	ActionUseObject ActionType = "use_object" // 使用物品
+	ActionGrapple   ActionType = "grapple"    // 擒抱
+	ActionShove     ActionType = "shove"      // 推撞
 
 	// 特殊动作
 	ActionSecondWind      ActionType = "second_wind"      // 复苏之风（战士）

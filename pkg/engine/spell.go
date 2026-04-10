@@ -532,6 +532,10 @@ func (e *Engine) ConcentrationCheck(ctx context.Context, req ConcentrationCheckR
 		return nil, err
 	}
 
+	if err := e.checkPermission(game.Phase, OpConcentrationCheck); err != nil {
+		return nil, err
+	}
+
 	caster, ok := game.GetActor(req.CasterID)
 	if !ok {
 		return nil, ErrNotFound
@@ -539,10 +543,12 @@ func (e *Engine) ConcentrationCheck(ctx context.Context, req ConcentrationCheckR
 
 	var casterActor *model.Actor
 	var spellcaster *model.SpellcasterState
+	var casterLevel int
 	switch c := caster.(type) {
 	case *model.PlayerCharacter:
 		casterActor = &c.Actor
 		spellcaster = c.Spellcasting
+		casterLevel = c.TotalLevel
 	default:
 		return nil, fmt.Errorf("only player characters can concentrate on spells")
 	}
@@ -551,17 +557,20 @@ func (e *Engine) ConcentrationCheck(ctx context.Context, req ConcentrationCheckR
 		return nil, fmt.Errorf("caster is not concentrating on any spell")
 	}
 
-	// 专注检定DC = max(10, 伤害值/2)
-	dc := req.DamageTaken / 2
-	if dc < 10 {
-		dc = 10
-	}
+	// 使用 rules 包计算专注豁免DC
+	dc := rules.CalculateConcentrationDC(req.DamageTaken)
 
 	// 体质豁免掷骰
 	saveRoll, _ := e.roller.Roll("1d20")
 	conMod := rules.AbilityModifier(casterActor.AbilityScores.Constitution)
 
-	saveTotal := saveRoll.Total + conMod
+	// 计算加值（属性修正 + 熟练加值，如果熟练的话）
+	bonus := conMod
+	if casterActor.Proficiencies.IsSavingThrowProficient(model.AbilityConstitution) {
+		bonus += rules.ProficiencyBonus(casterLevel)
+	}
+
+	saveTotal := saveRoll.Total + bonus
 	success := saveTotal >= dc
 
 	currentSpell := spellcaster.ConcentrationSpell
@@ -574,9 +583,9 @@ func (e *Engine) ConcentrationCheck(ctx context.Context, req ConcentrationCheckR
 		DC:               dc,
 		Roll:             saveRoll,
 		RollTotal:        saveTotal,
-		ConstitutionSave: conMod,
+		ConstitutionSave: bonus,
 		SpellName:        currentSpell,
-		Message:          fmt.Sprintf("专注检定: %d vs DC %d", saveTotal, dc),
+		Message:          fmt.Sprintf("专注豁免: %d vs DC %d", saveTotal, dc),
 	}
 
 	if !success {

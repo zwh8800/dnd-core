@@ -299,6 +299,23 @@ type TurnInfo struct {
 	ReactionAvailable    bool     `json:"reaction_available"`     // 反应是否可用
 }
 
+// AttemptOpportunityAttackRequest 尝试机会攻击请求
+// 当敌对生物离开角色触及范围时，角色可以用反应进行机会攻击
+type AttemptOpportunityAttackRequest struct {
+	GameID     model.ID    `json:"game_id"`     // 游戏会话ID（必填）
+	AttackerID model.ID    `json:"attacker_id"` // 机会攻击者ID（必填）
+	TargetID   model.ID    `json:"target_id"`   // 目标ID（必填）
+	Attack     AttackInput `json:"attack"`      // 攻击输入（武器、优势等）
+}
+
+// AttemptOpportunityAttackResult 机会攻击结果
+// 描述机会攻击的完整结果
+type AttemptOpportunityAttackResult struct {
+	CanTake      bool          `json:"can_take"`      // 是否能进行机会攻击
+	AttackResult *AttackResult `json:"attack_result"` // 攻击结果（如果执行）
+	Message      string        `json:"message"`       // 人类可读消息
+}
+
 // ============================================================================
 // 战斗API
 // ============================================================================
@@ -722,6 +739,148 @@ func (e *Engine) ExecuteAction(ctx context.Context, req ExecuteActionRequest) (*
 
 	case model.ActionSearch:
 		result.Message = fmt.Sprintf("%s 进行搜索", baseActor.Name)
+		game.Combat.CurrentTurn.ActionUsed = true
+
+	case model.ActionGrapple:
+		// 擒抱动作：需要目标ID
+		targetID, _ := req.Action.Details["target_id"].(string)
+		if targetID == "" {
+			return nil, fmt.Errorf("擒抱动作需要指定目标ID")
+		}
+
+		target, ok := game.GetActor(model.ID(targetID))
+		if !ok {
+			return nil, ErrNotFound
+		}
+
+		var targetActor *model.Actor
+		switch a := target.(type) {
+		case *model.PlayerCharacter:
+			targetActor = &a.Actor
+		case *model.NPC:
+			targetActor = &a.Actor
+		case *model.Enemy:
+			targetActor = &a.Actor
+		case *model.Companion:
+			targetActor = &a.Actor
+		}
+
+		// 获取攻击者等级
+		actorLevel := 1
+		if pc, ok := actor.(*model.PlayerCharacter); ok {
+			actorLevel = pc.TotalLevel
+		}
+
+		// 验证体型
+		if ok, msg := rules.CanGrapple(baseActor.Size, targetActor.Size); !ok {
+			return nil, fmt.Errorf("无法擒抱: %s", msg)
+		}
+
+		// 执行擒抱检定
+		grappleResult := rules.PerformGrapple(
+			actorLevel,
+			baseActor.AbilityScores.Strength,
+			targetActor.AbilityScores.Strength,
+			targetActor.AbilityScores.Dexterity,
+		)
+
+		result.Message = fmt.Sprintf("%s 尝试擒抱 %s: %s", baseActor.Name, targetActor.Name, grappleResult.Message)
+
+		// 如果成功，添加擒抱状态
+		if grappleResult.Success {
+			targetActor.Conditions = append(targetActor.Conditions, model.ConditionInstance{
+				Type: model.ConditionGrappled,
+			})
+			result.Effects = append(result.Effects, EffectDetail{
+				Type:        "grappled",
+				Description: fmt.Sprintf("%s 被擒抱（逃脱DC: %d）", targetActor.Name, grappleResult.EscapeDC),
+			})
+		}
+
+		game.Combat.CurrentTurn.ActionUsed = true
+
+	case model.ActionShove:
+		// 推撞动作：需要目标ID和效果选择
+		targetID, _ := req.Action.Details["target_id"].(string)
+		if targetID == "" {
+			return nil, fmt.Errorf("推撞动作需要指定目标ID")
+		}
+
+		knockProne, _ := req.Action.Details["knock_prone"].(bool)
+
+		target, ok := game.GetActor(model.ID(targetID))
+		if !ok {
+			return nil, ErrNotFound
+		}
+
+		var targetActor *model.Actor
+		switch a := target.(type) {
+		case *model.PlayerCharacter:
+			targetActor = &a.Actor
+		case *model.NPC:
+			targetActor = &a.Actor
+		case *model.Enemy:
+			targetActor = &a.Actor
+		case *model.Companion:
+			targetActor = &a.Actor
+		}
+
+		// 获取攻击者等级
+		actorLevel := 1
+		if pc, ok := actor.(*model.PlayerCharacter); ok {
+			actorLevel = pc.TotalLevel
+		}
+
+		// 验证体型
+		if ok, msg := rules.CanShove(baseActor.Size, targetActor.Size); !ok {
+			return nil, fmt.Errorf("无法推撞: %s", msg)
+		}
+
+		// 执行推撞检定
+		shoveResult := rules.PerformShove(
+			actorLevel,
+			baseActor.AbilityScores.Strength,
+			targetActor.AbilityScores.Strength,
+			targetActor.AbilityScores.Dexterity,
+			knockProne,
+		)
+
+		result.Message = shoveResult.Message
+
+		// 如果成功，应用效果
+		if shoveResult.Success {
+			switch shoveResult.Effect {
+			case "knocked_prone":
+				targetActor.Conditions = append(targetActor.Conditions, model.ConditionInstance{
+					Type: model.ConditionProne,
+				})
+				result.Effects = append(result.Effects, EffectDetail{
+					Type:        "prone",
+					Description: fmt.Sprintf("%s 倒地", targetActor.Name),
+				})
+			case "pushed_away":
+				// 推开5尺
+				if targetActor.Position != nil && baseActor.Position != nil {
+					dx := targetActor.Position.X - baseActor.Position.X
+					dy := targetActor.Position.Y - baseActor.Position.Y
+					if dx > 0 {
+						targetActor.Position.X++
+					} else if dx < 0 {
+						targetActor.Position.X--
+					}
+					if dy > 0 {
+						targetActor.Position.Y++
+					} else if dy < 0 {
+						targetActor.Position.Y--
+					}
+				}
+				result.Effects = append(result.Effects, EffectDetail{
+					Type:        "pushed",
+					Description: fmt.Sprintf("%s 被推开5尺", targetActor.Name),
+				})
+			}
+		}
+
 		game.Combat.CurrentTurn.ActionUsed = true
 
 	default:
@@ -1422,4 +1581,156 @@ func combatStateToInfo(combat *model.CombatState) *CombatInfo {
 	}
 
 	return info
+}
+
+// ============================================================================
+// 机会攻击API
+// ============================================================================
+
+// AttemptOpportunityAttack 执行机会攻击
+// 当一个你能看到的敌对生物离开你的触及范围时，你可以用反应对其进行一次近战攻击。
+// 此方法会检查机会攻击条件，如果满足则执行攻击。
+// 参数:
+//
+//	ctx - 上下文
+//	req - 机会攻击请求，包含游戏ID、攻击者ID、目标ID和攻击输入
+//
+// 返回:
+//
+//	*AttemptOpportunityAttackResult - 机会攻击结果，包含是否能攻击和攻击结果
+//	error - 战斗未激活、角色不存在、反应已用或保存失败时返回错误
+func (e *Engine) AttemptOpportunityAttack(ctx context.Context, req AttemptOpportunityAttackRequest) (*AttemptOpportunityAttackResult, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	game, err := e.loadGame(ctx, req.GameID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := e.checkPermission(game.Phase, OpOpportunityAttack); err != nil {
+		return nil, err
+	}
+
+	// 获取攻击者
+	attacker, ok := game.GetActor(req.AttackerID)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	// 获取目标
+	target, ok := game.GetActor(req.TargetID)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	var attackerActor *model.Actor
+	var targetActor *model.Actor
+
+	switch a := attacker.(type) {
+	case *model.PlayerCharacter:
+		attackerActor = &a.Actor
+	case *model.NPC:
+		attackerActor = &a.Actor
+	case *model.Enemy:
+		attackerActor = &a.Actor
+	case *model.Companion:
+		attackerActor = &a.Actor
+	}
+
+	switch a := target.(type) {
+	case *model.PlayerCharacter:
+		targetActor = &a.Actor
+	case *model.NPC:
+		targetActor = &a.Actor
+	case *model.Enemy:
+		targetActor = &a.Actor
+	case *model.Companion:
+		targetActor = &a.Actor
+	}
+
+	// 检查是否能进行机会攻击
+	canTake, msg := rules.CanTakeOpportunityAttack(attacker, target, attackerActor, targetActor)
+	if !canTake {
+		return &AttemptOpportunityAttackResult{
+			CanTake: false,
+			Message: msg,
+		}, nil
+	}
+
+	// 检查攻击者是否失能
+	if attackerActor.IsIncapacitated() {
+		return &AttemptOpportunityAttackResult{
+			CanTake: false,
+			Message: "攻击者失能，无法进行机会攻击",
+		}, nil
+	}
+
+	// 执行攻击
+	attackResult := &AttackResult{
+		Hit:     false,
+		Effects: make([]AttackEffect, 0),
+	}
+
+	// 计算攻击加值
+	attackBonus := rules.CalcAttachBonus(attacker, attackerActor.AbilityScores.Strength)
+
+	// 掷攻击骰
+	rollResult, _ := e.roller.Roll("1d20")
+	rollValue := rollResult.Rolls[0].Value
+
+	// 执行攻击检定
+	attackCheck := rules.PerformAttackRoll(rollValue, attackBonus, targetActor.ArmorClass)
+
+	attackResult.Roll = rollResult
+	attackResult.AttackTotal = attackCheck.Total
+	attackResult.TargetAC = attackCheck.TargetAC
+	attackResult.Hit = attackCheck.Hit
+	attackResult.IsCritical = attackCheck.IsCritical
+	attackResult.IsFumble = attackCheck.IsFumble
+	attackResult.Message = fmt.Sprintf("机会攻击: 攻击掷骰 %d (总计 %d) vs AC %d", rollValue, attackCheck.Total, targetActor.ArmorClass)
+
+	// 如果命中，计算伤害
+	if attackCheck.Hit {
+		// 简化伤害计算（基础2d6+力量修正）
+		damageRoll, _ := e.roller.Roll("2d6")
+		strMod := rules.AbilityModifier(attackerActor.AbilityScores.Strength)
+		damage := damageRoll.Total + strMod
+
+		if attackCheck.IsCritical {
+			damage *= 2
+		}
+
+		// 应用伤害
+		resistances := model.NewDamageResistances()
+		calc := rules.CalculateDamage(damage, 0, model.DamageTypeSlashing, resistances, attackCheck.IsCritical)
+
+		// 扣除HP
+		hpBefore := targetActor.HitPoints.Current
+		newHP, newTempHP, _ := rules.ApplyDamage(hpBefore, targetActor.TempHitPoints, calc.FinalDamage)
+		targetActor.HitPoints.Current = newHP
+		targetActor.TempHitPoints = newTempHP
+
+		attackResult.Damage = &DamageResult{
+			RawDamage:      damage,
+			FinalDamage:    calc.FinalDamage,
+			TargetHPBefore: hpBefore,
+			TargetHPAfter:  newHP,
+			Message:        fmt.Sprintf("造成 %d 点伤害", calc.FinalDamage),
+		}
+
+		attackResult.Message += fmt.Sprintf(" - 命中！造成 %d 点伤害", calc.FinalDamage)
+	} else {
+		attackResult.Message += " - 未命中"
+	}
+
+	if err := e.saveGame(ctx, game); err != nil {
+		return nil, err
+	}
+
+	return &AttemptOpportunityAttackResult{
+		CanTake:      true,
+		AttackResult: attackResult,
+		Message:      fmt.Sprintf("%s 对 %s 发动机会攻击", attackerActor.Name, targetActor.Name),
+	}, nil
 }

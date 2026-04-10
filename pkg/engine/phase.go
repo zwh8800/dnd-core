@@ -28,13 +28,14 @@ const (
 	OpSavingThrow  Operation = "saving_throw"
 
 	// 战斗操作
-	OpStartCombat    Operation = "start_combat"
-	OpEndCombat      Operation = "end_combat"
-	OpNextTurn       Operation = "next_turn"
-	OpExecuteAction  Operation = "execute_action"
-	OpExecuteAttack  Operation = "execute_attack"
-	OpExecuteDamage  Operation = "execute_damage"
-	OpExecuteHealing Operation = "execute_healing"
+	OpStartCombat       Operation = "start_combat"
+	OpEndCombat         Operation = "end_combat"
+	OpNextTurn          Operation = "next_turn"
+	OpExecuteAction     Operation = "execute_action"
+	OpExecuteAttack     Operation = "execute_attack"
+	OpExecuteDamage     Operation = "execute_damage"
+	OpExecuteHealing    Operation = "execute_healing"
+	OpOpportunityAttack Operation = "opportunity_attack"
 
 	// 法术操作
 	OpCastSpell     Operation = "cast_spell"
@@ -71,6 +72,11 @@ const (
 	OpSelectFeat Operation = "select_feat"
 	OpRemoveFeat Operation = "remove_feat"
 	OpGetFeat    Operation = "get_feat"
+
+	// 专注与状态
+	OpConcentrationCheck Operation = "concentration_check"
+	OpPerformDeathSave   Operation = "perform_death_save"
+	OpStabilizeCreature  Operation = "stabilize_creature"
 
 	// 状态查询（所有阶段都允许）
 	OpGetStateSummary Operation = "get_state_summary"
@@ -122,7 +128,8 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpExecuteHealing: true,
 		OpLevelUp:        true,
 		OpSelectFeat:     true, OpRemoveFeat: true, OpGetFeat: true,
-		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
+		OpConcentrationCheck: true,
+		OpGetStateSummary:    true, OpGetActorSheet: true, OpGetPhase: true,
 	},
 	model.PhaseExploration: {
 		OpCreatePC: true, OpCreateNPC: true, OpCreateEnemy: true, OpCreateCompanion: true,
@@ -137,6 +144,8 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpShortRest: true, OpStartLongRest: true,
 		OpAddExperience: true,
 		OpSelectFeat:    true, OpGetFeat: true,
+		OpConcentrationCheck: true,
+		OpPerformDeathSave:   true, OpStabilizeCreature: true,
 		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
 	},
 	model.PhaseCombat: {
@@ -144,7 +153,10 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpRoll: true, OpAbilityCheck: true, OpSkillCheck: true, OpSavingThrow: true,
 		OpEndCombat: true, OpNextTurn: true, OpExecuteAction: true,
 		OpExecuteAttack: true, OpExecuteDamage: true, OpExecuteHealing: true,
-		OpCastSpell: true, OpGetSpellSlots: true,
+		OpOpportunityAttack: true,
+		OpCastSpell:         true, OpGetSpellSlots: true,
+		OpConcentrationCheck: true,
+		OpPerformDeathSave:   true, OpStabilizeCreature: true,
 		OpGetInventory:    true,
 		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
 	},
