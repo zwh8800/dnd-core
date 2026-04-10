@@ -1432,18 +1432,25 @@ func (e *Engine) applyDamageToTarget(game *model.GameState, sourceID, targetID m
 	if newHP <= 0 {
 		// PC需要死亡豁免
 		if pc != nil {
-			if amount >= targetActor.HitPoints.Maximum {
-				// 即死规则：伤害超过HP最大值，立即死亡
+			// 使用 rules.HandleDamageAtZeroHP 处理0HP伤害
+			newFails, isDead, deathMessage := rules.HandleDamageAtZeroHP(
+				calc.FinalDamage,
+				targetActor.HitPoints.Maximum,
+				pc.DeathSaveFailures,
+			)
+			pc.DeathSaveFailures = newFails
+			targetActor.HitPoints.Current = 0
+
+			if isDead {
 				result.IsDead = true
-				result.Message = "即死！伤害超过HP最大值"
+				result.Message = deathMessage
 			} else {
-				// 进入濒死状态
-				targetActor.HitPoints.Current = 0
 				result.IsDead = false
 				result.DeathSaves = &DeathSaveUpdate{
 					Successes: pc.DeathSaveSuccesses,
 					Failures:  pc.DeathSaveFailures,
 				}
+				result.Message += fmt.Sprintf("，%s", deathMessage)
 			}
 		} else {
 			// NPC/敌人直接死亡

@@ -78,6 +78,10 @@ const (
 	OpPerformDeathSave   Operation = "perform_death_save"
 	OpStabilizeCreature  Operation = "stabilize_creature"
 
+	// 力竭管理
+	OpApplyExhaustion  Operation = "apply_exhaustion"
+	OpRemoveExhaustion Operation = "remove_exhaustion"
+
 	// 状态查询（所有阶段都允许）
 	OpGetStateSummary Operation = "get_state_summary"
 	OpGetActorSheet   Operation = "get_actor_sheet"
@@ -146,6 +150,7 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpSelectFeat:    true, OpGetFeat: true,
 		OpConcentrationCheck: true,
 		OpPerformDeathSave:   true, OpStabilizeCreature: true,
+		OpApplyExhaustion: true, OpRemoveExhaustion: true,
 		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
 	},
 	model.PhaseCombat: {
@@ -157,6 +162,7 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpCastSpell:         true, OpGetSpellSlots: true,
 		OpConcentrationCheck: true,
 		OpPerformDeathSave:   true, OpStabilizeCreature: true,
+		OpApplyExhaustion: true,
 		OpGetInventory:    true,
 		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
 	},
