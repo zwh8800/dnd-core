@@ -6,6 +6,14 @@ import (
 	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
+// init 注册所有职业
+func init() {
+	for id, class := range Classes {
+		class.ID = id
+		GlobalRegistry.RegisterClass(class)
+	}
+}
+
 // ClassDefinition 职业定义
 type ClassDefinition struct {
 	ID                  model.ClassID     // 职业ID

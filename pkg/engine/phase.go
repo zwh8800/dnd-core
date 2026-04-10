@@ -89,6 +89,15 @@ const (
 	OpApplySuffocation       Operation = "apply_suffocation"
 	OpPerformEncounterCheck  Operation = "perform_encounter_check"
 
+	// 高级角色系统
+	OpValidateMulticlass Operation = "validate_multiclass"
+	OpGetMulticlassSlots Operation = "get_multiclass_slots"
+	OpApplyBackground    Operation = "apply_background"
+	OpUseMagicItem       Operation = "use_magic_item"
+	OpUnattuneItem       Operation = "unattune_item"
+	OpRechargeMagicItems Operation = "recharge_magic_items"
+	OpGetMagicItemBonus  Operation = "get_magic_item_bonus"
+
 	// 状态查询（所有阶段都允许）
 	OpGetStateSummary Operation = "get_state_summary"
 	OpGetActorSheet   Operation = "get_actor_sheet"
@@ -140,6 +149,9 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpLevelUp:        true,
 		OpSelectFeat:     true, OpRemoveFeat: true, OpGetFeat: true,
 		OpConcentrationCheck: true,
+		OpValidateMulticlass: true,
+		OpGetMulticlassSlots: true,
+		OpApplyBackground:    true,
 		OpGetStateSummary:    true, OpGetActorSheet: true, OpGetPhase: true,
 	},
 	model.PhaseExploration: {
@@ -161,6 +173,10 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpPerformJump: true, OpApplyFallDamage: true,
 		OpCalculateBreathHolding: true, OpApplySuffocation: true,
 		OpPerformEncounterCheck: true,
+		OpUseMagicItem:          true,
+		OpUnattuneItem:          true,
+		OpRechargeMagicItems:    true,
+		OpGetMagicItemBonus:     true,
 		OpGetStateSummary:       true, OpGetActorSheet: true, OpGetPhase: true,
 	},
 	model.PhaseCombat: {
@@ -174,8 +190,10 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpPerformDeathSave:   true, OpStabilizeCreature: true,
 		OpApplyExhaustion: true,
 		OpPerformJump:     true, OpApplyFallDamage: true,
-		OpGetInventory:    true,
-		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
+		OpGetInventory:      true,
+		OpUseMagicItem:      true,
+		OpGetMagicItemBonus: true,
+		OpGetStateSummary:   true, OpGetActorSheet: true, OpGetPhase: true,
 	},
 	model.PhaseRest: {
 		OpGetActor: true, OpUpdateActor: true,

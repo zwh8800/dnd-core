@@ -23,6 +23,11 @@ type ItemInput struct {
 	AttackBonus        int            `json:"attack_bonus"`        // 攻击加值
 	Damage             string         `json:"damage"`              // 伤害描述
 	Range              string         `json:"range"`               // 射程
+	Consumable         bool           `json:"consumable"`          // 是否为消耗品
+	Effect             string         `json:"effect"`              // 使用效果
+	Charges            int            `json:"charges"`             // 充能次数
+	MaxCharges         int            `json:"max_charges"`         // 最大充能
+	Recharge           string         `json:"recharge"`            // 充能恢复条件
 }
 
 // ItemSummary 物品摘要信息（替代 *model.Item 返回值）
@@ -207,6 +212,11 @@ func itemInputToItem(input *ItemInput) *model.Item {
 		Attunement:  input.Attunement,
 		Attuned:     false, // 新添加的物品默认未调谐
 		MagicBonus:  0,     // 默认无魔法加值
+		Consumable:  input.Consumable,
+		Effect:      input.Effect,
+		Charges:     input.Charges,
+		MaxCharges:  input.MaxCharges,
+		Recharge:    input.Recharge,
 	}
 
 	// 如果需要调谐但未提供描述，使用默认值
