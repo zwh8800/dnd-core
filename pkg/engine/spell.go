@@ -233,8 +233,8 @@ func (e *Engine) CastSpell(ctx context.Context, req CastSpellRequest) (*SpellRes
 				targetActor = &t.Actor
 			}
 
-			isNat20 := rollResult.Rolls[0].Value == 20
-			isNat1 := rollResult.Rolls[0].Value == 1
+			isNat20 := rules.IsCriticalHit(rollResult.Rolls[0].Value)
+			isNat1 := rules.IsCriticalFumble(rollResult.Rolls[0].Value)
 			hit := attackTotal >= targetActor.ArmorClass || isNat20
 			if isNat1 {
 				hit = false

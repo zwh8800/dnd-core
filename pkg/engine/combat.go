@@ -1306,7 +1306,8 @@ func (e *Engine) calculateAndApplyDamage(game *model.GameState, attackerID, targ
 	// 基础伤害掷骰
 	roll, _ := e.roller.Roll("2d6")
 	strMod := rules.AbilityModifier(attackerActor.AbilityScores.Strength)
-	baseDamage := roll.Total + strMod
+	baseDamageDice := roll.Total
+	baseDamage := baseDamageDice + strMod
 
 	// 应用职业特性伤害钩子
 	if attackerPC != nil && attackerPC.FeatureHooks != nil {
@@ -1320,11 +1321,13 @@ func (e *Engine) calculateAndApplyDamage(game *model.GameState, attackerID, targ
 		for _, hook := range attackerPC.FeatureHooks {
 			hook.OnDamageCalc(ctx)
 		}
+		baseDamageDice = roll.Total
 		baseDamage = roll.Total + ctx.Bonus
 	}
 
 	if isCritical {
-		baseDamage *= 2 // 暴击伤害翻倍
+		// 使用 rules.CalculateCriticalDamage 计算暴击伤害
+		baseDamage = rules.CalculateCriticalDamage(baseDamageDice, strMod)
 	}
 
 	// 创建伤害抗性
@@ -1699,13 +1702,15 @@ func (e *Engine) AttemptOpportunityAttack(ctx context.Context, req AttemptOpport
 
 	// 如果命中，计算伤害
 	if attackCheck.Hit {
-		// 简化伤害计算（基础2d6+力量修正）
+		// 伤害计算（基础2d6+力量修正）
 		damageRoll, _ := e.roller.Roll("2d6")
 		strMod := rules.AbilityModifier(attackerActor.AbilityScores.Strength)
-		damage := damageRoll.Total + strMod
+		damageDice := damageRoll.Total
+		damage := damageDice + strMod
 
 		if attackCheck.IsCritical {
-			damage *= 2
+			// 使用 rules.CalculateCriticalDamage 计算暴击伤害
+			damage = rules.CalculateCriticalDamage(damageDice, strMod)
 		}
 
 		// 应用伤害
