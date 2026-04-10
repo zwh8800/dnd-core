@@ -82,6 +82,13 @@ const (
 	OpApplyExhaustion  Operation = "apply_exhaustion"
 	OpRemoveExhaustion Operation = "remove_exhaustion"
 
+	// 探索与移动
+	OpPerformJump            Operation = "perform_jump"
+	OpApplyFallDamage        Operation = "apply_fall_damage"
+	OpCalculateBreathHolding Operation = "calculate_breath_holding"
+	OpApplySuffocation       Operation = "apply_suffocation"
+	OpPerformEncounterCheck  Operation = "perform_encounter_check"
+
 	// 状态查询（所有阶段都允许）
 	OpGetStateSummary Operation = "get_state_summary"
 	OpGetActorSheet   Operation = "get_actor_sheet"
@@ -151,7 +158,10 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpConcentrationCheck: true,
 		OpPerformDeathSave:   true, OpStabilizeCreature: true,
 		OpApplyExhaustion: true, OpRemoveExhaustion: true,
-		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
+		OpPerformJump: true, OpApplyFallDamage: true,
+		OpCalculateBreathHolding: true, OpApplySuffocation: true,
+		OpPerformEncounterCheck: true,
+		OpGetStateSummary:       true, OpGetActorSheet: true, OpGetPhase: true,
 	},
 	model.PhaseCombat: {
 		OpGetActor: true, OpUpdateActor: true,
@@ -163,6 +173,7 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 		OpConcentrationCheck: true,
 		OpPerformDeathSave:   true, OpStabilizeCreature: true,
 		OpApplyExhaustion: true,
+		OpPerformJump:     true, OpApplyFallDamage: true,
 		OpGetInventory:    true,
 		OpGetStateSummary: true, OpGetActorSheet: true, OpGetPhase: true,
 	},
