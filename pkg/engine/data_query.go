@@ -45,6 +45,9 @@ func (p *PaginationRequest) applyDefaults() {
 
 // calculatePagination 计算分页信息
 func calculatePagination(totalCount int, req *PaginationRequest) PaginationInfo {
+	if req == nil {
+		req = &PaginationRequest{}
+	}
 	req.applyDefaults()
 
 	totalPages := (totalCount + req.PageSize - 1) / req.PageSize
@@ -1122,14 +1125,17 @@ func (e *Engine) GetFeatData(ctx context.Context, req GetFeatDataRequest) (*GetF
 
 // featToInfoForData 将 FeatDefinition 转换为 FeatInfo（用于数据查询）
 func featToInfoForData(feat *model.FeatDefinition) FeatInfo {
-	return FeatInfo{
-		ID:           feat.ID,
-		Name:         feat.Name,
-		Type:         string(feat.Type),
-		Description:  feat.Description,
-		Repeatable:   feat.Repeatable,
-		Prerequisite: feat.Prerequisite.Description,
+	info := FeatInfo{
+		ID:          feat.ID,
+		Name:        feat.Name,
+		Type:        string(feat.Type),
+		Description: feat.Description,
+		Repeatable:  feat.Repeatable,
 	}
+	if feat.Prerequisite != nil {
+		info.Prerequisite = feat.Prerequisite.Description
+	}
+	return info
 }
 
 // ListMonsters 列出所有怪物，支持分页
