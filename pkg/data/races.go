@@ -16,8 +16,8 @@ type RaceDefinition struct {
 
 // Races 所有种族定义
 var Races = map[string]*RaceDefinition{
-	"Human": {
-		Name: "Human",
+	"人类": {
+		Name: "人类",
 		AbilityBonuses: map[model.Ability]int{
 			model.AbilityStrength:     1,
 			model.AbilityDexterity:    1,
@@ -28,103 +28,103 @@ var Races = map[string]*RaceDefinition{
 		},
 		Speed:       30,
 		Size:        model.SizeMedium,
-		Languages:   []string{"Common"},
-		Traits:      []string{"Extra Language"},
+		Languages:   []string{"通用语"},
+		Traits:      []string{"额外语言"},
 		Description: "人类是最常见、最多样化的种族",
 	},
-	"Elf": {
-		Name:     "Elf",
-		Subraces: []string{"High Elf", "Wood Elf", "Drow"},
+	"精灵": {
+		Name:     "精灵",
+		Subraces: []string{"高等精灵", "木精灵", "卓尔"},
 		AbilityBonuses: map[model.Ability]int{
 			model.AbilityDexterity: 2,
 		},
 		Speed:       30,
 		Size:        model.SizeMedium,
-		Languages:   []string{"Common", "Elvish"},
-		Traits:      []string{"Darkvision", "Keen Senses", "Fey Ancestry", "Trance"},
+		Languages:   []string{"通用语", "精灵语"},
+		Traits:      []string{"黑暗视觉", "敏锐感官", "精类血统", "冥想"},
 		Description: "优雅长寿的森林种族",
 	},
-	"Dwarf": {
-		Name:     "Dwarf",
-		Subraces: []string{"Hill Dwarf", "Mountain Dwarf"},
+	"矮人": {
+		Name:     "矮人",
+		Subraces: []string{"丘陵矮人", "山地矮人"},
 		AbilityBonuses: map[model.Ability]int{
 			model.AbilityConstitution: 2,
 		},
 		Speed:       25,
 		Size:        model.SizeMedium,
-		Languages:   []string{"Common", "Dwarvish"},
-		Traits:      []string{"Darkvision", "Dwarven Resilience", "Combat Training", "Tool Proficiency", "Stonecunning"},
+		Languages:   []string{"通用语", "矮人语"},
+		Traits:      []string{"黑暗视觉", "矮人韧性", "战斗训练", "工具熟练", "石中精妙"},
 		Description: "坚韧不拔的山地民族",
 	},
-	"Halfling": {
-		Name:     "Halfling",
-		Subraces: []string{"Lightfoot", "Stout"},
+	"半身人": {
+		Name:     "半身人",
+		Subraces: []string{"轻足", "强魄"},
 		AbilityBonuses: map[model.Ability]int{
 			model.AbilityDexterity: 2,
 		},
 		Speed:       25,
 		Size:        model.SizeSmall,
-		Languages:   []string{"Common", "Halfling"},
-		Traits:      []string{"Lucky", "Brave", "Halfling Nimbleness"},
+		Languages:   []string{"通用语", "半身人语"},
+		Traits:      []string{"幸运", "勇敢", "半身人敏捷"},
 		Description: "小巧而勇敢的民族",
 	},
-	"Dragonborn": {
-		Name: "Dragonborn",
+	"龙裔": {
+		Name: "龙裔",
 		AbilityBonuses: map[model.Ability]int{
 			model.AbilityStrength: 2,
 			model.AbilityCharisma: 1,
 		},
 		Speed:       30,
 		Size:        model.SizeMedium,
-		Languages:   []string{"Common", "Draconic"},
-		Traits:      []string{"Draconic Ancestry", "Breath Weapon", "Damage Resistance"},
+		Languages:   []string{"通用语", "龙语"},
+		Traits:      []string{"龙族先祖", "吐息武器", "伤害抗性"},
 		Description: "拥有龙族血统的战士",
 	},
-	"Gnome": {
-		Name:     "Gnome",
-		Subraces: []string{"Forest Gnome", "Rock Gnome"},
+	"侏儒": {
+		Name:     "侏儒",
+		Subraces: []string{"森林侏儒", "岩侏儒"},
 		AbilityBonuses: map[model.Ability]int{
 			model.AbilityIntelligence: 2,
 		},
 		Speed:       25,
 		Size:        model.SizeSmall,
-		Languages:   []string{"Common", "Gnomish"},
-		Traits:      []string{"Darkvision", "Gnome Cunning"},
+		Languages:   []string{"通用语", "侏儒语"},
+		Traits:      []string{"黑暗视觉", "侏儒聪明"},
 		Description: "聪明好奇的小型种族",
 	},
-	"Half-Elf": {
-		Name: "Half-Elf",
+	"半精灵": {
+		Name: "半精灵",
 		AbilityBonuses: map[model.Ability]int{
 			model.AbilityCharisma: 2,
 		},
 		Speed:       30,
 		Size:        model.SizeMedium,
-		Languages:   []string{"Common", "Elvish"},
-		Traits:      []string{"Darkvision", "Fey Ancestry", "Skill Versatility"},
+		Languages:   []string{"通用语", "精灵语"},
+		Traits:      []string{"黑暗视觉", "精类血统", "技能多才多艺"},
 		Description: "人类与精灵的混血",
 	},
-	"Half-Orc": {
-		Name: "Half-Orc",
+	"半兽人": {
+		Name: "半兽人",
 		AbilityBonuses: map[model.Ability]int{
 			model.AbilityStrength:     2,
 			model.AbilityConstitution: 1,
 		},
 		Speed:       30,
 		Size:        model.SizeMedium,
-		Languages:   []string{"Common", "Orc"},
-		Traits:      []string{"Darkvision", "Menacing", "Relentless Endurance", "Savage Attacks"},
+		Languages:   []string{"通用语", "兽人语"},
+		Traits:      []string{"黑暗视觉", "恐吓", "坚韧不屈", "野蛮攻击"},
 		Description: "人类与兽人的混血",
 	},
-	"Tiefling": {
-		Name: "Tiefling",
+	"提夫林": {
+		Name: "提夫林",
 		AbilityBonuses: map[model.Ability]int{
 			model.AbilityCharisma:     2,
 			model.AbilityIntelligence: 1,
 		},
 		Speed:       30,
 		Size:        model.SizeMedium,
-		Languages:   []string{"Common", "Infernal"},
-		Traits:      []string{"Darkvision", "Hellish Resistance", "Infernal Legacy"},
+		Languages:   []string{"通用语", "炼狱语"},
+		Traits:      []string{"黑暗视觉", "地狱抗性", "炼狱传承"},
 		Description: "拥有魔族血统的种族",
 	},
 }
