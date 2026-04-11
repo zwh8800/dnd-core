@@ -10,18 +10,24 @@ import (
 	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
+// TestCombatEncounters 测试战斗遭遇系统
+// 包含多角色参与完整战斗回合的测试
 func TestCombatEncounters(t *testing.T) {
-	t.Run("full combat round with multiple participants", func(t *testing.T) {
+	// 测试完整战斗回合：多个参与者按先攻顺序进行战斗
+	t.Run("多角色参与完整战斗回合", func(t *testing.T) {
+		// 创建测试引擎和上下文
 		e := engine.NewTestEngine(t)
 		ctx := context.Background()
 
+		// 创建新游戏
 		gameResult, err := e.NewGame(ctx, engine.NewGameRequest{
 			Name:        "Arena Battle",
-			Description: "A gladiatorial combat",
+			Description: "角斗场战斗",
 		})
 		require.NoError(t, err)
 		gameID := gameResult.Game.ID
 
+		// 创建战士角色（5级）
 		fighter, err := e.CreatePC(ctx, engine.CreatePCRequest{
 			GameID: gameID,
 			PC: &engine.PlayerCharacterInput{
@@ -41,6 +47,7 @@ func TestCombatEncounters(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		// 创建盗贼角色（5级）
 		rogue, err := e.CreatePC(ctx, engine.CreatePCRequest{
 			GameID: gameID,
 			PC: &engine.PlayerCharacterInput{
@@ -60,11 +67,12 @@ func TestCombatEncounters(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		// 创建敌人：兽人战士
 		orc, err := e.CreateEnemy(ctx, engine.CreateEnemyRequest{
 			GameID: gameID,
 			Enemy: &engine.EnemyInput{
 				Name:        "Orc Brute",
-				Description: "A fearsome orc warrior",
+				Description: "凶猛的兽人战士",
 				Size:        model.SizeMedium,
 				Speed:       30,
 				AbilityScores: engine.AbilityScoresInput{
@@ -82,9 +90,11 @@ func TestCombatEncounters(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "Begin combat")
+		// 切换到探索阶段
+		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "开始战斗")
 		require.NoError(t, err)
 
+		// 开始战斗
 		combatResult, err := e.StartCombat(ctx, engine.StartCombatRequest{
 			GameID: gameID,
 			ParticipantIDs: []model.ID{
@@ -95,19 +105,22 @@ func TestCombatEncounters(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, combatResult.Combat)
+
+		// 验证战斗状态
 		assert.Equal(t, model.CombatStatusActive, combatResult.Combat.Status)
 		assert.Equal(t, 3, len(combatResult.Combat.Initiative))
+		t.Logf("战斗已开始 - 第%d回合, %d名参战者", combatResult.Combat.Round, len(combatResult.Combat.Initiative))
 
-		t.Logf("Combat started - Round %d, %d combatants", combatResult.Combat.Round, len(combatResult.Combat.Initiative))
-
+		// 验证：通过GetCurrentTurn确认当前回合信息正确
 		currentTurn, err := e.GetCurrentTurn(ctx, engine.GetCurrentTurnRequest{
 			GameID: gameID,
 		})
 		require.NoError(t, err)
 		require.NotNil(t, currentTurn)
-		t.Logf("Current turn: %s", currentTurn.ActorName)
+		t.Logf("当前回合: %s", currentTurn.ActorName)
 
-		t.Run("execute attack action", func(t *testing.T) {
+		// 测试执行攻击动作
+		t.Run("执行攻击动作", func(t *testing.T) {
 			attackResult, err := e.ExecuteAttack(ctx, engine.ExecuteAttackRequest{
 				GameID:     gameID,
 				AttackerID: fighter.Actor.ID,
@@ -119,30 +132,38 @@ func TestCombatEncounters(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, attackResult)
 			require.NotNil(t, attackResult.AttackResult)
-			t.Logf("Attack: Roll=%d, Hit=%v, Critical=%v",
+			t.Logf("攻击结果: 掷骰=%d, 命中=%v, 重击=%v",
 				attackResult.AttackResult.Roll.Total,
 				attackResult.AttackResult.Hit,
 				attackResult.AttackResult.IsCritical)
 		})
 
-		t.Run("next turn advances", func(t *testing.T) {
+		// 测试下一回合推进
+		t.Run("推进下一回合", func(t *testing.T) {
 			nextResult, err := e.NextTurn(ctx, engine.NextTurnRequest{
 				GameID: gameID,
 			})
 			require.NoError(t, err)
 			require.NotNil(t, nextResult)
 
+			// 验证：通过GetCombatSummary确认战斗状态更新
 			summary, err := e.GetCombatSummary(ctx, gameID)
 			require.NoError(t, err)
 			require.NotNil(t, summary)
-			t.Logf("Combat: Round %d", summary.Round)
+			t.Logf("战斗状态: 第%d回合", summary.Round)
 		})
 
-		t.Run("end combat", func(t *testing.T) {
+		// 测试结束战斗
+		t.Run("结束战斗", func(t *testing.T) {
 			err := e.EndCombat(ctx, engine.EndCombatRequest{
 				GameID: gameID,
 			})
 			require.NoError(t, err)
+
+			// 验证：战斗结束后Phase应恢复为Exploration
+			phase, err := e.GetPhase(ctx, gameID)
+			require.NoError(t, err)
+			assert.Equal(t, model.PhaseExploration, phase)
 		})
 	})
 }
