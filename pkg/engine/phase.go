@@ -72,6 +72,7 @@ const (
 	OpSelectFeat Operation = "select_feat"
 	OpRemoveFeat Operation = "remove_feat"
 	OpGetFeat    Operation = "get_feat"
+	OpListFeats  Operation = "list_feats"
 
 	// 专注与状态
 	OpConcentrationCheck Operation = "concentration_check"
@@ -134,6 +135,26 @@ type GetPhaseResult struct {
 // GetAllowedOperationsRequest 获取允许的操作请求
 type GetAllowedOperationsRequest struct {
 	GameID model.ID `json:"game_id"` // 游戏会话ID
+}
+
+// dataQueryOperations 数据查询操作列表（所有阶段都允许）
+var dataQueryOperations = map[Operation]bool{
+	OpListRaces: true, OpGetRace: true,
+	OpListClasses: true, OpGetClass: true,
+	OpListBackgrounds: true, OpGetBackground: true,
+	OpListFeatsData: true, OpGetFeatData: true,
+	OpListMonsters: true, OpGetMonster: true,
+	OpListSpells: true, OpGetSpell: true,
+	OpListWeapons: true, OpGetWeapon: true,
+	OpListArmors: true, OpGetArmor: true,
+	OpListMagicItems: true, OpGetMagicItem: true,
+	OpListGears: true, OpGetGear: true,
+	OpListTools: true, OpGetTool: true,
+	OpListRecipes: true, OpGetRecipe: true,
+	OpListLifestyles: true, OpGetLifestyleData: true,
+	OpListMounts: true, OpGetMount: true,
+	OpListPoisons: true, OpGetPoison: true,
+	OpListTraps: true, OpGetTrap: true,
 }
 
 // phasePermissions 定义每个阶段允许的操作
@@ -207,6 +228,11 @@ var phasePermissions = map[model.Phase]map[Operation]bool{
 
 // checkPermission 检查当前阶段是否允许执行指定操作
 func (e *Engine) checkPermission(phase model.Phase, op Operation) error {
+	// 数据查询操作在所有阶段都允许
+	if dataQueryOperations[op] {
+		return nil
+	}
+
 	allowed, ok := phasePermissions[phase]
 	if !ok {
 		return fmt.Errorf("unknown phase: %s", phase)
