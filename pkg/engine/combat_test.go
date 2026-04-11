@@ -94,6 +94,21 @@ func TestStartCombat(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.NotNil(t, result.Combat)
+
+		currentCombat, err := e.GetCurrentCombat(ctx, GetCurrentCombatRequest{GameID: gameID})
+		require.NoError(t, err)
+		require.NotNil(t, currentCombat.Combat)
+		assert.Equal(t, 1, currentCombat.Combat.Round)
+		assert.True(t, len(currentCombat.Combat.Initiative) >= 3)
+
+		phase, err := e.GetPhase(ctx, gameID)
+		require.NoError(t, err)
+		assert.Equal(t, model.PhaseCombat, phase)
+
+		pc1Info, err := e.GetActor(ctx, GetActorRequest{GameID: gameID, ActorID: pc1.Actor.ID})
+		require.NoError(t, err)
+		require.NotNil(t, pc1Info.Actor)
+		assert.Equal(t, model.ActorTypePC, pc1Info.Actor.Type)
 	})
 
 	t.Run("starts combat with surprise", func(t *testing.T) {
@@ -233,6 +248,14 @@ func TestEndCombat(t *testing.T) {
 		err = e.EndCombat(ctx, EndCombatRequest{GameID: gameID})
 
 		require.NoError(t, err)
+
+		currentCombat, err := e.GetCurrentCombat(ctx, GetCurrentCombatRequest{GameID: gameID})
+		assert.Error(t, err)
+		assert.Nil(t, currentCombat)
+
+		phase, err := e.GetPhase(ctx, gameID)
+		require.NoError(t, err)
+		assert.Equal(t, model.PhaseExploration, phase)
 	})
 }
 
@@ -302,7 +325,13 @@ func TestNextTurn(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.NotNil(t, result.Combat)
+		require.NotNil(t, result.Combat)
+		assert.Equal(t, 1, result.Combat.Round)
+
+		turnInfo, err := e.GetCurrentTurn(ctx, GetCurrentTurnRequest{GameID: gameID})
+		require.NoError(t, err)
+		require.NotNil(t, turnInfo)
+		assert.NotEmpty(t, turnInfo.ActorID)
 	})
 }
 
@@ -481,6 +510,11 @@ func TestExecuteDamage(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, 5, result.DamageResult.FinalDamage)
+
+		actorInfo, err := e.GetActor(ctx, GetActorRequest{GameID: gameID, ActorID: target.Actor.ID})
+		require.NoError(t, err)
+		require.NotNil(t, actorInfo.Actor)
+		assert.Less(t, actorInfo.Actor.HitPoints.Current, actorInfo.Actor.HitPoints.Maximum)
 	})
 }
 
@@ -537,5 +571,10 @@ func TestExecuteHealing(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, 5, result.Healed)
+
+		actorInfo, err := e.GetActor(ctx, GetActorRequest{GameID: gameID, ActorID: target.Actor.ID})
+		require.NoError(t, err)
+		require.NotNil(t, actorInfo.Actor)
+		assert.Greater(t, actorInfo.Actor.HitPoints.Current, 0)
 	})
 }

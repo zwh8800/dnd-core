@@ -41,6 +41,10 @@ func TestRestingSystem(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		actorBeforeRest, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: fighter.Actor.ID})
+		require.NoError(t, err)
+		hpBeforeRest := actorBeforeRest.Actor.HitPoints.Current
+
 		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "Resting")
 		require.NoError(t, err)
 
@@ -52,6 +56,10 @@ func TestRestingSystem(t *testing.T) {
 		require.NotNil(t, restResult)
 		require.GreaterOrEqual(t, len(restResult.ActorResults), 1)
 		t.Logf("Short rest: %s", restResult.Message)
+
+		actorAfterRest, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: fighter.Actor.ID})
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, actorAfterRest.Actor.HitPoints.Current, hpBeforeRest)
 	})
 
 	t.Run("long rest", func(t *testing.T) {
@@ -84,6 +92,10 @@ func TestRestingSystem(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		actorBeforeRest, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: cleric.Actor.ID})
+		require.NoError(t, err)
+		maxHP := actorBeforeRest.Actor.HitPoints.Maximum
+
 		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "Resting")
 		require.NoError(t, err)
 
@@ -106,6 +118,10 @@ func TestRestingSystem(t *testing.T) {
 		assert.GreaterOrEqual(t, actorResult.HPRecovered, 0)
 		t.Logf("Long rest: HP recovered=%d, SpellSlots=%v",
 			actorResult.HPRecovered, actorResult.SpellSlotsRestored)
+
+		actorAfterRest, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: cleric.Actor.ID})
+		require.NoError(t, err)
+		assert.Equal(t, maxHP, actorAfterRest.Actor.HitPoints.Current)
 	})
 
 	t.Run("party rest", func(t *testing.T) {
@@ -149,6 +165,11 @@ func TestRestingSystem(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		pc1BeforeHP, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: pc1.Actor.ID})
+		require.NoError(t, err)
+		pc2BeforeHP, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: pc2.Actor.ID})
+		require.NoError(t, err)
+
 		_, err = e.SetPhase(ctx, gameID, model.PhaseExploration, "Party rests")
 		require.NoError(t, err)
 
@@ -169,5 +190,12 @@ func TestRestingSystem(t *testing.T) {
 		t.Logf("Party rested: %s recovered %d HP, %s recovered %d HP",
 			pc1.Actor.Name, endResult.ActorResults[0].HPRecovered,
 			pc2.Actor.Name, endResult.ActorResults[1].HPRecovered)
+
+		pc1AfterHP, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: pc1.Actor.ID})
+		require.NoError(t, err)
+		pc2AfterHP, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: pc2.Actor.ID})
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, pc1AfterHP.Actor.HitPoints.Current, pc1BeforeHP.Actor.HitPoints.Current)
+		assert.GreaterOrEqual(t, pc2AfterHP.Actor.HitPoints.Current, pc2BeforeHP.Actor.HitPoints.Current)
 	})
 }
