@@ -2,6 +2,12 @@ package data
 
 import "github.com/zwh8800/dnd-core/pkg/model"
 
+func init() {
+	for _, bg := range Backgrounds {
+		GlobalRegistry.RegisterBackground(bg)
+	}
+}
+
 // Backgrounds 包含 4 个 SRD 背景数据
 var Backgrounds = []*model.BackgroundDefinition{
 	{

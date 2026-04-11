@@ -6,14 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zwh8800/dnd-core/pkg/data"
 	"github.com/zwh8800/dnd-core/pkg/model"
 )
-
-func init() {
-	// 初始化数据
-	data.InitDefaultData()
-}
 
 // TestValidateMulticlassChoice 测试多职业验证功能
 func TestValidateMulticlassChoice(t *testing.T) {

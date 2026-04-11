@@ -2,6 +2,12 @@ package data
 
 import "github.com/zwh8800/dnd-core/pkg/model"
 
+func init() {
+	for _, poison := range PoisonDataList {
+		GlobalRegistry.RegisterPoison(poison)
+	}
+}
+
 // PoisonData 毒药数据
 type PoisonData = model.PoisonDefinition
 

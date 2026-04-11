@@ -6,14 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zwh8800/dnd-core/pkg/data"
 	"github.com/zwh8800/dnd-core/pkg/model"
 )
-
-func init() {
-	// 初始化背景数据
-	data.InitDefaultData()
-}
 
 // TestApplyBackground 测试背景应用功能
 func TestApplyBackground(t *testing.T) {

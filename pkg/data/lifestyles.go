@@ -4,6 +4,12 @@ import (
 	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
+func init() {
+	for _, lifestyleData := range LifestyleDataList {
+		GlobalRegistry.RegisterLifestyle(lifestyleData)
+	}
+}
+
 // LifestyleData 生活方式数据
 type LifestyleData struct {
 	Tier        model.LifestyleTier `json:"tier"`

@@ -2,6 +2,12 @@ package data
 
 import "github.com/zwh8800/dnd-core/pkg/model"
 
+func init() {
+	for _, bg := range Backgrounds {
+		GlobalRegistry.RegisterBackground(bg)
+	}
+}
+
 // MonsterStatBlocks 包含 5 个示例怪物的完整数据块
 var MonsterStatBlocks = []*model.MonsterStatBlock{
 	// Goblin - CR 1/4

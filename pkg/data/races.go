@@ -2,6 +2,12 @@ package data
 
 import "github.com/zwh8800/dnd-core/pkg/model"
 
+func init() {
+	for _, race := range Races {
+		GlobalRegistry.RegisterRace(race)
+	}
+}
+
 // RaceDefinition 种族定义
 type RaceDefinition struct {
 	Name           string

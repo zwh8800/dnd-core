@@ -43,6 +43,21 @@ type DataRegistry struct {
 
 	// 工具数据
 	tools map[string]*model.Item
+
+	// 制作配方数据
+	craftingRecipes map[string]*model.CraftingRecipe
+
+	// 生活方式数据
+	lifestyles map[model.LifestyleTier]*LifestyleData
+
+	// 坐骑数据
+	mounts map[string]*MountData
+
+	// 毒药数据
+	poisons map[string]*model.PoisonDefinition
+
+	// 陷阱数据
+	traps map[string]*model.TrapDefinition
 }
 
 // GlobalRegistry 全局数据注册中心实例
@@ -51,17 +66,22 @@ var GlobalRegistry = NewDataRegistry()
 // NewDataRegistry 创建新的数据注册中心
 func NewDataRegistry() *DataRegistry {
 	return &DataRegistry{
-		races:       make(map[string]*RaceDefinition),
-		classes:     make(map[model.ClassID]*ClassDefinition),
-		backgrounds: make(map[string]*model.BackgroundDefinition),
-		feats:       make(map[string]*model.FeatDefinition),
-		monsters:    make(map[string]*model.MonsterStatBlock),
-		spells:      make(map[string]*model.Spell),
-		weapons:     make(map[string]*model.Item),
-		armors:      make(map[string]*model.Item),
-		magicItems:  make(map[string]*model.Item),
-		gears:       make(map[string]*model.Item),
-		tools:       make(map[string]*model.Item),
+		races:           make(map[string]*RaceDefinition),
+		classes:         make(map[model.ClassID]*ClassDefinition),
+		backgrounds:     make(map[string]*model.BackgroundDefinition),
+		feats:           make(map[string]*model.FeatDefinition),
+		monsters:        make(map[string]*model.MonsterStatBlock),
+		spells:          make(map[string]*model.Spell),
+		weapons:         make(map[string]*model.Item),
+		armors:          make(map[string]*model.Item),
+		magicItems:      make(map[string]*model.Item),
+		gears:           make(map[string]*model.Item),
+		tools:           make(map[string]*model.Item),
+		craftingRecipes: make(map[string]*model.CraftingRecipe),
+		lifestyles:      make(map[model.LifestyleTier]*LifestyleData),
+		mounts:          make(map[string]*MountData),
+		poisons:         make(map[string]*model.PoisonDefinition),
+		traps:           make(map[string]*model.TrapDefinition),
 	}
 }
 
@@ -404,4 +424,159 @@ func (r *DataRegistry) ListTools() []*model.Item {
 		tools = append(tools, tool)
 	}
 	return tools
+}
+
+// RegisterCraftingRecipe 注册制作配方数据
+func (r *DataRegistry) RegisterCraftingRecipe(recipe model.CraftingRecipe) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.craftingRecipes[recipe.ID]; exists {
+		return fmt.Errorf("crafting recipe already registered: %s", recipe.ID)
+	}
+	r.craftingRecipes[recipe.ID] = &recipe
+	return nil
+}
+
+// GetCraftingRecipe 获取制作配方数据
+func (r *DataRegistry) GetCraftingRecipe(id string) (*model.CraftingRecipe, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	recipe, exists := r.craftingRecipes[id]
+	return recipe, exists
+}
+
+// ListCraftingRecipes 列出所有制作配方
+func (r *DataRegistry) ListCraftingRecipes() []*model.CraftingRecipe {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	recipes := make([]*model.CraftingRecipe, 0, len(r.craftingRecipes))
+	for _, recipe := range r.craftingRecipes {
+		recipes = append(recipes, recipe)
+	}
+	return recipes
+}
+
+// RegisterLifestyle 注册生活方式数据
+func (r *DataRegistry) RegisterLifestyle(lifestyle LifestyleData) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.lifestyles[lifestyle.Tier]; exists {
+		return fmt.Errorf("lifestyle already registered: %s", lifestyle.Tier)
+	}
+	r.lifestyles[lifestyle.Tier] = &lifestyle
+	return nil
+}
+
+// GetLifestyle 获取生活方式数据
+func (r *DataRegistry) GetLifestyle(tier model.LifestyleTier) (*LifestyleData, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	lifestyle, exists := r.lifestyles[tier]
+	return lifestyle, exists
+}
+
+// ListLifestyles 列出所有生活方式
+func (r *DataRegistry) ListLifestyles() []*LifestyleData {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	lifestyles := make([]*LifestyleData, 0, len(r.lifestyles))
+	for _, lifestyle := range r.lifestyles {
+		lifestyles = append(lifestyles, lifestyle)
+	}
+	return lifestyles
+}
+
+// RegisterMount 注册坐骑数据
+func (r *DataRegistry) RegisterMount(mount MountData) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.mounts[mount.ID.String()]; exists {
+		return fmt.Errorf("mount already registered: %s", mount.ID)
+	}
+	r.mounts[mount.ID.String()] = &mount
+	return nil
+}
+
+// GetMount 获取坐骑数据
+func (r *DataRegistry) GetMount(id string) (*MountData, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	mount, exists := r.mounts[id]
+	return mount, exists
+}
+
+// ListMounts 列出所有坐骑
+func (r *DataRegistry) ListMounts() []*MountData {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	mounts := make([]*MountData, 0, len(r.mounts))
+	for _, mount := range r.mounts {
+		mounts = append(mounts, mount)
+	}
+	return mounts
+}
+
+// RegisterPoison 注册毒药数据
+func (r *DataRegistry) RegisterPoison(poison model.PoisonDefinition) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.poisons[poison.ID]; exists {
+		return fmt.Errorf("poison already registered: %s", poison.ID)
+	}
+	r.poisons[poison.ID] = &poison
+	return nil
+}
+
+// GetPoison 获取毒药数据
+func (r *DataRegistry) GetPoison(id string) (*model.PoisonDefinition, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	poison, exists := r.poisons[id]
+	return poison, exists
+}
+
+// ListPoisons 列出所有毒药
+func (r *DataRegistry) ListPoisons() []*model.PoisonDefinition {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	poisons := make([]*model.PoisonDefinition, 0, len(r.poisons))
+	for _, poison := range r.poisons {
+		poisons = append(poisons, poison)
+	}
+	return poisons
+}
+
+// RegisterTrap 注册陷阱数据
+func (r *DataRegistry) RegisterTrap(trap *model.TrapDefinition) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.traps[trap.ID]; exists {
+		return fmt.Errorf("trap already registered: %s", trap.ID)
+	}
+	r.traps[trap.ID] = trap
+	return nil
+}
+
+// GetTrap 获取陷阱数据
+func (r *DataRegistry) GetTrap(id string) (*model.TrapDefinition, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	trap, exists := r.traps[id]
+	return trap, exists
+}
+
+// ListTraps 列出所有陷阱
+func (r *DataRegistry) ListTraps() []*model.TrapDefinition {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	traps := make([]*model.TrapDefinition, 0, len(r.traps))
+	for _, trap := range r.traps {
+		traps = append(traps, trap)
+	}
+	return traps
 }

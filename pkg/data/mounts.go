@@ -4,6 +4,12 @@ import (
 	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
+func init() {
+	for _, mountData := range MountDataList {
+		GlobalRegistry.RegisterMount(mountData)
+	}
+}
+
 // MountData 坐骑数据
 type MountData struct {
 	ID          model.ID `json:"id"`

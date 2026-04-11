@@ -4,6 +4,12 @@ import (
 	"github.com/zwh8800/dnd-core/pkg/model"
 )
 
+func init() {
+	for _, recipe := range CraftingRecipes {
+		GlobalRegistry.RegisterCraftingRecipe(recipe)
+	}
+}
+
 // CraftingRecipes 制作配方数据库
 var CraftingRecipes = map[string]model.CraftingRecipe{
 	// === 非魔法物品制作 ===

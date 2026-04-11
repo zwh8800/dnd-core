@@ -2,6 +2,12 @@ package data
 
 import "github.com/zwh8800/dnd-core/pkg/model"
 
+func init() {
+	for _, trap := range TrapDataList {
+		GlobalRegistry.RegisterTrap(&trap)
+	}
+}
+
 // TrapData 陷阱数据
 type TrapData = model.TrapDefinition
 
