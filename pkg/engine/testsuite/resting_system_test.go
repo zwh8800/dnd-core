@@ -33,7 +33,7 @@ func TestRestingSystem(t *testing.T) {
 			PC: &engine.PlayerCharacterInput{
 				Name:  "Conan",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 3,
 				AbilityScores: engine.AbilityScoresInput{
 					Strength:     16,
@@ -90,7 +90,7 @@ func TestRestingSystem(t *testing.T) {
 			PC: &engine.PlayerCharacterInput{
 				Name:  "Healer",
 				Race:  "Dwarf",
-				Class: "Cleric",
+				Class: "牧师",
 				Level: 2,
 				AbilityScores: engine.AbilityScoresInput{
 					Strength:     14,
@@ -160,7 +160,7 @@ func TestRestingSystem(t *testing.T) {
 			PC: &engine.PlayerCharacterInput{
 				Name:  "Warrior",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: engine.AbilityScoresInput{
 					Strength: 16, Dexterity: 14, Constitution: 14,
@@ -176,7 +176,7 @@ func TestRestingSystem(t *testing.T) {
 			PC: &engine.PlayerCharacterInput{
 				Name:  "Mage",
 				Race:  "Elf",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: engine.AbilityScoresInput{
 					Strength: 8, Dexterity: 14, Constitution: 10,

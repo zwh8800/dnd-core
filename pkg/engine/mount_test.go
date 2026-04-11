@@ -22,7 +22,7 @@ func TestMountCreature(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Rider",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -88,7 +88,7 @@ func TestMountCreature(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Rider",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -132,7 +132,7 @@ func TestMountCreature(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Rider",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -179,7 +179,7 @@ func TestDismount(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Rider",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -240,7 +240,7 @@ func TestDismount(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Rider",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -268,7 +268,7 @@ func TestDismount(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Rider",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})

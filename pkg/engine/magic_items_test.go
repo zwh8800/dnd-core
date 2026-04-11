@@ -42,7 +42,7 @@ func setupMagicItemTest(t *testing.T, className string) (*Engine, context.Contex
 // TestUseMagicItem 测试魔法物品使用功能
 func TestUseMagicItem(t *testing.T) {
 	t.Run("uses consumable magic item successfully", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		// Add a healing potion to inventory
 		addResult, err := e.AddItem(ctx, AddItemRequest{
@@ -73,7 +73,7 @@ func TestUseMagicItem(t *testing.T) {
 	})
 
 	t.Run("uses item with quantity decreases count", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		// Add item with quantity > 1
 		addResult, err := e.AddItem(ctx, AddItemRequest{
@@ -117,7 +117,7 @@ func TestUseMagicItem(t *testing.T) {
 	})
 
 	t.Run("returns error when item requires attunement but not attuned", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		// Add item that requires attunement
 		addResult, err := e.AddItem(ctx, AddItemRequest{
@@ -146,7 +146,7 @@ func TestUseMagicItem(t *testing.T) {
 	})
 
 	t.Run("returns error when item not found", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		result, err := e.UseMagicItem(ctx, UseMagicItemRequest{
 			GameID:  gameResult.Game.ID,
@@ -160,7 +160,7 @@ func TestUseMagicItem(t *testing.T) {
 	})
 
 	t.Run("returns error when actor not found", func(t *testing.T) {
-		e, ctx, gameResult, _ := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, _ := setupMagicItemTest(t, "战士")
 
 		result, err := e.UseMagicItem(ctx, UseMagicItemRequest{
 			GameID:  gameResult.Game.ID,
@@ -192,7 +192,7 @@ func TestUseMagicItem(t *testing.T) {
 // TestUnattuneItem 测试取消调谐功能
 func TestUnattuneItem(t *testing.T) {
 	t.Run("unattunes item successfully", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		// Add item that requires attunement
 		addResult, err := e.AddItem(ctx, AddItemRequest{
@@ -232,7 +232,7 @@ func TestUnattuneItem(t *testing.T) {
 	})
 
 	t.Run("returns error when item not attuned", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		// Add item but don't attune
 		addResult, err := e.AddItem(ctx, AddItemRequest{
@@ -262,7 +262,7 @@ func TestUnattuneItem(t *testing.T) {
 	})
 
 	t.Run("returns error when item not found", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		result, err := e.UnattuneItem(ctx, UnattuneItemRequest{
 			GameID:  gameResult.Game.ID,
@@ -276,7 +276,7 @@ func TestUnattuneItem(t *testing.T) {
 	})
 
 	t.Run("returns error when actor not found", func(t *testing.T) {
-		e, ctx, gameResult, _ := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, _ := setupMagicItemTest(t, "战士")
 
 		result, err := e.UnattuneItem(ctx, UnattuneItemRequest{
 			GameID:  gameResult.Game.ID,
@@ -308,7 +308,7 @@ func TestUnattuneItem(t *testing.T) {
 // TestRechargeMagicItems 测试魔法物品充能功能
 func TestRechargeMagicItems(t *testing.T) {
 	t.Run("recharges magic items at dawn", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Wizard")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "法师")
 
 		// Add a charged item with dawn recharge
 		// Note: We need to manually create an item with charges since ItemInput doesn't support it
@@ -326,7 +326,7 @@ func TestRechargeMagicItems(t *testing.T) {
 	})
 
 	t.Run("returns message when actor has no inventory", func(t *testing.T) {
-		e, ctx, gameResult, _ := setupMagicItemTest(t, "Wizard")
+		e, ctx, gameResult, _ := setupMagicItemTest(t, "法师")
 
 		// Create NPC (no inventory by default)
 		npcResult, err := e.CreateNPC(ctx, CreateNPCRequest{
@@ -348,7 +348,7 @@ func TestRechargeMagicItems(t *testing.T) {
 	})
 
 	t.Run("returns error when actor not found", func(t *testing.T) {
-		e, ctx, gameResult, _ := setupMagicItemTest(t, "Wizard")
+		e, ctx, gameResult, _ := setupMagicItemTest(t, "法师")
 
 		result, err := e.RechargeMagicItems(ctx, RechargeMagicItemsRequest{
 			GameID:  gameResult.Game.ID,
@@ -378,7 +378,7 @@ func TestRechargeMagicItems(t *testing.T) {
 // TestGetMagicItemBonus 测试魔法物品加值查询功能
 func TestGetMagicItemBonus(t *testing.T) {
 	t.Run("gets magic item bonus for +1 weapon", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		// Add a magic weapon with bonus
 		addResult, err := e.AddItem(ctx, AddItemRequest{
@@ -409,7 +409,7 @@ func TestGetMagicItemBonus(t *testing.T) {
 	})
 
 	t.Run("gets magic item bonus for +1 armor", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		// Add magic armor
 		addResult, err := e.AddItem(ctx, AddItemRequest{
@@ -437,7 +437,7 @@ func TestGetMagicItemBonus(t *testing.T) {
 	})
 
 	t.Run("returns zero bonus for non-magic item", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		// Add regular item
 		addResult, err := e.AddItem(ctx, AddItemRequest{
@@ -465,7 +465,7 @@ func TestGetMagicItemBonus(t *testing.T) {
 	})
 
 	t.Run("returns error when item not found", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		result, err := e.GetMagicItemBonus(ctx, GetMagicItemBonusRequest{
 			GameID:  gameResult.Game.ID,
@@ -479,7 +479,7 @@ func TestGetMagicItemBonus(t *testing.T) {
 	})
 
 	t.Run("returns error when actor not found", func(t *testing.T) {
-		e, ctx, gameResult, _ := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, _ := setupMagicItemTest(t, "战士")
 
 		result, err := e.GetMagicItemBonus(ctx, GetMagicItemBonusRequest{
 			GameID:  gameResult.Game.ID,
@@ -508,7 +508,7 @@ func TestGetMagicItemBonus(t *testing.T) {
 	})
 
 	t.Run("result includes attunement status", func(t *testing.T) {
-		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "Fighter")
+		e, ctx, gameResult, pcResult := setupMagicItemTest(t, "战士")
 
 		// Add item that can be attuned
 		addResult, err := e.AddItem(ctx, AddItemRequest{

@@ -27,7 +27,7 @@ func TestStartCombat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -46,7 +46,7 @@ func TestStartCombat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Wizard",
 				Race:  "Elf",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -128,7 +128,7 @@ func TestStartCombat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -198,7 +198,7 @@ func TestEndCombat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -277,7 +277,7 @@ func TestNextTurn(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -296,7 +296,7 @@ func TestNextTurn(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Wizard",
 				Race:  "Elf",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -353,7 +353,7 @@ func TestGetCurrentCombat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -405,7 +405,7 @@ func TestExecuteAttack(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -483,7 +483,7 @@ func TestExecuteDamage(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Target",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -536,7 +536,7 @@ func TestExecuteHealing(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Wounded Target",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,

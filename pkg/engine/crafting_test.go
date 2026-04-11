@@ -22,7 +22,7 @@ func TestStartCrafting2(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Crafter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 5,
 				AbilityScores: AbilityScoresInput{
 					Strength: 14, Dexterity: 12, Constitution: 13,
@@ -120,7 +120,7 @@ func TestStartCrafting2(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Unskilled",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 5,
 				AbilityScores: AbilityScoresInput{
 					Strength: 14, Dexterity: 12, Constitution: 13,
@@ -153,7 +153,7 @@ func TestStartCrafting2(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:       "Guild Artisan",
 				Race:       "Human",
-				Class:      "Fighter",
+				Class:      "战士",
 				Level:      5,
 				Background: "Guild Artisan",
 				AbilityScores: AbilityScoresInput{
@@ -194,7 +194,7 @@ func TestAdvanceCrafting2(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Crafter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 5,
 				AbilityScores: AbilityScoresInput{
 					Strength: 14, Dexterity: 12, Constitution: 13,
@@ -292,7 +292,7 @@ func TestAdvanceCrafting2(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Crafter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 5,
 				AbilityScores: AbilityScoresInput{
 					Strength: 14, Dexterity: 12, Constitution: 13,
@@ -326,7 +326,7 @@ func TestCompleteCrafting2(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Crafter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 5,
 				AbilityScores: AbilityScoresInput{
 					Strength: 14, Dexterity: 12, Constitution: 13,
@@ -424,7 +424,7 @@ func TestCompleteCrafting2(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Crafter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 5,
 				AbilityScores: AbilityScoresInput{
 					Strength: 14, Dexterity: 12, Constitution: 13,

@@ -431,26 +431,6 @@ func GetClassID(name string) (model.ClassID, error) {
 		}
 	}
 
-	// 尝试英文名映射
-	englishToClassID := map[string]model.ClassID{
-		"Barbarian": model.ClassBarbarian,
-		"Bard":      model.ClassBard,
-		"Cleric":    model.ClassCleric,
-		"Druid":     model.ClassDruid,
-		"Fighter":   model.ClassFighter,
-		"Monk":      model.ClassMonk,
-		"Paladin":   model.ClassPaladin,
-		"Ranger":    model.ClassRanger,
-		"Rogue":     model.ClassRogue,
-		"Sorcerer":  model.ClassSorcerer,
-		"Warlock":   model.ClassWarlock,
-		"Wizard":    model.ClassWizard,
-	}
-
-	if id, ok := englishToClassID[name]; ok {
-		return id, nil
-	}
-
 	return "", fmt.Errorf("未知的职业: %s", name)
 }
 

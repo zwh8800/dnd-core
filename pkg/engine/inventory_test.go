@@ -26,7 +26,7 @@ func TestAddItem(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -76,7 +76,7 @@ func TestGetInventory(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -130,7 +130,7 @@ func TestEquipItem(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,

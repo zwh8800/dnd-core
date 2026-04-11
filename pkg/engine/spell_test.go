@@ -26,7 +26,7 @@ func TestCastSpell(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -91,7 +91,7 @@ func TestCastSpell(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Wizard",
 				Race:  "Human",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -189,7 +189,7 @@ func TestGetSpellSlots(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -330,7 +330,7 @@ func TestPrepareSpells(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -441,7 +441,7 @@ func TestPrepareSpells(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Sorcerer",
 				Race:  "Human",
-				Class: "Sorcerer",
+				Class: "术士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -483,7 +483,7 @@ func TestLearnSpell(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -663,7 +663,7 @@ func TestConcentrationCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Wizard",
 				Race:  "Human",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -807,7 +807,7 @@ func TestEndConcentration(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Wizard",
 				Race:  "Human",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -950,7 +950,7 @@ func TestCastSpellRitual(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -1027,7 +1027,7 @@ func TestCastSpellRitual(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Wizard",
 				Race:  "Human",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -1069,7 +1069,7 @@ func TestIsConcentrating(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -1245,7 +1245,7 @@ func TestGetConcentrationSpell(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Wizard",
 				Race:  "Human",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -1354,7 +1354,7 @@ func TestGetPactMagicSlots(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -1495,7 +1495,7 @@ func TestRestorePactMagicSlots(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,

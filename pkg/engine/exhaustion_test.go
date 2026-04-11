@@ -28,7 +28,7 @@ func TestApplyExhaustion(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -77,7 +77,7 @@ func TestApplyExhaustion(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -124,7 +124,7 @@ func TestApplyExhaustion(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -171,7 +171,7 @@ func TestApplyExhaustion(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -238,7 +238,7 @@ func TestApplyExhaustion(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -280,7 +280,7 @@ func TestRemoveExhaustion(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -334,7 +334,7 @@ func TestRemoveExhaustion(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -388,7 +388,7 @@ func TestRemoveExhaustion(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -432,7 +432,7 @@ func TestRemoveExhaustion(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -478,7 +478,7 @@ func TestGetExhaustionStatus(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,
@@ -521,7 +521,7 @@ func TestGetExhaustionStatus(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15,

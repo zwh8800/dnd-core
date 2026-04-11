@@ -28,7 +28,7 @@ func TestPerformDeathSave(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				HitPoints: 10,
 				AbilityScores: AbilityScoresInput{
@@ -88,7 +88,7 @@ func TestPerformDeathSave(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				HitPoints: 10,
 				AbilityScores: AbilityScoresInput{
@@ -190,7 +190,7 @@ func TestPerformDeathSave(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				HitPoints: 10,
 				AbilityScores: AbilityScoresInput{
@@ -255,7 +255,7 @@ func TestStabilizeCreature(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				HitPoints: 10,
 				AbilityScores: AbilityScoresInput{
@@ -313,7 +313,7 @@ func TestStabilizeCreature(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				HitPoints: 10,
 				AbilityScores: AbilityScoresInput{
@@ -357,7 +357,7 @@ func TestStabilizeCreature(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				HitPoints: 10,
 				AbilityScores: AbilityScoresInput{
@@ -422,7 +422,7 @@ func TestGetDeathSaveStatus(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				HitPoints: 10,
 				AbilityScores: AbilityScoresInput{
@@ -467,7 +467,7 @@ func TestGetDeathSaveStatus(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				HitPoints: 10,
 				AbilityScores: AbilityScoresInput{
@@ -527,7 +527,7 @@ func TestGetDeathSaveStatus(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				HitPoints: 10,
 				AbilityScores: AbilityScoresInput{

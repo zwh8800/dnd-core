@@ -33,7 +33,7 @@ func TestValidateMulticlassChoice(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     15, // >= 13 for Fighter multiclass
@@ -76,7 +76,7 @@ func TestValidateMulticlassChoice(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -119,7 +119,7 @@ func TestValidateMulticlassChoice(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -228,7 +228,7 @@ func TestGetMulticlassSpellSlots(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength: 16,

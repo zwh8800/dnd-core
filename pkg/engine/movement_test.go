@@ -26,7 +26,7 @@ func setupTestPC(t *testing.T, e *Engine, name string, strength, constitution in
 		PC: &PlayerCharacterInput{
 			Name:  name,
 			Race:  "Human",
-			Class: "Fighter",
+			Class: "战士",
 			Level: 1,
 			AbilityScores: AbilityScoresInput{
 				Strength:     strength,

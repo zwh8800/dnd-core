@@ -222,7 +222,7 @@ func TestGameInfo(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Hero 1",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength: 15, Dexterity: 14, Constitution: 13,

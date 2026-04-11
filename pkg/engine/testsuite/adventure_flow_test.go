@@ -36,7 +36,7 @@ func TestFullAdventureFlow(t *testing.T) {
 				PC: &engine.PlayerCharacterInput{
 					Name:       "Aelindra",
 					Race:       "Elf",
-					Class:      "Ranger",
+					Class:      "游侠",
 					Level:      3,
 					Background: "Outlander",
 					AbilityScores: engine.AbilityScoresInput{
@@ -59,7 +59,7 @@ func TestFullAdventureFlow(t *testing.T) {
 				PC: &engine.PlayerCharacterInput{
 					Name:       "Thorin",
 					Race:       "Dwarf",
-					Class:      "Fighter",
+					Class:      "战士",
 					Level:      3,
 					Background: "Soldier",
 					AbilityScores: engine.AbilityScoresInput{
@@ -335,7 +335,7 @@ func TestFullAdventureFlow(t *testing.T) {
 			PC: &engine.PlayerCharacterInput{
 				Name:       "Elara",
 				Race:       "Half-Elf",
-				Class:      "Bard",
+				Class:      "吟游诗人",
 				Level:      2,
 				Background: "Entertainer",
 				AbilityScores: engine.AbilityScoresInput{

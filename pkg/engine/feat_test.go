@@ -22,7 +22,7 @@ func TestSelectFeat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 4,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -68,7 +68,7 @@ func TestSelectFeat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 4,
 			},
 		})
@@ -131,7 +131,7 @@ func TestSelectFeat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 4,
 			},
 		})
@@ -327,7 +327,7 @@ func TestRemoveFeat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 4,
 			},
 		})
@@ -390,7 +390,7 @@ func TestRemoveFeat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 4,
 			},
 		})
@@ -432,7 +432,7 @@ func TestRemoveFeat(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 8,
 			},
 		})
@@ -491,7 +491,7 @@ func TestGetActorFeats(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -519,7 +519,7 @@ func TestGetActorFeats(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 4,
 			},
 		})
@@ -593,7 +593,7 @@ func TestGetActorFeats(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 4,
 			},
 		})

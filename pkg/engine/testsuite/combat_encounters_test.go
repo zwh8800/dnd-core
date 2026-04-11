@@ -33,7 +33,7 @@ func TestCombatEncounters(t *testing.T) {
 			PC: &engine.PlayerCharacterInput{
 				Name:  "Marcus",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 5,
 				AbilityScores: engine.AbilityScoresInput{
 					Strength:     18,
@@ -53,7 +53,7 @@ func TestCombatEncounters(t *testing.T) {
 			PC: &engine.PlayerCharacterInput{
 				Name:  "Shadow",
 				Race:  "Halfling",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 5,
 				AbilityScores: engine.AbilityScoresInput{
 					Strength:     10,

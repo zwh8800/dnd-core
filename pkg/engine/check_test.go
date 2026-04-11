@@ -26,7 +26,7 @@ func TestPerformAbilityCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -70,7 +70,7 @@ func TestPerformAbilityCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     20,
@@ -114,7 +114,7 @@ func TestPerformAbilityCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -157,7 +157,7 @@ func TestPerformAbilityCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -274,7 +274,7 @@ func TestPerformSkillCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -318,7 +318,7 @@ func TestPerformSkillCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -361,7 +361,7 @@ func TestPerformSkillCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -403,7 +403,7 @@ func TestPerformSkillCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     18,
@@ -468,7 +468,7 @@ func TestPerformSkillCheck(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -515,7 +515,7 @@ func TestPerformSavingThrow(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -560,7 +560,7 @@ func TestPerformSavingThrow(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     20,
@@ -604,7 +604,7 @@ func TestPerformSavingThrow(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -648,7 +648,7 @@ func TestPerformSavingThrow(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -802,7 +802,7 @@ func TestGetPassivePerception(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -915,7 +915,7 @@ func TestGetPassivePerception(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Leader",
 				Race:  "Human",
-				Class: "Ranger",
+				Class: "游侠",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,

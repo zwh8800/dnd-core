@@ -179,7 +179,7 @@ func TestGetCarryingCapacity(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Strong Character",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     20, // STR 20 = 300 lbs carrying capacity
@@ -238,7 +238,7 @@ func TestGetCarryingCapacity(t *testing.T) {
 					PC: &PlayerCharacterInput{
 						Name:  "Test Character",
 						Race:  "Human",
-						Class: "Fighter",
+						Class: "战士",
 						Level: 1,
 						AbilityScores: AbilityScoresInput{
 							Strength:     tt.strength,

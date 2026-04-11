@@ -30,7 +30,7 @@ func TestCreatePC(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "Test Character",
 				Race:      "Human",
-				Class:     "Fighter",
+				Class:     "战士",
 				Level:     1,
 				Alignment: "Neutral",
 				AbilityScores: AbilityScoresInput{
@@ -67,7 +67,7 @@ func TestCreatePC(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:      "High HP Character",
 				Race:      "Dwarf",
-				Class:     "Barbarian",
+				Class:     "野蛮人",
 				Level:     1,
 				HitPoints: 20,
 				AbilityScores: AbilityScoresInput{
@@ -184,7 +184,7 @@ func TestGetActor(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -252,7 +252,7 @@ func TestGetPC(t *testing.T) {
 				Name:       "Detailed Character",
 				Race:       "Elf",
 				Background: "Soldier",
-				Class:      "Wizard",
+				Class:      "法师",
 				Level:      3,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -301,7 +301,7 @@ func TestUpdateActor(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Human",
-				Class: "Cleric",
+				Class: "牧师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -356,7 +356,7 @@ func TestUpdateActor(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Character",
 				Race:  "Halfling",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     10,
@@ -414,7 +414,7 @@ func TestListActors(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Character 1",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength: 15, Dexterity: 13, Constitution: 14,
@@ -466,7 +466,7 @@ func TestListActors(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Player",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength: 15, Dexterity: 13, Constitution: 14,
@@ -526,7 +526,7 @@ func TestRemoveActor(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "To Be Removed",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength: 15, Dexterity: 13, Constitution: 14,
@@ -573,7 +573,7 @@ func TestAddExperience(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Adventurer",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength: 16, Dexterity: 12, Constitution: 15,
@@ -619,7 +619,7 @@ func TestAddExperience(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Veteran",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength: 16, Dexterity: 12, Constitution: 15,

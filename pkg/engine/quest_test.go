@@ -201,7 +201,7 @@ func TestAcceptQuest(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Adventurer",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength: 16, Dexterity: 14, Constitution: 15,

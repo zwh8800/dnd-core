@@ -32,7 +32,7 @@ func TestApplyBackground(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:  16,
@@ -71,7 +71,7 @@ func TestApplyBackground(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Acolyte",
 				Race:  "Human",
-				Class: "Cleric",
+				Class: "牧师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Wisdom: 16,
@@ -109,7 +109,7 @@ func TestApplyBackground(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -177,7 +177,7 @@ func TestApplyBackground(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Criminal",
 				Race:  "Human",
-				Class: "Rogue",
+				Class: "游荡者",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Dexterity: 16,
@@ -216,7 +216,7 @@ func TestApplyBackground(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Character 1",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -228,7 +228,7 @@ func TestApplyBackground(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Character 2",
 				Race:  "Human",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 			},
 		})
@@ -283,7 +283,7 @@ func TestGetBackgroundFeatures(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Sage",
 				Race:  "Human",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 			},
 		})
@@ -324,7 +324,7 @@ func TestGetBackgroundFeatures(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 			},
 		})
@@ -389,7 +389,7 @@ func TestGetBackgroundFeatures(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Test Acolyte",
 				Race:  "Human",
-				Class: "Cleric",
+				Class: "牧师",
 				Level: 1,
 			},
 		})

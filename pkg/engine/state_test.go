@@ -27,7 +27,7 @@ func TestGetStateSummary(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Hero",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -96,7 +96,7 @@ func TestGetActorSheet(t *testing.T) {
 				Name:       "Detailed Hero",
 				Race:       "Elf",
 				Background: "Soldier",
-				Class:      "Wizard",
+				Class:      "法师",
 				Level:      3,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -203,7 +203,7 @@ func TestGetCombatSummary(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Fighter",
 				Race:  "Human",
-				Class: "Fighter",
+				Class: "战士",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     16,
@@ -222,7 +222,7 @@ func TestGetCombatSummary(t *testing.T) {
 			PC: &PlayerCharacterInput{
 				Name:  "Wizard",
 				Race:  "Elf",
-				Class: "Wizard",
+				Class: "法师",
 				Level: 1,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
