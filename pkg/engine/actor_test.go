@@ -104,7 +104,7 @@ func TestCreateNPC(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Village Elder",
 				Description: "An old and wise elder",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength:     10,
@@ -142,7 +142,7 @@ func TestCreateEnemy(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:        "Goblin",
 				Description: "A small green creature",
-				Size:        model.SizeSmall,
+				Size:        string(model.SizeSmall),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -152,7 +152,7 @@ func TestCreateEnemy(t *testing.T) {
 					Wisdom:       8,
 					Charisma:     8,
 				},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -429,7 +429,7 @@ func TestListActors(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Merchant",
 				Description: "A friendly merchant",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 10, Dexterity: 12, Constitution: 11,
@@ -481,7 +481,7 @@ func TestListActors(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "NPC",
 				Description: "An NPC",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 10, Dexterity: 12, Constitution: 11,

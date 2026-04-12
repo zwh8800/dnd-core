@@ -20,47 +20,169 @@ type AbilityScoresInput struct {
 	Charisma     int `json:"charisma"`     // 魅力
 }
 
+// PersonalityTraitsInput 个性特征输入
+type PersonalityTraitsInput struct {
+	Traits string `json:"traits"` // 个性特征
+	Ideals string `json:"ideals"` // 理想
+	Bonds  string `json:"bonds"`  // 羁绊
+	Flaws  string `json:"flaws"`  // 缺陷
+}
+
+// FeatInstanceInput 专长实例输入
+type FeatInstanceInput struct {
+	FeatID        string `json:"feat_id"`        // 专长ID
+	Source        string `json:"source"`         // 来源（background/level_up/variant）
+	AcquiredLevel int    `json:"acquired_level"` // 获得时的等级
+}
+
+// ClassLevelInput 职业等级输入
+type ClassLevelInput struct {
+	Class string `json:"class"` // 职业名称
+	Level int    `json:"level"` // 职业等级
+}
+
+// SpellcasterStateInput 施法者状态输入
+type SpellcasterStateInput struct {
+	SpellcastingAbility string   `json:"spellcasting_ability"`      // 施法属性
+	PreparedSpells      []string `json:"prepared_spells,omitempty"` // 已准备的法术
+	KnownSpells         []string `json:"known_spells,omitempty"`    // 已知的法术
+	PreparationType     string   `json:"preparation_type"`          // 准备类型（prepared/known）
+}
+
+// CraftingProgressInput 制作进度输入
+type CraftingProgressInput struct {
+	RecipeID   string `json:"recipe_id"`   // 配方ID
+	DaysWorked int    `json:"days_worked"` // 已工作天数
+	MoneySpent int    `json:"money_spent"` // 已花费金额
+}
+
+// FighterStateInput 战士特性状态输入
+type FighterStateInput struct {
+	FightingStyle string `json:"fighting_style"` // 战斗风格
+	Archetype     string `json:"archetype"`      // 武术范型
+}
+
 // PlayerCharacterInput 玩家角色创建输入
 type PlayerCharacterInput struct {
-	Name          string             `json:"name"`                 // 角色名称
-	Race          string             `json:"race"`                 // 种族
-	Background    string             `json:"background"`           // 背景
-	Class         string             `json:"class"`                // 职业
-	Level         int                `json:"level"`                // 等级
-	Alignment     string             `json:"alignment"`            // 阵营
-	AbilityScores AbilityScoresInput `json:"ability_scores"`       // 属性值
-	HitPoints     int                `json:"hit_points,omitempty"` // 初始HP（可选，不填则自动计算）
+	// 基础信息
+	Name          string             `json:"name"`              // 角色名称
+	Race          string             `json:"race"`              // 种族
+	Subrace       string             `json:"subrace,omitempty"` // 子种族（可选）
+	Background    string             `json:"background"`        // 背景ID
+	Class         string             `json:"class"`             // 主职业
+	Level         int                `json:"level"`             // 等级（默认1）
+	Alignment     string             `json:"alignment"`         // 阵营
+	AbilityScores AbilityScoresInput `json:"ability_scores"`    // 属性值
+
+	// 可选配置
+	Description string `json:"description,omitempty"` // 角色描述
+	Size        string `json:"size,omitempty"`        // 体型（默认继承种族）
+	Speed       *int   `json:"speed,omitempty"`       // 速度（可选，不填则使用种族默认值）
+
+	// 个性特征（可选）
+	Personality *PersonalityTraitsInput `json:"personality,omitempty"` // 个性特征
+
+	// 专长（可选，通常来自变体人类或背景）
+	Feats []FeatInstanceInput `json:"feats,omitempty"` // 初始专长列表
+
+	// 施法者配置（可选，仅当职业是施法者时需要）
+	Spellcasting *SpellcasterStateInput `json:"spellcasting,omitempty"` // 施法者状态
+
+	// 经济系统
+	Gold int `json:"gold,omitempty"` // 初始金币（铜币单位，默认使用背景起始财富）
+
+	// 制作进度（可选，用于继承已有角色）
+	CraftingProgress map[string]*CraftingProgressInput `json:"crafting_progress,omitempty"` // 制作进度
+
+	// 职业特性配置
+	FighterState *FighterStateInput `json:"fighter_state,omitempty"` // 战士特性（仅战士职业需要）
+
+	// 生命值（可选，不填则自动计算）
+	HitPoints int `json:"hit_points,omitempty"` // 初始HP
 }
 
 // NPCInput NPC创建输入
 type NPCInput struct {
+	// 基础信息
 	Name          string             `json:"name"`           // NPC名称
 	Description   string             `json:"description"`    // 描述
-	Size          model.Size         `json:"size"`           // 体型
-	Speed         int                `json:"speed"`          // 速度（尺）
+	Size          string             `json:"size"`           // 体型（Tiny/Small/Medium/Large/Huge/Gargantuan）
+	CreatureType  string             `json:"creature_type"`  // 生物类型（Aberration/Beast/Celestial等）
+	Speed         int                `json:"speed"`          // 基础速度（英尺）
 	AbilityScores AbilityScoresInput `json:"ability_scores"` // 属性值
+
+	// NPC特有字段
+	Occupation  string   `json:"occupation"`  // 职业/身份
+	Faction     string   `json:"faction"`     // 所属组织
+	Attitude    string   `json:"attitude"`    // 对玩家的态度（friendly/indifferent/hostile）
+	Disposition string   `json:"disposition"` // 性格倾向（helpful/friendly/indifferent/suspicious/hostile）
+	KnownInfo   []string `json:"known_info"`  // 知道的信息
+	QuestGiver  bool     `json:"quest_giver"` // 是否能给予任务
+	Merchant    bool     `json:"merchant"`    // 是否是商人
+
+	// 可选配置
+	ArmorClass      *int `json:"armor_class,omitempty"`      // 护甲等级（不填则自动计算）
+	HitPoints       *int `json:"hit_points,omitempty"`       // 生命值（不填则使用默认值10）
+	InitiativeBonus *int `json:"initiative_bonus,omitempty"` // 先攻修正
+	Inspiration     bool `json:"inspiration"`                // 是否拥有灵感点
+}
+
+// DamageImmunityInput 伤害免疫/抗性/易伤输入
+type DamageImmunityInput struct {
+	DamageTypes []string `json:"damage_types"` // 伤害类型
+	NonMagical  bool     `json:"non_magical"`  // 是否仅对非魔法攻击有效
 }
 
 // EnemyInput 敌人创建输入
 type EnemyInput struct {
+	// 基础信息
 	Name            string             `json:"name"`             // 敌人名称
 	Description     string             `json:"description"`      // 描述
-	Size            model.Size         `json:"size"`             // 体型
-	Speed           int                `json:"speed"`            // 速度（尺）
+	Size            string             `json:"size"`             // 体型
+	CreatureType    string             `json:"creature_type"`    // 生物类型
+	Speed           int                `json:"speed"`            // 基础速度（英尺）
 	AbilityScores   AbilityScoresInput `json:"ability_scores"`   // 属性值
-	ChallengeRating float64            `json:"challenge_rating"` // 挑战等级
+	ChallengeRating string             `json:"challenge_rating"` // 挑战等级（如 "1/4", "2", "10"）
 	HitPoints       int                `json:"hit_points"`       // 生命值
 	ArmorClass      int                `json:"armor_class"`      // 护甲等级
+
+	// 战斗属性
+	XPValue               int                   `json:"xp_value"`               // 经验值
+	AttackBonus           int                   `json:"attack_bonus"`           // 攻击加值
+	DamagePerRound        int                   `json:"damage_per_round"`       // 每回合伤害
+	Senses                []string              `json:"senses"`                 // 感官（黑暗视觉等）
+	DamageImmunities      []DamageImmunityInput `json:"damage_immunities"`      // 伤害免疫
+	DamageResistances     []DamageImmunityInput `json:"damage_resistances"`     // 伤害抗性
+	DamageVulnerabilities []DamageImmunityInput `json:"damage_vulnerabilities"` // 伤害易伤
+	ConditionImmunities   []string              `json:"condition_immunities"`   // 状态免疫
+
+	// 传说动作
+	LegendaryActionsRemaining int `json:"legendary_actions_remaining"` // 传说动作剩余次数
+
+	// 可选配置
+	InitiativeBonus *int `json:"initiative_bonus,omitempty"` // 先攻修正
 }
 
 // CompanionInput 同伴创建输入
 type CompanionInput struct {
+	// 基础信息
 	Name          string             `json:"name"`           // 同伴名称
 	Description   string             `json:"description"`    // 描述
-	Size          model.Size         `json:"size"`           // 体型
-	Speed         int                `json:"speed"`          // 速度（尺）
+	Size          string             `json:"size"`           // 体型
+	CreatureType  string             `json:"creature_type"`  // 生物类型
+	Speed         int                `json:"speed"`          // 速度（英尺）
 	AbilityScores AbilityScoresInput `json:"ability_scores"` // 属性值
-	LeaderID      model.ID           `json:"leader_id"`      // 领导者ID
+
+	// 同伴特有字段
+	LeaderID     string   `json:"leader_id"`     // 领导者（玩家）ID
+	Loyalty      int      `json:"loyalty"`       // 忠诚度
+	BehaviorMode string   `json:"behavior_mode"` // 行为模式（攻击/防御/辅助）
+	Commands     []string `json:"commands"`      // 可接受的命令
+
+	// 可选配置
+	ArmorClass      *int `json:"armor_class,omitempty"`      // 护甲等级（不填则自动计算）
+	HitPoints       *int `json:"hit_points,omitempty"`       // 生命值（不填则自动计算）
+	InitiativeBonus *int `json:"initiative_bonus,omitempty"` // 先攻修正
 }
 
 // ActorInfo 角色基本信息
@@ -292,7 +414,7 @@ type EndLongRestRequest struct {
 }
 
 // CreatePC 创建一个新的玩家角色（Player Character）
-// 根据提供的角色配置创建PC，包括种族、职业、背景、属性等，并自动计算HP、AC等派生值。
+// 根据提供的角色配置创建PC，包括种族、职业、背景、属性、专长、法术位等，并自动计算HP、AC等派生值。
 // 参数:
 //
 //	ctx - 上下文
@@ -325,25 +447,61 @@ func (e *Engine) CreatePC(ctx context.Context, req CreatePCRequest) (*CreatePCRe
 		Actor: model.Actor{
 			ID:            model.NewID(),
 			Name:          req.PC.Name,
+			Description:   req.PC.Description,
 			AbilityScores: abilityScoresInputToModel(req.PC.AbilityScores),
 			HitPoints:     model.HitPoints{},
 			Conditions:    []model.ConditionInstance{},
 			Exhaustion:    0,
 		},
 		Race: model.RaceReference{
-			Name: req.PC.Race,
+			Name:    req.PC.Race,
+			Subrace: req.PC.Subrace,
 		},
 		Alignment:    model.Alignment(req.PC.Alignment),
 		Classes:      []model.ClassLevel{},
 		Experience:   0,
 		Features:     []string{},
 		RacialTraits: []string{},
+		Feats:        []model.FeatInstance{},
+		Gold:         req.PC.Gold,
+	}
+
+	// 设置体型和速度（如果提供）
+	if req.PC.Size != "" {
+		pc.Size = model.Size(req.PC.Size)
+	}
+	if req.PC.Speed != nil {
+		pc.Speed = *req.PC.Speed
 	}
 
 	// 设置背景
 	if req.PC.Background != "" {
+		pc.BackgroundID = req.PC.Background
+	}
+
+	// 设置个性特征
+	if req.PC.Personality != nil {
 		pc.Personality = &model.PersonalityTraits{
+			Traits:     req.PC.Personality.Traits,
+			Ideals:     req.PC.Personality.Ideals,
+			Bonds:      req.PC.Personality.Bonds,
+			Flaws:      req.PC.Personality.Flaws,
 			Background: req.PC.Background,
+		}
+	}
+
+	// 设置初始专长
+	if len(req.PC.Feats) > 0 {
+		for _, featInput := range req.PC.Feats {
+			acquiredLevel := featInput.AcquiredLevel
+			if acquiredLevel < 1 {
+				acquiredLevel = 1
+			}
+			pc.Feats = append(pc.Feats, model.FeatInstance{
+				FeatID:        featInput.FeatID,
+				Source:        model.FeatSource(featInput.Source),
+				AcquiredLevel: acquiredLevel,
+			})
 		}
 	}
 
@@ -373,10 +531,45 @@ func (e *Engine) CreatePC(ctx context.Context, req CreatePCRequest) (*CreatePCRe
 		pc.FeatureHooks = make(map[model.ClassID]model.FeatureHook)
 		if classID == model.ClassFighter {
 			pc.FighterState = &model.FighterFeatures{}
+			if req.PC.FighterState != nil {
+				// 应用用户指定的战斗风格和范型
+				pc.FighterState.SelectedFightingStyle = model.FightingStyle(req.PC.FighterState.FightingStyle)
+				pc.FighterState.SelectedArchetype = model.MartialArchetype(req.PC.FighterState.Archetype)
+			}
 			model.UpdateFighterFeatures(pc.FighterState, level)
 			pc.FeatureHooks[classID] = &model.FighterFeatureHooks{
 				Features: pc.FighterState,
 				Level:    level,
+			}
+		}
+	}
+
+	// 设置施法者状态
+	if req.PC.Spellcasting != nil {
+		pc.Spellcasting = &model.SpellcasterState{
+			SpellcastingAbility: model.Ability(req.PC.Spellcasting.SpellcastingAbility),
+			PreparedSpells:      req.PC.Spellcasting.PreparedSpells,
+			KnownSpells:         req.PC.Spellcasting.KnownSpells,
+			PreparationType:     req.PC.Spellcasting.PreparationType,
+		}
+
+		// 计算法术豁免DC和攻击加值
+		if pc.Spellcasting.SpellcastingAbility != "" {
+			abilityScore := pc.AbilityScores.Get(pc.Spellcasting.SpellcastingAbility)
+			profBonus := rules.ProficiencyBonus(pc.TotalLevel)
+			pc.Spellcasting.SpellSaveDC = 8 + profBonus + rules.AbilityModifier(abilityScore)
+			pc.Spellcasting.SpellAttackBonus = profBonus + rules.AbilityModifier(abilityScore)
+		}
+	}
+
+	// 设置制作进度
+	if len(req.PC.CraftingProgress) > 0 {
+		pc.CraftingProgress = make(map[string]*model.CraftingProgress)
+		for recipeID, progress := range req.PC.CraftingProgress {
+			pc.CraftingProgress[recipeID] = &model.CraftingProgress{
+				RecipeID:   progress.RecipeID,
+				DaysWorked: progress.DaysWorked,
+				MoneySpent: progress.MoneySpent,
 			}
 		}
 	}
@@ -443,15 +636,45 @@ func (e *Engine) CreateNPC(ctx context.Context, req CreateNPCRequest) (*CreateNP
 			Name:          req.NPC.Name,
 			Description:   req.NPC.Description,
 			AbilityScores: abilityScoresInputToModel(req.NPC.AbilityScores),
-			Size:          req.NPC.Size,
+			Size:          model.Size(req.NPC.Size),
+			CreatureType:  model.CreatureType(req.NPC.CreatureType),
 			Speed:         req.NPC.Speed,
 			HitPoints:     model.HitPoints{},
 			Conditions:    []model.ConditionInstance{},
 			Exhaustion:    0,
 		},
+		Occupation:  req.NPC.Occupation,
+		Faction:     req.NPC.Faction,
+		Attitude:    req.NPC.Attitude,
+		Disposition: req.NPC.Disposition,
+		KnownInfo:   req.NPC.KnownInfo,
+		QuestGiver:  req.NPC.QuestGiver,
+		Merchant:    req.NPC.Merchant,
 	}
 
-	npc.ArmorClass = calculateArmorClassFromActor(&npc.Actor)
+	// 设置可选字段
+	if req.NPC.InitiativeBonus != nil {
+		npc.InitiativeBonus = *req.NPC.InitiativeBonus
+	}
+	if req.NPC.Inspiration {
+		npc.Inspiration = true
+	}
+
+	// 设置生命值
+	if req.NPC.HitPoints != nil {
+		npc.HitPoints.Maximum = *req.NPC.HitPoints
+		npc.HitPoints.Current = *req.NPC.HitPoints
+	} else {
+		npc.HitPoints.Maximum = 10
+		npc.HitPoints.Current = 10
+	}
+
+	// 设置护甲等级
+	if req.NPC.ArmorClass != nil {
+		npc.ArmorClass = *req.NPC.ArmorClass
+	} else {
+		npc.ArmorClass = calculateArmorClassFromActor(&npc.Actor)
+	}
 
 	game.NPCs[npc.ID] = npc
 
@@ -498,14 +721,78 @@ func (e *Engine) CreateEnemy(ctx context.Context, req CreateEnemyRequest) (*Crea
 			Name:          req.Enemy.Name,
 			Description:   req.Enemy.Description,
 			AbilityScores: abilityScoresInputToModel(req.Enemy.AbilityScores),
-			Size:          req.Enemy.Size,
+			Size:          model.Size(req.Enemy.Size),
+			CreatureType:  model.CreatureType(req.Enemy.CreatureType),
 			Speed:         req.Enemy.Speed,
 			HitPoints:     model.HitPoints{Current: req.Enemy.HitPoints, Maximum: req.Enemy.HitPoints},
 			ArmorClass:    req.Enemy.ArmorClass,
 			Conditions:    []model.ConditionInstance{},
 			Exhaustion:    0,
 		},
-		ChallengeRating: fmt.Sprintf("%d", int(req.Enemy.ChallengeRating)),
+		ChallengeRating:           req.Enemy.ChallengeRating,
+		XPValue:                   req.Enemy.XPValue,
+		AttackBonus:               req.Enemy.AttackBonus,
+		DamagePerRound:            req.Enemy.DamagePerRound,
+		Senses:                    req.Enemy.Senses,
+		LegendaryActionsRemaining: req.Enemy.LegendaryActionsRemaining,
+	}
+
+	// 设置先攻修正
+	if req.Enemy.InitiativeBonus != nil {
+		enemy.InitiativeBonus = *req.Enemy.InitiativeBonus
+	}
+
+	// 转换伤害免疫
+	if len(req.Enemy.DamageImmunities) > 0 {
+		enemy.DamageImmunities = make([]model.DamageImmunity, len(req.Enemy.DamageImmunities))
+		for i, imm := range req.Enemy.DamageImmunities {
+			damageTypes := make([]model.DamageType, len(imm.DamageTypes))
+			for j, dt := range imm.DamageTypes {
+				damageTypes[j] = model.DamageType(dt)
+			}
+			enemy.DamageImmunities[i] = model.DamageImmunity{
+				DamageTypes: damageTypes,
+				NonMagical:  imm.NonMagical,
+			}
+		}
+	}
+
+	// 转换伤害抗性
+	if len(req.Enemy.DamageResistances) > 0 {
+		enemy.DamageResistances = make([]model.DamageImmunity, len(req.Enemy.DamageResistances))
+		for i, res := range req.Enemy.DamageResistances {
+			damageTypes := make([]model.DamageType, len(res.DamageTypes))
+			for j, dt := range res.DamageTypes {
+				damageTypes[j] = model.DamageType(dt)
+			}
+			enemy.DamageResistances[i] = model.DamageImmunity{
+				DamageTypes: damageTypes,
+				NonMagical:  res.NonMagical,
+			}
+		}
+	}
+
+	// 转换伤害易伤
+	if len(req.Enemy.DamageVulnerabilities) > 0 {
+		enemy.DamageVulnerabilities = make([]model.DamageImmunity, len(req.Enemy.DamageVulnerabilities))
+		for i, vul := range req.Enemy.DamageVulnerabilities {
+			damageTypes := make([]model.DamageType, len(vul.DamageTypes))
+			for j, dt := range vul.DamageTypes {
+				damageTypes[j] = model.DamageType(dt)
+			}
+			enemy.DamageVulnerabilities[i] = model.DamageImmunity{
+				DamageTypes: damageTypes,
+				NonMagical:  vul.NonMagical,
+			}
+		}
+	}
+
+	// 转换状态免疫
+	if len(req.Enemy.ConditionImmunities) > 0 {
+		enemy.ConditionImmunities = make([]model.ConditionType, len(req.Enemy.ConditionImmunities))
+		for i, cond := range req.Enemy.ConditionImmunities {
+			enemy.ConditionImmunities[i] = model.ConditionType(cond)
+		}
 	}
 
 	game.Enemies[enemy.ID] = enemy
@@ -550,17 +837,44 @@ func (e *Engine) CreateCompanion(ctx context.Context, req CreateCompanionRequest
 	companion := &model.Companion{
 		Actor: model.Actor{
 			ID:            model.NewID(),
+			Name:          req.Companion.Name,
+			Description:   req.Companion.Description,
 			AbilityScores: abilityScoresInputToModel(req.Companion.AbilityScores),
-			Size:          req.Companion.Size,
+			Size:          model.Size(req.Companion.Size),
+			CreatureType:  model.CreatureType(req.Companion.CreatureType),
 			Speed:         req.Companion.Speed,
 			HitPoints:     model.HitPoints{},
 			Conditions:    []model.ConditionInstance{},
 			Exhaustion:    0,
 		},
-		LeaderID: req.Companion.LeaderID,
+		LeaderID:     model.ID(req.Companion.LeaderID),
+		Loyalty:      req.Companion.Loyalty,
+		BehaviorMode: req.Companion.BehaviorMode,
+		Commands:     req.Companion.Commands,
 	}
 
-	companion.ArmorClass = calculateArmorClassFromActor(&companion.Actor)
+	// 设置先攻修正
+	if req.Companion.InitiativeBonus != nil {
+		companion.InitiativeBonus = *req.Companion.InitiativeBonus
+	}
+
+	// 设置生命值
+	if req.Companion.HitPoints != nil {
+		companion.HitPoints.Maximum = *req.Companion.HitPoints
+		companion.HitPoints.Current = *req.Companion.HitPoints
+	} else {
+		// 默认使用属性修正计算HP
+		conMod := rules.AbilityModifier(companion.AbilityScores.Constitution)
+		companion.HitPoints.Maximum = 10 + conMod
+		companion.HitPoints.Current = companion.HitPoints.Maximum
+	}
+
+	// 设置护甲等级
+	if req.Companion.ArmorClass != nil {
+		companion.ArmorClass = *req.Companion.ArmorClass
+	} else {
+		companion.ArmorClass = calculateArmorClassFromActor(&companion.Actor)
+	}
 
 	game.Companions[companion.ID] = companion
 
@@ -1446,8 +1760,10 @@ func playerCharacterToInfo(pc *model.PlayerCharacter) *PlayerCharacterInfo {
 		Features:         pc.Features,
 		RacialTraits:     pc.RacialTraits,
 	}
-	if pc.Personality != nil {
+	if pc.Personality != nil && pc.Personality.Background != "" {
 		info.Background = pc.Personality.Background
+	} else if pc.BackgroundID != "" {
+		info.Background = pc.BackgroundID
 	}
 	return info
 }

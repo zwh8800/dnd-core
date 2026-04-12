@@ -73,7 +73,7 @@ func TestCombatEncounters(t *testing.T) {
 			Enemy: &engine.EnemyInput{
 				Name:        "Orc Brute",
 				Description: "凶猛的兽人战士",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: engine.AbilityScoresInput{
 					Strength:     18,
@@ -83,7 +83,7 @@ func TestCombatEncounters(t *testing.T) {
 					Wisdom:       10,
 					Charisma:     12,
 				},
-				ChallengeRating: 1,
+				ChallengeRating: "1",
 				HitPoints:       43,
 				ArmorClass:      13,
 			},
@@ -573,7 +573,7 @@ func TestCombatEncounters(t *testing.T) {
 				Enemy: &engine.EnemyInput{
 					Name:        "Weak Goblin",
 					Description: "虚弱的哥布林",
-					Size:        model.SizeSmall,
+					Size:        string(model.SizeSmall),
 					Speed:       30,
 					AbilityScores: engine.AbilityScoresInput{
 						Strength:     8,
@@ -583,7 +583,7 @@ func TestCombatEncounters(t *testing.T) {
 						Wisdom:       8,
 						Charisma:     6,
 					},
-					ChallengeRating: 0,
+					ChallengeRating: "0",
 					HitPoints:       5, // 非常低的HP
 					ArmorClass:      10,
 				},
@@ -678,7 +678,7 @@ func TestCombatEncounters(t *testing.T) {
 					Enemy: &engine.EnemyInput{
 						Name:        "Test Target",
 						Description: "测试目标",
-						Size:        model.SizeSmall,
+						Size:        string(model.SizeSmall),
 						Speed:       30,
 						AbilityScores: engine.AbilityScoresInput{
 							Strength:     8,
@@ -688,7 +688,7 @@ func TestCombatEncounters(t *testing.T) {
 							Wisdom:       8,
 							Charisma:     6,
 						},
-						ChallengeRating: 0,
+						ChallengeRating: "0",
 						HitPoints:       3,
 						ArmorClass:      10,
 					},
@@ -832,7 +832,7 @@ func TestCombatEncounters(t *testing.T) {
 			Enemy: &engine.EnemyInput{
 				Name:        "Orc Warrior",
 				Description: "兽人战士",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: engine.AbilityScoresInput{
 					Strength:     18,
@@ -842,7 +842,7 @@ func TestCombatEncounters(t *testing.T) {
 					Wisdom:       10,
 					Charisma:     12,
 				},
-				ChallengeRating: 1,
+				ChallengeRating: "1",
 				HitPoints:       43,
 				ArmorClass:      13,
 			},
@@ -856,7 +856,7 @@ func TestCombatEncounters(t *testing.T) {
 			Enemy: &engine.EnemyInput{
 				Name:        "Goblin Archer",
 				Description: "哥布林弓箭手",
-				Size:        model.SizeSmall,
+				Size:        string(model.SizeSmall),
 				Speed:       30,
 				AbilityScores: engine.AbilityScoresInput{
 					Strength:     8,
@@ -866,7 +866,7 @@ func TestCombatEncounters(t *testing.T) {
 					Wisdom:       12,
 					Charisma:     12,
 				},
-				ChallengeRating: 1,
+				ChallengeRating: "1",
 				HitPoints:       22,
 				ArmorClass:      14,
 			},

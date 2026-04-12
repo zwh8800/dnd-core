@@ -14,12 +14,12 @@ const (
 type Size string
 
 const (
-	SizeTiny       Size = "Tiny"       // 超小型（2.5×2.5英尺）
-	SizeSmall      Size = "Small"      // 小型（5×5英尺）
-	SizeMedium     Size = "Medium"     // 中型（5×5英尺）
-	SizeLarge      Size = "Large"      // 大型（10×10英尺）
-	SizeHuge       Size = "Huge"       // 超大型（15×15英尺）
-	SizeGargantuan Size = "Gargantuan" // 巨型（20×20英尺或更大）
+	SizeTiny       Size = "超小型" // Tiny 超小型（2.5×2.5英尺）
+	SizeSmall      Size = "小型"  // Small 小型（5×5英尺）
+	SizeMedium     Size = "中型"  // Medium 中型（5×5英尺）
+	SizeLarge      Size = "大型"  // Large 大型（10×10英尺）
+	SizeHuge       Size = "超大型" // Huge 超大型（15×15英尺）
+	SizeGargantuan Size = "巨型"  // Gargantuan 巨型（20×20英尺或更大）
 )
 
 // HitPoints 代表生物的生命值状态

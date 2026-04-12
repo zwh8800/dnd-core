@@ -72,7 +72,7 @@ func TestStartCrafting2(t *testing.T) {
 			GameID: gameResult.Game.ID,
 			Enemy: &EnemyInput{
 				Name:  "Test Enemy",
-				Size:  model.SizeMedium,
+				Size:  string(model.SizeMedium),
 				Speed: 30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 10, Dexterity: 10, Constitution: 10,
@@ -259,7 +259,7 @@ func TestAdvanceCrafting2(t *testing.T) {
 			GameID: gameResult.Game.ID,
 			Enemy: &EnemyInput{
 				Name:  "Test Enemy",
-				Size:  model.SizeMedium,
+				Size:  string(model.SizeMedium),
 				Speed: 30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 10, Dexterity: 10, Constitution: 10,
@@ -391,7 +391,7 @@ func TestCompleteCrafting2(t *testing.T) {
 			GameID: gameResult.Game.ID,
 			Enemy: &EnemyInput{
 				Name:  "Test Enemy",
-				Size:  model.SizeMedium,
+				Size:  string(model.SizeMedium),
 				Speed: 30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 10, Dexterity: 10, Constitution: 10,

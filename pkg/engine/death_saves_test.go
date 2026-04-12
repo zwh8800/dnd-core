@@ -133,7 +133,7 @@ func TestPerformDeathSave(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:        "Goblin",
 				Description: "A goblin",
-				Size:        model.SizeSmall,
+				Size:        string(model.SizeSmall),
 				Speed:       30,
 				HitPoints:   7,
 				ArmorClass:  15,
@@ -612,7 +612,7 @@ func TestGetDeathSaveStatus(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:        "Goblin",
 				Description: "A goblin",
-				Size:        model.SizeSmall,
+				Size:        string(model.SizeSmall),
 				Speed:       30,
 				HitPoints:   7,
 				ArmorClass:  15,

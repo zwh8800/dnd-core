@@ -89,7 +89,7 @@ func TestFullAdventureFlow(t *testing.T) {
 				NPC: &engine.NPCInput{
 					Name:        "Elder Theron",
 					Description: "村庄里的智慧老人",
-					Size:        model.SizeMedium,
+					Size:        string(model.SizeMedium),
 					Speed:       25,
 					AbilityScores: engine.AbilityScoresInput{
 						Strength:     10,
@@ -192,7 +192,7 @@ func TestFullAdventureFlow(t *testing.T) {
 				Enemy: &engine.EnemyInput{
 					Name:        "Skeleton Warrior",
 					Description: "手持生锈剑的活化骷髅",
-					Size:        model.SizeMedium,
+					Size:        string(model.SizeMedium),
 					Speed:       30,
 					AbilityScores: engine.AbilityScoresInput{
 						Strength:     14,
@@ -202,7 +202,7 @@ func TestFullAdventureFlow(t *testing.T) {
 						Wisdom:       8,
 						Charisma:     5,
 					},
-					ChallengeRating: 0.25,
+					ChallengeRating: "1/4",
 					HitPoints:       13,
 					ArmorClass:      13,
 				},
@@ -217,7 +217,7 @@ func TestFullAdventureFlow(t *testing.T) {
 				Enemy: &engine.EnemyInput{
 					Name:        "Skeleton Archer",
 					Description: "持弓的活化骷髅",
-					Size:        model.SizeMedium,
+					Size:        string(model.SizeMedium),
 					Speed:       30,
 					AbilityScores: engine.AbilityScoresInput{
 						Strength:     10,
@@ -227,7 +227,7 @@ func TestFullAdventureFlow(t *testing.T) {
 						Wisdom:       8,
 						Charisma:     5,
 					},
-					ChallengeRating: 0.25,
+					ChallengeRating: "1/4",
 					HitPoints:       10,
 					ArmorClass:      13,
 				},

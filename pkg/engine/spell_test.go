@@ -296,7 +296,7 @@ func TestGetSpellSlots(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:            "Dragon",
 				AbilityScores:   AbilityScoresInput{Strength: 20, Dexterity: 14, Constitution: 18, Intelligence: 16, Wisdom: 14, Charisma: 18},
-				ChallengeRating: 10,
+				ChallengeRating: "10",
 				HitPoints:       200,
 				ArmorClass:      19,
 			},
@@ -594,7 +594,7 @@ func TestLearnSpell(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:            "Goblin",
 				AbilityScores:   AbilityScoresInput{Strength: 10, Dexterity: 12, Constitution: 10, Intelligence: 8, Wisdom: 10, Charisma: 8},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -740,7 +740,7 @@ func TestConcentrationCheck(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:            "Goblin",
 				AbilityScores:   AbilityScoresInput{Strength: 10, Dexterity: 12, Constitution: 10, Intelligence: 8, Wisdom: 10, Charisma: 8},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -882,7 +882,7 @@ func TestEndConcentration(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:            "Goblin",
 				AbilityScores:   AbilityScoresInput{Strength: 10, Dexterity: 12, Constitution: 10, Intelligence: 8, Wisdom: 10, Charisma: 8},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -1179,7 +1179,7 @@ func TestIsConcentrating(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:            "Goblin",
 				AbilityScores:   AbilityScoresInput{Strength: 10, Dexterity: 12, Constitution: 10, Intelligence: 8, Wisdom: 10, Charisma: 8},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -1320,7 +1320,7 @@ func TestGetConcentrationSpell(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:            "Goblin",
 				AbilityScores:   AbilityScoresInput{Strength: 10, Dexterity: 12, Constitution: 10, Intelligence: 8, Wisdom: 10, Charisma: 8},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -1461,7 +1461,7 @@ func TestGetPactMagicSlots(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:            "Goblin",
 				AbilityScores:   AbilityScoresInput{Strength: 10, Dexterity: 12, Constitution: 10, Intelligence: 8, Wisdom: 10, Charisma: 8},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -1602,7 +1602,7 @@ func TestRestorePactMagicSlots(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:            "Goblin",
 				AbilityScores:   AbilityScoresInput{Strength: 10, Dexterity: 12, Constitution: 10, Intelligence: 8, Wisdom: 10, Charisma: 8},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},

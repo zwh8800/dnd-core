@@ -26,7 +26,7 @@ func TestCreateQuest(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Quest Giver",
 				Description: "A merchant with a job",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 12, Dexterity: 12, Constitution: 12,
@@ -70,7 +70,7 @@ func TestGetQuest(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Quest Giver",
 				Description: "A merchant",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 12, Dexterity: 12, Constitution: 12,
@@ -118,7 +118,7 @@ func TestListQuests(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Quest Giver",
 				Description: "A merchant",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 12, Dexterity: 12, Constitution: 12,
@@ -175,7 +175,7 @@ func TestAcceptQuest(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Quest Giver",
 				Description: "A merchant",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 12, Dexterity: 12, Constitution: 12,
@@ -239,7 +239,7 @@ func TestUpdateQuestObjective(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Quest Giver",
 				Description: "A merchant",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 12, Dexterity: 12, Constitution: 12,
@@ -289,7 +289,7 @@ func TestCompleteQuest(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Quest Giver",
 				Description: "A merchant",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 12, Dexterity: 12, Constitution: 12,
@@ -344,7 +344,7 @@ func TestFailQuest(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Quest Giver",
 				Description: "A merchant",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 12, Dexterity: 12, Constitution: 12,
@@ -392,7 +392,7 @@ func TestDeleteQuest(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Quest Giver",
 				Description: "A merchant",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 12, Dexterity: 12, Constitution: 12,

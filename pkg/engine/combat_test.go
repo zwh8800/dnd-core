@@ -65,7 +65,7 @@ func TestStartCombat(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:        "Goblin",
 				Description: "A sneaky goblin",
-				Size:        model.SizeSmall,
+				Size:        string(model.SizeSmall),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -75,7 +75,7 @@ func TestStartCombat(t *testing.T) {
 					Wisdom:       8,
 					Charisma:     8,
 				},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -147,7 +147,7 @@ func TestStartCombat(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:        "Assassin",
 				Description: "A deadly assassin",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength:     12,
@@ -157,7 +157,7 @@ func TestStartCombat(t *testing.T) {
 					Wisdom:       10,
 					Charisma:     8,
 				},
-				ChallengeRating: 0.5,
+				ChallengeRating: "1/2",
 				HitPoints:       12,
 				ArmorClass:      14,
 			},
@@ -217,7 +217,7 @@ func TestEndCombat(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:        "Goblin",
 				Description: "A sneaky goblin",
-				Size:        model.SizeSmall,
+				Size:        string(model.SizeSmall),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -227,7 +227,7 @@ func TestEndCombat(t *testing.T) {
 					Wisdom:       8,
 					Charisma:     8,
 				},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -424,7 +424,7 @@ func TestExecuteAttack(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:        "Goblin",
 				Description: "A sneaky goblin",
-				Size:        model.SizeSmall,
+				Size:        string(model.SizeSmall),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength:     8,
@@ -434,7 +434,7 @@ func TestExecuteAttack(t *testing.T) {
 					Wisdom:       8,
 					Charisma:     8,
 				},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},

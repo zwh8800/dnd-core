@@ -235,7 +235,7 @@ func TestPerformAbilityCheck(t *testing.T) {
 				Name:            "Goblin",
 				Description:     "A small goblin",
 				AbilityScores:   AbilityScoresInput{Strength: 10, Dexterity: 12, Constitution: 10, Intelligence: 8, Wisdom: 10, Charisma: 8},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -729,7 +729,7 @@ func TestPerformSavingThrow(t *testing.T) {
 				Name:            "Orc",
 				Description:     "A fierce orc warrior",
 				AbilityScores:   AbilityScoresInput{Strength: 16, Dexterity: 12, Constitution: 16, Intelligence: 8, Wisdom: 10, Charisma: 8},
-				ChallengeRating: 0.5,
+				ChallengeRating: "1/2",
 				HitPoints:       15,
 				ArmorClass:      13,
 			},
@@ -881,7 +881,7 @@ func TestGetPassivePerception(t *testing.T) {
 			Enemy: &EnemyInput{
 				Name:            "Goblin",
 				AbilityScores:   AbilityScoresInput{Strength: 10, Dexterity: 12, Constitution: 10, Intelligence: 8, Wisdom: 14, Charisma: 8},
-				ChallengeRating: 0.25,
+				ChallengeRating: "1/4",
 				HitPoints:       7,
 				ArmorClass:      15,
 			},
@@ -933,7 +933,7 @@ func TestGetPassivePerception(t *testing.T) {
 			GameID: gameID,
 			Companion: &CompanionInput{
 				Name:          "Wolf",
-				LeaderID:      pcResult.Actor.ID,
+				LeaderID:      string(pcResult.Actor.ID),
 				AbilityScores: AbilityScoresInput{Strength: 12, Dexterity: 14, Constitution: 12, Intelligence: 4, Wisdom: 12, Charisma: 6},
 			},
 		})

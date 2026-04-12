@@ -142,7 +142,7 @@ func TestGetActorSheet(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Village Elder",
 				Description: "A wise elder",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength:     10,

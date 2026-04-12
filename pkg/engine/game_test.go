@@ -237,7 +237,7 @@ func TestGameInfo(t *testing.T) {
 			NPC: &NPCInput{
 				Name:        "Guard",
 				Description: "A city guard",
-				Size:        model.SizeMedium,
+				Size:        string(model.SizeMedium),
 				Speed:       30,
 				AbilityScores: AbilityScoresInput{
 					Strength: 14, Dexterity: 12, Constitution: 14,
