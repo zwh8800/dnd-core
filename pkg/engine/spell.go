@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/zwh8800/dnd-core/pkg/data"
+	"github.com/zwh8800/dnd-core/pkg/dice"
 	"github.com/zwh8800/dnd-core/pkg/model"
 	"github.com/zwh8800/dnd-core/pkg/rules"
 )
@@ -290,7 +291,11 @@ func (e *Engine) CastSpell(ctx context.Context, req CastSpellRequest) (*SpellRes
 
 			// 根据豁免结果计算伤害
 			if spellDef.DamageDice != "" {
-				baseDamage := parseDiceString(spellDef.DamageDice)
+				roll, err := e.roller.Roll(spellDef.DamageDice)
+				baseDamage := 0
+				if err == nil {
+					baseDamage = roll.Total
+				}
 				if saveSuccess {
 					baseDamage /= 2
 				}
@@ -305,7 +310,11 @@ func (e *Engine) CastSpell(ctx context.Context, req CastSpellRequest) (*SpellRes
 		}
 	} else if spellDef.HealingDice != "" {
 		// 治疗法术
-		healingAmount := parseDiceString(spellDef.HealingDice)
+		roll, err := e.roller.Roll(spellDef.HealingDice)
+		healingAmount := 0
+		if err == nil {
+			healingAmount = roll.Total
+		}
 		for _, targetID := range req.Spell.TargetIDs {
 			healResult, err := e.applyHealingInSpell(game, targetID, healingAmount)
 			if err != nil {
@@ -663,13 +672,30 @@ func canCastSpell(spellcaster *model.SpellcasterState, spellID string) bool {
 
 // applySpellDamage 应用法术伤害（带攻击掷骰）
 func (e *Engine) applySpellDamage(game *model.GameState, attackerID, targetID model.ID, spell *model.Spell, upcastLevel int, isCritical bool) (*DamageResult, error) {
-	baseDamage := parseDiceString(spell.DamageDice)
+	// 解析基础伤害骰
+	roll, err := e.roller.Roll(spell.DamageDice)
+	baseDamage := 0
+	if err == nil {
+		baseDamage = roll.Total
+	}
 
-	// 升环加成
+	// 升环加成：每升一环增加相同数量的骰子
+	// 例如火球术3环8d6，升4环时为9d6，升5环时为10d6
 	if upcastLevel > spell.Level && spell.AtHigherLevels != "" {
-		// 简化处理：每升一环增加基础伤害的1/2
-		bonus := (upcastLevel - spell.Level) * (baseDamage / 2)
-		baseDamage += bonus
+		// 使用dice.ParseExpression解析骰子表达式
+		diceExpr, err := dice.ParseExpression(spell.DamageDice)
+		if err == nil && diceExpr.DiceCount > 0 {
+			// 计算升环级数
+			upcastLevels := upcastLevel - spell.Level
+			// 每升一环增加1个骰子（D&D 5e标准规则）
+			additionalDice := upcastLevels
+			// 构建新的骰子表达式：基础骰子数 + 增加的骰子数
+			newDiceExpr := fmt.Sprintf("%dd%d", diceExpr.DiceCount+additionalDice, diceExpr.DiceType)
+			roll, err := e.roller.Roll(newDiceExpr)
+			if err == nil {
+				baseDamage = roll.Total
+			}
+		}
 	}
 
 	return e.applyDamageToTarget(game, attackerID, targetID, baseDamage, spell.DamageType, isCritical)
@@ -725,17 +751,6 @@ func (e *Engine) applyHealingInSpell(game *model.GameState, targetID model.ID, a
 		WasStable: wasStable,
 		Message:   fmt.Sprintf("恢复 %d 点HP", amount),
 	}, nil
-}
-
-// parseDiceString 解析骰子字符串并返回估算值
-// 简化实现：返回平均值
-func parseDiceString(diceExpr string) int {
-	if diceExpr == "" {
-		return 0
-	}
-	// 简化处理：返回一个固定值用于测试
-	// 实际应该使用 e.roller 来掷骰
-	return 10
 }
 
 // findSpellDefinition 查找法术定义

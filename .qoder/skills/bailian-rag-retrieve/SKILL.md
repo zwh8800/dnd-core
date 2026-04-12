@@ -94,12 +94,32 @@ func (client *Client) RetrieveWithOptions(WorkspaceId *string, tmpReq *RetrieveR
 - `IndexId`: 知识库标识
 - `Query`: 检索内容
 
-### 步骤 2: 创建临时 Go 脚本
+### 步骤 2: 创建临时 Go 项目
 
-在 `/tmp` 目录创建临时 Go 文件。使用以下模板：
+在 `/tmp` 目录下创建一个独立的 Go 模块目录，**源文件和 go.mod 必须放在同一个目录内**。
 
-```go
-// /tmp/bailian_retrieve_{timestamp}.go
+**CRITICAL - 常见错误规避：**
+1. **文件名绝不能包含 `_test.go` 后缀**，Go 会将其视为测试文件，`go run` 拒绝执行。使用 `main.go` 即可。
+2. **源文件必须放在 go.mod 所在目录内**，否则 `go run` 无法解析模块依赖。
+3. **go.mod 中不要写 `require` 和版本号**，让 `go mod tidy` 根据源文件 import 自动解析。
+4. **必须先创建源文件再执行 `go mod tidy`**，否则 tidy 无法确定依赖。
+5. **执行 `go run` 前必须 `cd` 到模块目录**，使用 `go run .` 而非指定外部文件路径。
+
+按以下顺序操作：
+
+```bash
+# 1. 创建模块目录
+mkdir -p /tmp/bailian_retrieve_mod
+
+# 2. 创建 go.mod（不含 require，让 tidy 自动解析）
+cat > /tmp/bailian_retrieve_mod/go.mod << 'GOMOD'
+module bailian_retrieve
+
+go 1.24
+GOMOD
+
+# 3. 创建源文件（在同一目录内，文件名为 main.go）
+cat > /tmp/bailian_retrieve_mod/main.go << 'GOSRC'
 package main
 
 import (
@@ -159,26 +179,24 @@ func main() {
 		fmt.Printf("未找到相关结果 (Code: %s, Message: %s)\n", code, msg)
 	}
 }
+GOSRC
 ```
 
-同时创建 `go.mod`：
+### 步骤 3: 安装依赖并执行检索
 
-```
-// /tmp/bailian_retrieve_{timestamp}_mod/go.mod
-module bailian_retrieve
-
-go 1.24
-
-```
-
-### 步骤 3: 执行检索脚本
+**必须 cd 到模块目录后执行**，使用 `go run .` 运行：
 
 ```bash
-cd /tmp/bailian_retrieve_{timestamp}_mod && \
-  go mod tidy && \
+cd /tmp/bailian_retrieve_mod && \
+  GOPROXY=https://mirrors.aliyun.com/goproxy/,direct go mod tidy && \
   WORKSPACE_ID="<workspace_id>" INDEX_ID="<index_id>" QUERY="<query>" \
-  go run ../bailian_retrieve_{timestamp}.go
+  go run .
 ```
+
+**关键要点：**
+- `go mod tidy` 必须在源文件已存在后执行，才能根据 import 解析依赖
+- 使用 `GOPROXY=https://mirrors.aliyun.com/goproxy/,direct` 加速依赖下载
+- 使用 `go run .` 而非 `go run ../外部文件.go`，确保模块依赖正确解析
 
 ### 步骤 4: 处理响应
 
@@ -254,3 +272,53 @@ resp, err := client.RetrieveWithOptions(tea.String("llm-xxx"), req, headers, run
 4. **超时策略**: 检索计算复杂，建议通过 `RetrieveWithOptions` 设置 30-60 秒超时
 5. **结果处理**: 优先使用 `Score` 高的片段，合并相关内容
 6. **临时文件**: 所有临时 Go 脚本和 go.mod 放置在 `/tmp` 目录，执行完成后可删除
+
+## Go 工程化注意事项（CRITICAL）
+
+以下是基于实际执行经验总结的常见错误，务必规避：
+
+### 1. 文件名不能包含 `_test.go`
+
+Go 将 `_test.go` 后缀的文件视为测试文件，`go run` 会拒绝执行并报错。源文件统一命名为 `main.go`。
+
+### 2. 源文件与 go.mod 必须在同一目录
+
+Go 模块依赖解析基于 `go.mod` 所在目录。如果 `.go` 文件在模块目录外，`go run /外部路径/main.go` 会报 `no required module provides package` 错误。**所有文件必须放在同一个目录下。**
+
+### 3. 先写源文件再 go mod tidy
+
+`go mod tidy` 根据目录内的 `.go` 文件 import 语句来解析依赖。如果目录内还没有源文件，tidy 无法确定需要哪些依赖，会产生 `matched no packages` 警告。正确顺序：
+1. 创建模块目录
+2. 创建 `go.mod`（不含 require）
+3. 创建 `main.go`（含 import）
+4. 执行 `go mod tidy`
+5. 执行 `go run .`
+
+### 4. go.mod 不写 require 和版本号
+
+`require github.com/alibabacloud-go/bailian-20231229/v2 latest` 中的 `latest` 不是有效的 Go module 版本语法。只需声明 `module` 和 `go` 版本，让 `go mod tidy` 自动解析所有依赖及版本。
+
+### 5. 使用 go run . 而非指定外部文件
+
+在模块目录内执行 `go run .`，而不是 `go run ../外部文件.go`。后者会导致 Go 在文件所在目录（而非模块目录）查找 `go.mod`，从而找不到依赖。
+
+### 6. 执行命令时必须 cd 到模块目录
+
+Bash 工具的默认工作目录是项目根目录，不会自动切换。所有 `go mod tidy` 和 `go run` 命令必须通过 `cd /tmp/bailian_retrieve_mod && ...` 的方式确保在正确目录执行。
+
+### 推荐的一键执行模板
+
+```bash
+# 创建模块目录和文件
+mkdir -p /tmp/bailian_retrieve_mod && \
+cat > /tmp/bailian_retrieve_mod/go.mod << 'EOF'
+module bailian_retrieve
+go 1.24
+EOF
+# (写入 main.go 省略，见步骤2)
+# 然后一步到位：
+cd /tmp/bailian_retrieve_mod && \
+  GOPROXY=https://mirrors.aliyun.com/goproxy/,direct go mod tidy && \
+  WORKSPACE_ID="<workspace_id>" INDEX_ID="<index_id>" QUERY="<query>" \
+  go run .
+```

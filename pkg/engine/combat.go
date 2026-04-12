@@ -1303,41 +1303,99 @@ func (e *Engine) calculateAndApplyDamage(game *model.GameState, attackerID, targ
 		attackerActor = &a.Actor
 	}
 
-	// 基础伤害掷骰
-	roll, _ := e.roller.Roll("2d6")
-	strMod := rules.AbilityModifier(attackerActor.AbilityScores.Strength)
+	// 确定武器和属性修正
+	var weaponDamageDice string
+	var damageType model.DamageType
+	var abilityMod int
+	var isMelee bool
+
+	if attack.WeaponID != nil {
+		// 使用武器攻击 - 从武器获取伤害骰
+		weapon, found := findWeaponInInventory(game, attackerActor, *attack.WeaponID)
+		if !found {
+			return nil, fmt.Errorf("weapon not found: %s", *attack.WeaponID)
+		}
+
+		if weapon.WeaponProps == nil {
+			return nil, fmt.Errorf("item is not a weapon: %s", weapon.Name)
+		}
+
+		weaponDamageDice = weapon.WeaponProps.DamageDice
+		damageType = weapon.WeaponProps.DamageType
+		isMelee = weapon.WeaponProps.WeaponType == "melee"
+
+		// 确定使用力量还是敏捷修正
+		if weapon.WeaponProps.Finesse {
+			// 灵巧武器可以使用力量或敏捷中较高的
+			strMod := rules.AbilityModifier(attackerActor.AbilityScores.Strength)
+			dexMod := rules.AbilityModifier(attackerActor.AbilityScores.Dexterity)
+			if dexMod > strMod {
+				abilityMod = dexMod
+			} else {
+				abilityMod = strMod
+			}
+		} else if weapon.WeaponProps.Thrown {
+			// 投掷武器使用力量修正
+			abilityMod = rules.AbilityModifier(attackerActor.AbilityScores.Strength)
+		} else if !isMelee {
+			// 远程武器使用敏捷修正
+			abilityMod = rules.AbilityModifier(attackerActor.AbilityScores.Dexterity)
+		} else {
+			// 近战武器使用力量修正
+			abilityMod = rules.AbilityModifier(attackerActor.AbilityScores.Strength)
+		}
+	} else if attack.IsUnarmed {
+		// 徒手攻击
+		weaponDamageDice = "1"
+		damageType = model.DamageTypeBludgeoning
+		abilityMod = rules.AbilityModifier(attackerActor.AbilityScores.Strength)
+		isMelee = true
+	} else {
+		// 默认使用力量修正和2d6（应该通过WeaponID指定武器）
+		weaponDamageDice = "2d6"
+		damageType = model.DamageTypeSlashing
+		abilityMod = rules.AbilityModifier(attackerActor.AbilityScores.Strength)
+		isMelee = true
+	}
+
+	// 使用e.roller掷武器伤害骰
+	roll, err := e.roller.Roll(weaponDamageDice)
+	if err != nil {
+		return nil, fmt.Errorf("failed to roll weapon damage: %w", err)
+	}
+
 	baseDamageDice := roll.Total
-	baseDamage := baseDamageDice + strMod
+	baseDamage := baseDamageDice + abilityMod
 
 	// 应用职业特性伤害钩子
 	if attackerPC != nil && attackerPC.FeatureHooks != nil {
 		ctx := &model.DamageContext{
-			BaseDamage: roll.Total,
-			Bonus:      strMod,
-			DamageType: model.DamageTypeSlashing, // TODO: 从武器获取
-			IsMelee:    true,
-			IsRanged:   false,
+			BaseDamage: baseDamageDice,
+			Bonus:      abilityMod,
+			DamageType: damageType,
+			IsMelee:    isMelee,
+			IsRanged:   !isMelee,
 		}
 		for _, hook := range attackerPC.FeatureHooks {
 			hook.OnDamageCalc(ctx)
 		}
-		baseDamageDice = roll.Total
-		baseDamage = roll.Total + ctx.Bonus
+		baseDamageDice = ctx.BaseDamage
+		baseDamage = ctx.BaseDamage + ctx.Bonus
 	}
 
 	if isCritical {
 		// 使用 rules.CalculateCriticalDamage 计算暴击伤害
-		baseDamage = rules.CalculateCriticalDamage(baseDamageDice, strMod)
+		baseDamage = rules.CalculateCriticalDamage(baseDamageDice, abilityMod)
 	}
 
 	// 创建伤害抗性
 	resistances := model.NewDamageResistances()
 
 	// 计算最终伤害
-	calc := rules.CalculateDamage(baseDamage, 0, model.DamageTypeSlashing, resistances, isCritical)
+	calc := rules.CalculateDamage(baseDamage, 0, damageType, resistances, isCritical)
 
 	// 应用伤害（包含专注检查）
-	result, err := e.applyDamageToTarget(game, attackerID, targetID, calc.FinalDamage, model.DamageTypeSlashing, false)
+	result, err := e.applyDamageToTarget(game, attackerID, targetID, calc.FinalDamage, damageType, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1745,4 +1803,36 @@ func (e *Engine) AttemptOpportunityAttack(ctx context.Context, req AttemptOpport
 		AttackResult: attackResult,
 		Message:      fmt.Sprintf("%s 对 %s 发动机会攻击", attackerActor.Name, targetActor.Name),
 	}, nil
+}
+
+// findWeaponInInventory 从角色的背包中查找武器
+func findWeaponInInventory(game *model.GameState, actor *model.Actor, weaponID model.ID) (*model.Item, bool) {
+	// 只有PlayerCharacter有InventoryID
+	// 遍历所有PC查找匹配的Actor
+	for _, pc := range game.PCs {
+		if pc.Actor.ID == actor.ID && pc.InventoryID != "" {
+			inventory, ok := game.Inventories[pc.InventoryID]
+			if !ok {
+				return nil, false
+			}
+
+			// 在背包中查找
+			for _, item := range inventory.Items {
+				if item.ID == weaponID {
+					return item, true
+				}
+			}
+
+			// 在已装备的槽位中查找
+			if inventory.Equipment != nil {
+				for _, item := range inventory.Equipment.Slots {
+					if item.ID == weaponID {
+						return item, true
+					}
+				}
+			}
+		}
+	}
+
+	return nil, false
 }
