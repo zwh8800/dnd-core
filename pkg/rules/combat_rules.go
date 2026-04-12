@@ -160,21 +160,18 @@ type GrappleResult struct {
 
 // PerformGrapple 执行擒抱
 // PHB Ch.9: 使用力量(运动)检定对抗目标的力量(运动)或敏捷(体操)检定
-func PerformGrapple(grapplerLevel int, grapplerStr int, targetStr int, targetDex int) *GrappleResult {
+// grapplerAthletics: 擒抱者的运动技能修正(力量修正+熟练加值)
+// targetAthletics: 目标的运动技能修正
+// targetAcrobatics: 目标的体操技能修正
+func PerformGrapple(grapplerAthletics int, targetAthletics int, targetAcrobatics int) *GrappleResult {
 	// 擒抱者: 力量(运动)检定
-	grappleBonus := AbilityModifier(grapplerStr)
-	// 假设擒抱者有运动技能熟练(实际应检查)
-	// 简化实现: 只加属性修正
 	grappleRoll := RollD20()
-	grappleTotal := grappleRoll + grappleBonus
+	grappleTotal := grappleRoll + grapplerAthletics
 
 	// 目标可以选择力量(运动)或敏捷(体操),取较高值
-	strMod := AbilityModifier(targetStr)
-	dexMod := AbilityModifier(targetDex)
-
-	targetBonus := strMod
-	if dexMod > strMod {
-		targetBonus = dexMod
+	targetBonus := targetAthletics
+	if targetAcrobatics > targetAthletics {
+		targetBonus = targetAcrobatics
 	}
 	targetRoll := RollD20()
 	targetTotal := targetRoll + targetBonus
@@ -271,19 +268,18 @@ type ShoveResult struct {
 // PerformShove 执行推撞
 // PHB Ch.9: 使用力量(运动)检定对抗目标的力量(运动)或敏捷(体操)检定
 // 成功则目标倒地或被推开5尺
-func PerformShove(shoverLevel int, shoverStr int, targetStr int, targetDex int, knockProne bool) *ShoveResult {
+// shoverAthletics: 推撞者的运动技能修正
+// targetAthletics: 目标的运动技能修正
+// targetAcrobatics: 目标的体操技能修正
+func PerformShove(shoverAthletics int, targetAthletics int, targetAcrobatics int, knockProne bool) *ShoveResult {
 	// 推撞者: 力量(运动)检定
-	shoveBonus := AbilityModifier(shoverStr)
 	shoveRoll := RollD20()
-	shoveTotal := shoveRoll + shoveBonus
+	shoveTotal := shoveRoll + shoverAthletics
 
 	// 目标可以选择力量(运动)或敏捷(体操),取较高值
-	strMod := AbilityModifier(targetStr)
-	dexMod := AbilityModifier(targetDex)
-
-	targetBonus := strMod
-	if dexMod > strMod {
-		targetBonus = dexMod
+	targetBonus := targetAthletics
+	if targetAcrobatics > targetAthletics {
+		targetBonus = targetAcrobatics
 	}
 	targetRoll := RollD20()
 	targetTotal := targetRoll + targetBonus
@@ -628,6 +624,50 @@ type WorkingTogetherResult struct {
 	DC           int      `json:"dc"`            // 难度等级
 	Success      bool     `json:"success"`       // 是否成功
 	Message      string   `json:"message"`       // 描述消息
+}
+
+// ============================================================================
+// 擦伤伤害 (Graze Damage)
+// ============================================================================
+
+// CalculateGrazeDamage 计算擦伤伤害
+// D&D 5e 2024规则: 擦伤(Graze)武器未命中时,造成等于攻击属性修正值的伤害
+// 根据武器特性选择正确的属性修正:
+// - 灵巧武器: 力量或敏捷中较高者
+// - 远程武器: 敏捷
+// - 近战武器: 力量
+// - 投掷武器: 力量
+// - 徒手攻击: 力量
+func CalculateGrazeDamage(weapon *model.WeaponProperties, strengthScore int, dexterityScore int) int {
+	var abilityMod int
+
+	if weapon != nil {
+		// 根据武器特性选择属性
+		if weapon.Finesse {
+			// 灵巧武器使用力量或敏捷中较高者
+			strMod := AbilityModifier(strengthScore)
+			dexMod := AbilityModifier(dexterityScore)
+			if dexMod > strMod {
+				abilityMod = dexMod
+			} else {
+				abilityMod = strMod
+			}
+		} else if weapon.Thrown {
+			// 投掷武器使用力量
+			abilityMod = AbilityModifier(strengthScore)
+		} else if weapon.WeaponType != "melee" {
+			// 远程武器使用敏捷
+			abilityMod = AbilityModifier(dexterityScore)
+		} else {
+			// 近战武器使用力量
+			abilityMod = AbilityModifier(strengthScore)
+		}
+	} else {
+		// 无武器(徒手或默认)使用力量
+		abilityMod = AbilityModifier(strengthScore)
+	}
+
+	return abilityMod
 }
 
 // ============================================================================

@@ -275,8 +275,9 @@ type LevelUpRequest struct {
 
 // ShortRestRequest 短休请求
 type ShortRestRequest struct {
-	GameID   model.ID   `json:"game_id"`   // 游戏会话ID
-	ActorIDs []model.ID `json:"actor_ids"` // 参与短休的角色ID列表
+	GameID       model.ID         `json:"game_id"`        // 游戏会话ID
+	ActorIDs     []model.ID       `json:"actor_ids"`      // 参与短休的角色ID列表
+	HitDiceCount map[model.ID]int `json:"hit_dice_count"` // 每个角色想要使用的生命骰数量(可选,默认为1)
 }
 
 // StartLongRestRequest 开始长休请求
@@ -1008,7 +1009,15 @@ func (e *Engine) ShortRest(ctx context.Context, req ShortRestRequest) (*RestResu
 	}
 
 	for _, actorID := range req.ActorIDs {
-		actorResult, err := e.processShortRest(game, actorID)
+		// 获取该角色要使用的生命骰数量
+		hitDiceCount := 1 // 默认1个
+		if req.HitDiceCount != nil {
+			if count, exists := req.HitDiceCount[actorID]; exists {
+				hitDiceCount = count
+			}
+		}
+
+		actorResult, err := e.processShortRest(game, actorID, hitDiceCount)
 		if err != nil {
 			return nil, fmt.Errorf("short rest failed for actor %s: %w", actorID, err)
 		}
@@ -1119,7 +1128,8 @@ func (e *Engine) EndLongRest(ctx context.Context, req EndLongRestRequest) (*Rest
 }
 
 // processShortRest 处理单个角色的短休
-func (e *Engine) processShortRest(game *model.GameState, actorID model.ID) (ActorRestResult, error) {
+// PHB 第8章: 短休时可以使用一粒或多粒生命骰(最多等于角色等级)
+func (e *Engine) processShortRest(game *model.GameState, actorID model.ID, hitDiceCount int) (ActorRestResult, error) {
 	result := ActorRestResult{
 		ActorID: actorID,
 	}
@@ -1144,28 +1154,70 @@ func (e *Engine) processShortRest(game *model.GameState, actorID model.ID) (Acto
 		baseActor = &a.Actor
 	}
 
-	// 短休可以掷生命骰恢复HP（仅PC）
+	// 短休可以掷生命骰恢复HP(仅PC)
 	if pc != nil && len(pc.HitDice) > 0 {
-		// 简化的短休逻辑：恢复一部分HP
-		hpRecovered := 0
+		// 如果未指定,默认使用1个生命骰
+		if hitDiceCount <= 0 {
+			hitDiceCount = 1
+		}
+
+		// 计算可用生命骰总数
+		totalAvailable := 0
 		for i := range pc.HitDice {
-			if pc.HitDice[i].Used < pc.HitDice[i].Total {
-				// 使用一个生命骰
-				pc.HitDice[i].Used++
-				// 简化：取平均值
-				hpRecovered += (pc.HitDice[i].DiceType / 2) + 1
-				result.HitDiceUsed++
-				break // 简化：只用一个生命骰
+			totalAvailable += pc.HitDice[i].Total - pc.HitDice[i].Used
+		}
+
+		// 实际使用的生命骰不能超过可用数量
+		if hitDiceCount > totalAvailable {
+			hitDiceCount = totalAvailable
+		}
+
+		if hitDiceCount > 0 {
+			// 使用rules层的UseHitDice函数计算恢复效果
+			conMod := rules.AbilityModifier(pc.AbilityScores.Constitution)
+			restResult, err := rules.UseHitDice(
+				baseActor.HitPoints.Current,
+				baseActor.HitPoints.Maximum,
+				pc.HitDice,
+				conMod,
+				hitDiceCount,
+			)
+
+			if err != nil {
+				return result, fmt.Errorf("使用生命骰失败: %w", err)
+			}
+
+			// 应用恢复的HP
+			if restResult.HPRestored > 0 {
+				baseActor.HitPoints.Current += restResult.HPRestored
+				if baseActor.HitPoints.Current > baseActor.HitPoints.Maximum {
+					baseActor.HitPoints.Current = baseActor.HitPoints.Maximum
+				}
+			}
+
+			result.HPRecovered = restResult.HPRestored
+			result.HitDiceUsed = restResult.HitDiceUsed
+		}
+
+		// 邪术师特性: 短休恢复Pact Magic法术位
+		// D&D 5e规则: 邪术师完成短休或长休后恢复所有已消耗的法术位
+		isWarlock := false
+		for _, cl := range pc.Classes {
+			if cl.Class == model.ClassWarlock {
+				isWarlock = true
+				break
 			}
 		}
-		conMod := rules.AbilityModifier(pc.AbilityScores.Constitution)
-		hpRecovered += conMod
-		if hpRecovered > 0 {
-			baseActor.HitPoints.Current += hpRecovered
-			if baseActor.HitPoints.Current > baseActor.HitPoints.Maximum {
-				baseActor.HitPoints.Current = baseActor.HitPoints.Maximum
+
+		if isWarlock && pc.Spellcasting != nil && pc.FeatureHooks != nil {
+			// 恢复所有法术位
+			pc.Spellcasting.Slots.RestoreAll()
+			result.SpellSlotsRestored = true
+
+			// 调用邪术师钩子
+			if warlockHooks, ok := pc.FeatureHooks[model.ClassWarlock].(*model.WarlockFeatureHooks); ok {
+				warlockHooks.OnShortRest()
 			}
-			result.HPRecovered = hpRecovered
 		}
 	}
 
@@ -1203,11 +1255,32 @@ func (e *Engine) processLongRestRecovery(game *model.GameState, actorID model.ID
 	baseActor.TempHitPoints = 0
 	result.HPRecovered = hpRecovered
 
-	// 恢复法术位（PC）
+	// 恢复法术位(PC)
+	// D&D 5e规则:
+	// - 标准施法者(Spellcasting): 长休恢复所有法术位
+	// - 邪术师(Pact Magic): 短休即可恢复所有法术位,长休也恢复
 	if pc != nil && pc.Spellcasting != nil {
+		// 检查是否是邪术师
+		isWarlock := false
+		for _, cl := range pc.Classes {
+			if cl.Class == model.ClassWarlock {
+				isWarlock = true
+				break
+			}
+		}
+
+		// 长休恢复所有法术位(对邪术师和标准施法者都适用)
 		pc.Spellcasting.Slots.RestoreAll()
 		pc.Spellcasting.ConcentrationSpell = ""
 		result.SpellSlotsRestored = true
+
+		// 邪术师特性:调用OnShortRest钩子(短休也能恢复)
+		// 注意:长休时也会调用,但效果相同(都是恢复所有位)
+		if isWarlock && pc.FeatureHooks != nil {
+			if warlockHooks, ok := pc.FeatureHooks[model.ClassWarlock].(*model.WarlockFeatureHooks); ok {
+				warlockHooks.OnLongRest()
+			}
+		}
 	}
 
 	// 恢复生命骰

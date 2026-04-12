@@ -442,11 +442,102 @@ func (e *Engine) StartCombatWithSurprise(ctx context.Context, req StartCombatWit
 		req.SceneID = sceneID
 	}
 
-	// 隐秘方进行隐匿检定，观察方进行察觉检定
-	// 简化实现：隐秘方有优势
-	stealthMap := make(map[model.ID]bool)
-	for _, id := range req.StealthySide {
-		stealthMap[id] = true
+	// D&D 5e规则: 突袭需要比较潜行方的隐匿检定与观察方的被动察觉
+	// 至少有一个潜行方成功隐匿,则所有观察方被突袭
+	stealthResults := make(map[model.ID]int) // actorID -> 隐匿检定总值
+	highestStealth := 0
+
+	// 隐秘方进行隐匿检定
+	for _, actorID := range req.StealthySide {
+		actor, ok := game.GetActor(actorID)
+		if !ok {
+			continue
+		}
+
+		var baseActor *model.Actor
+		var pc *model.PlayerCharacter
+		switch a := actor.(type) {
+		case *model.PlayerCharacter:
+			baseActor = &a.Actor
+			pc = a
+		case *model.Enemy:
+			baseActor = &a.Actor
+		case *model.NPC:
+			baseActor = &a.Actor
+		case *model.Companion:
+			baseActor = &a.Actor
+		default:
+			continue
+		}
+
+		// 隐匿检定 = 1d20 + DEX修正 + 熟练加值(如果熟练)
+		dexMod := rules.AbilityModifier(baseActor.AbilityScores.Dexterity)
+		stealthBonus := dexMod
+
+		// 检查是否有隐匿技能熟练
+		if pc != nil && pc.Proficiencies.ProficientSkills != nil {
+			if pc.Proficiencies.ProficientSkills[model.SkillStealth] {
+				stealthBonus += rules.ProficiencyBonus(pc.TotalLevel)
+			}
+		}
+
+		// 掷隐匿检定
+		stealthRoll, err := e.roller.Roll("1d20")
+		if err != nil {
+			return nil, fmt.Errorf("stealth roll failed: %w", err)
+		}
+
+		stealthTotal := stealthRoll.Total + stealthBonus
+		stealthResults[actorID] = stealthTotal
+
+		if stealthTotal > highestStealth {
+			highestStealth = stealthTotal
+		}
+	}
+
+	// 观察方进行被动察觉检定 vs 潜行方最高隐匿值
+	// 被动察觉 = 10 + WIS修正 + 熟练加值(如果熟练)
+	surprisedMap := make(map[model.ID]bool)
+
+	for _, observerID := range req.Observers {
+		observer, ok := game.GetActor(observerID)
+		if !ok {
+			continue
+		}
+
+		var baseActor *model.Actor
+		var pc *model.PlayerCharacter
+		switch a := observer.(type) {
+		case *model.PlayerCharacter:
+			baseActor = &a.Actor
+			pc = a
+		case *model.Enemy:
+			baseActor = &a.Actor
+		case *model.NPC:
+			baseActor = &a.Actor
+		case *model.Companion:
+			baseActor = &a.Actor
+		default:
+			continue
+		}
+
+		// 计算被动察觉
+		wisMod := rules.AbilityModifier(baseActor.AbilityScores.Wisdom)
+		perceptionBonus := wisMod
+
+		// 检查是否有察觉技能熟练
+		if pc != nil {
+			if pc.Proficiencies.ProficientSkills != nil && pc.Proficiencies.ProficientSkills[model.SkillPerception] {
+				perceptionBonus += rules.ProficiencyBonus(pc.TotalLevel)
+			}
+		}
+
+		passivePerception := rules.PassiveScore(perceptionBonus)
+
+		// 如果被动察觉 < 最高隐匿检定,则被突袭
+		if passivePerception < highestStealth {
+			surprisedMap[observerID] = true
+		}
 	}
 
 	// 创建战斗状态
@@ -468,10 +559,10 @@ func (e *Engine) StartCombatWithSurprise(ctx context.Context, req StartCombatWit
 		}
 
 		// 被突袭的角色在第一回合无法行动
-		if stealthMap[actorID] {
-			entry.IsSurprised = false // 隐秘方不被突袭
+		if surprisedMap[actorID] {
+			entry.IsSurprised = true // 被突袭
 		} else {
-			entry.IsSurprised = true // 观察方被突袭
+			entry.IsSurprised = false // 不被突袭
 		}
 
 		combat.Initiative = append(combat.Initiative, entry)
@@ -765,23 +856,38 @@ func (e *Engine) ExecuteAction(ctx context.Context, req ExecuteActionRequest) (*
 			targetActor = &a.Actor
 		}
 
-		// 获取攻击者等级
-		actorLevel := 1
-		if pc, ok := actor.(*model.PlayerCharacter); ok {
-			actorLevel = pc.TotalLevel
-		}
-
 		// 验证体型
 		if ok, msg := rules.CanGrapple(baseActor.Size, targetActor.Size); !ok {
 			return nil, fmt.Errorf("无法擒抱: %s", msg)
 		}
 
-		// 执行擒抱检定
+		// 计算擒抱者的运动技能修正(力量修正 + 熟练加值)
+		grapplerAthletics := rules.AbilityModifier(baseActor.AbilityScores.Strength)
+		if pc, ok := actor.(*model.PlayerCharacter); ok {
+			if pc.Proficiencies.ProficientSkills != nil && pc.Proficiencies.ProficientSkills[model.SkillAthletics] {
+				grapplerAthletics += rules.ProficiencyBonus(pc.TotalLevel)
+			}
+		}
+
+		// 计算目标的运动/体操技能修正
+		targetAthletics := rules.AbilityModifier(targetActor.AbilityScores.Strength)
+		targetAcrobatics := rules.AbilityModifier(targetActor.AbilityScores.Dexterity)
+		if targetPC, ok := target.(*model.PlayerCharacter); ok {
+			if targetPC.Proficiencies.ProficientSkills != nil {
+				if targetPC.Proficiencies.ProficientSkills[model.SkillAthletics] {
+					targetAthletics += rules.ProficiencyBonus(targetPC.TotalLevel)
+				}
+				if targetPC.Proficiencies.ProficientSkills[model.SkillAcrobatics] {
+					targetAcrobatics += rules.ProficiencyBonus(targetPC.TotalLevel)
+				}
+			}
+		}
+
+		// 执行擒抱检定(对抗检定)
 		grappleResult := rules.PerformGrapple(
-			actorLevel,
-			baseActor.AbilityScores.Strength,
-			targetActor.AbilityScores.Strength,
-			targetActor.AbilityScores.Dexterity,
+			grapplerAthletics,
+			targetAthletics,
+			targetAcrobatics,
 		)
 
 		result.Message = fmt.Sprintf("%s 尝试擒抱 %s: %s", baseActor.Name, targetActor.Name, grappleResult.Message)
@@ -825,23 +931,38 @@ func (e *Engine) ExecuteAction(ctx context.Context, req ExecuteActionRequest) (*
 			targetActor = &a.Actor
 		}
 
-		// 获取攻击者等级
-		actorLevel := 1
-		if pc, ok := actor.(*model.PlayerCharacter); ok {
-			actorLevel = pc.TotalLevel
-		}
-
 		// 验证体型
 		if ok, msg := rules.CanShove(baseActor.Size, targetActor.Size); !ok {
 			return nil, fmt.Errorf("无法推撞: %s", msg)
 		}
 
-		// 执行推撞检定
+		// 计算推撞者的运动技能修正(力量修正 + 熟练加值)
+		shoverAthletics := rules.AbilityModifier(baseActor.AbilityScores.Strength)
+		if pc, ok := actor.(*model.PlayerCharacter); ok {
+			if pc.Proficiencies.ProficientSkills != nil && pc.Proficiencies.ProficientSkills[model.SkillAthletics] {
+				shoverAthletics += rules.ProficiencyBonus(pc.TotalLevel)
+			}
+		}
+
+		// 计算目标的运动/体操技能修正
+		targetAthletics := rules.AbilityModifier(targetActor.AbilityScores.Strength)
+		targetAcrobatics := rules.AbilityModifier(targetActor.AbilityScores.Dexterity)
+		if targetPC, ok := target.(*model.PlayerCharacter); ok {
+			if targetPC.Proficiencies.ProficientSkills != nil {
+				if targetPC.Proficiencies.ProficientSkills[model.SkillAthletics] {
+					targetAthletics += rules.ProficiencyBonus(targetPC.TotalLevel)
+				}
+				if targetPC.Proficiencies.ProficientSkills[model.SkillAcrobatics] {
+					targetAcrobatics += rules.ProficiencyBonus(targetPC.TotalLevel)
+				}
+			}
+		}
+
+		// 执行推撞检定(对抗检定)
 		shoveResult := rules.PerformShove(
-			actorLevel,
-			baseActor.AbilityScores.Strength,
-			targetActor.AbilityScores.Strength,
-			targetActor.AbilityScores.Dexterity,
+			shoverAthletics,
+			targetAthletics,
+			targetAcrobatics,
 			knockProne,
 		)
 
@@ -1008,26 +1129,16 @@ func (e *Engine) ExecuteAttack(ctx context.Context, req ExecuteAttackRequest) (*
 		attackResult.Message += " - 未命中"
 
 		// 未命中时应用擦伤效果
+		// D&D 5e 2024规则: 擦伤(Graze)武器未命中时,造成等于攻击属性修正值的伤害
 		if req.Attack.WeaponMastery == string(model.MasteryGraze) {
-			// 擦伤：未命中时仍造成属性修正伤害
-			abilityMod := 0
-			if attacker, ok := game.GetActor(req.AttackerID); ok {
-				var actor *model.Actor
-				switch a := attacker.(type) {
-				case *model.PlayerCharacter:
-					actor = &a.Actor
-				case *model.Enemy:
-					actor = &a.Actor
-				default:
-					actor = &model.Actor{}
-				}
-				abilityMod = rules.AbilityModifier(actor.AbilityScores.Strength)
-			}
-			attackResult.GrazeDamage = abilityMod
-			attackResult.Message += fmt.Sprintf("，擦伤造成 %d 点伤害", abilityMod)
+			abilityMod := e.calculateGrazeDamage(game, req.AttackerID, req.Attack)
+			if abilityMod > 0 {
+				attackResult.GrazeDamage = abilityMod
+				attackResult.Message += fmt.Sprintf("，擦伤造成 %d 点伤害", abilityMod)
 
-			// 应用擦伤伤害
-			_, _ = e.applyDamageToTarget(game, req.AttackerID, req.TargetID, abilityMod, model.DamageTypeSlashing, false)
+				// 应用擦伤伤害
+				_, _ = e.applyDamageToTarget(game, req.AttackerID, req.TargetID, abilityMod, model.DamageTypeSlashing, false)
+			}
 		}
 	}
 
@@ -1273,6 +1384,46 @@ func (e *Engine) rollInitiative(game *model.GameState, actorID model.ID) (model.
 		InitiativeRoll:  roll.Rolls[0].Value,
 		InitiativeTotal: total,
 	}, nil
+}
+
+// calculateGrazeDamage 计算擦伤伤害
+// D&D 5e 2024规则: 擦伤(Graze)武器未命中时,造成等于攻击属性修正值的伤害
+// 该函数从游戏状态中获取武器信息,然后调用rules.CalculateGrazeDamage
+func (e *Engine) calculateGrazeDamage(game *model.GameState, attackerID model.ID, attack AttackInput) int {
+	attacker, ok := game.GetActor(attackerID)
+	if !ok {
+		return 0
+	}
+
+	var attackerActor *model.Actor
+	switch a := attacker.(type) {
+	case *model.PlayerCharacter:
+		attackerActor = &a.Actor
+	case *model.Enemy:
+		attackerActor = &a.Actor
+	case *model.NPC:
+		attackerActor = &a.Actor
+	case *model.Companion:
+		attackerActor = &a.Actor
+	default:
+		return 0
+	}
+
+	// 获取武器信息
+	var weapon *model.WeaponProperties
+	if attack.WeaponID != nil {
+		weaponItem, found := findWeaponInInventory(game, attackerActor, *attack.WeaponID)
+		if found && weaponItem.WeaponProps != nil {
+			weapon = weaponItem.WeaponProps
+		}
+	}
+
+	// 调用rules层计算擦伤伤害
+	return rules.CalculateGrazeDamage(
+		weapon,
+		attackerActor.AbilityScores.Strength,
+		attackerActor.AbilityScores.Dexterity,
+	)
 }
 
 // calculateAndApplyDamage 计算并应用伤害

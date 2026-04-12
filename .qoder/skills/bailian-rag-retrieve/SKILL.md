@@ -153,7 +153,7 @@ func main() {
 	req.SetQuery(query)
 	req.SetDenseSimilarityTopK(50)
 	req.SetEnableReranking(true)
-	req.SetRerankTopN(5)
+	req.SetRerankTopN(10)
 
 	// 执行检索
 	resp, err := client.Retrieve(tea.String(workspaceID), req)
