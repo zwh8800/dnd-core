@@ -74,6 +74,14 @@ type ListGamesRequest struct {
 	// 无需参数，使用空结构体以统一API签名
 }
 
+type GetGameRequest struct {
+	GameID model.ID `json:"game_id"` // 游戏ID
+}
+
+type GetGameResult struct {
+	Game *GameInfo `json:"game"` // 加载的游戏信息
+}
+
 // gameStateToInfo 将 GameState 转换为 GameInfo
 func gameStateToInfo(game *model.GameState) *GameInfo {
 	info := &GameInfo{
@@ -197,6 +205,16 @@ func (e *Engine) DeleteGame(ctx context.Context, req DeleteGameRequest) error {
 }
 
 // ListGames 列出所有可用的游戏会话
+// 从存储后端读取所有游戏状态，并返回游戏信息摘要列表。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求生命周期和取消操作
+//	req - 列出游戏请求，无需参数
+//
+// 返回:
+//
+//	[]GameSummary - 包含所有游戏信息摘要的列表
+//	error - 列出失败时返回错误（如存储读取失败）
 func (e *Engine) ListGames(ctx context.Context, req ListGamesRequest) ([]GameSummary, error) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -227,4 +245,25 @@ func (e *Engine) ListGames(ctx context.Context, req ListGamesRequest) ([]GameSum
 	})
 
 	return result, nil
+}
+
+// GetGame 获取游戏信息
+// 获取指定游戏的最新状态，并返回游戏信息摘要。
+// 参数:
+//
+//	ctx - 上下文，用于控制请求生命周期和取消操作
+//	req - 获取游戏请求，包含要获取的游戏ID
+//
+// 返回:
+//
+//	*GameInfo - 包含游戏信息摘要
+//	error - 获取失败时返回错误（如游戏不存在或存储读取失败）
+func (e *Engine) GetGame(ctx context.Context, req GetGameRequest) (*GameInfo, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	game, err := e.loadGame(ctx, req.GameID)
+	if err != nil {
+		return nil, err
+	}
+	return gameStateToInfo(game), nil
 }
