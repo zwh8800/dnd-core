@@ -474,21 +474,56 @@ func TestCombatEncounters(t *testing.T) {
 			}
 		}
 
+		// 攻击并验证HP变化
 		attack := func(attacker, target model.ID) bool {
+			// 记录攻击前HP
+			targetBefore, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: target})
+			require.NoError(t, err)
+			hpBefore := targetBefore.Actor.HitPoints.Current
+
 			result, err := e.ExecuteAttack(ctx, engine.ExecuteAttackRequest{
 				GameID:     gameID,
 				AttackerID: attacker,
 				TargetID:   target,
 				Attack:     engine.AttackInput{IsUnarmed: false},
 			})
-			if err == nil && result.AttackResult.Hit {
+			require.NoError(t, err)
+			require.NotNil(t, result)
+			require.NotNil(t, result.AttackResult)
+
+			// 记录攻击后HP
+			targetAfter, err := e.GetActor(ctx, engine.GetActorRequest{GameID: gameID, ActorID: target})
+			require.NoError(t, err)
+			hpAfter := targetAfter.Actor.HitPoints.Current
+
+			if result.AttackResult.Hit {
+				// 断言1: 验证HP变化与伤害一致（考虑死亡时HP=0）
+				expectedHP := hpBefore - result.AttackResult.Damage.FinalDamage
+				if expectedHP < 0 {
+					expectedHP = 0
+				}
+				assert.Equal(t, expectedHP, hpAfter,
+					"攻击命中后目标HP应该等于攻击前HP减去伤害值（死亡时停在0）")
+
+				t.Logf("  ✓ 命中! 伤害: %d, HP: %d -> %d",
+					result.AttackResult.Damage.FinalDamage, hpBefore, hpAfter)
 				return true
+			} else {
+				// 断言2: 未命中时HP不变
+				assert.Equal(t, hpBefore, hpAfter, "未命中时目标HP应该不变")
+				t.Logf("  ✗ 未命中! HP保持: %d", hpAfter)
+				return false
 			}
-			return false
 		}
 
 		castSpell := func(caster model.ID, spellID string, targets []model.ID, slotLevel int) bool {
-			_, err := e.CastSpell(ctx, engine.CastSpellRequest{
+			// 记录施法前HP
+			hpBefore := make(map[model.ID]int)
+			for _, targetID := range targets {
+				hpBefore[targetID] = getHP(targetID)
+			}
+
+			spellResult, err := e.CastSpell(ctx, engine.CastSpellRequest{
 				GameID:   gameID,
 				CasterID: caster,
 				Spell: engine.SpellInput{
@@ -497,7 +532,27 @@ func TestCombatEncounters(t *testing.T) {
 					TargetIDs: targets,
 				},
 			})
-			return err == nil
+
+			if err == nil {
+				require.NotNil(t, spellResult)
+				t.Logf("  ✓ 法术 %s 施放成功", spellID)
+
+				// 验证每个目标的HP变化
+				for _, targetID := range targets {
+					hpAfter := getHP(targetID)
+					if hpBefore[targetID] > hpAfter {
+						damage := hpBefore[targetID] - hpAfter
+						t.Logf("    目标 %s 受到 %d 伤害, HP: %d -> %d",
+							targetID, damage, hpBefore[targetID], hpAfter)
+						// 断言：法术应该造成伤害
+						assert.Greater(t, damage, 0, "法术应该对目标造成伤害")
+					}
+				}
+				return true
+			}
+
+			t.Logf("  ✗ 法术 %s 施放失败: %v", spellID, err)
+			return false
 		}
 
 		doAction := func(actor model.ID, actionType string, params map[string]any) bool {
