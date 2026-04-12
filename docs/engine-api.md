@@ -64,6 +64,12 @@ func (e *Engine) ListGames(ctx context.Context, req ListGamesRequest) ([]GameSum
 ```
 列出所有可用的游戏会话
 
+### GetGame
+```go
+func (e *Engine) GetGame(ctx context.Context, req GetGameRequest) (*GetGameResult, error)
+```
+获取指定游戏会话的详细信息
+
 ---
 
 ## 3. 角色管理
@@ -230,6 +236,12 @@ func (e *Engine) MoveActor(ctx context.Context, req MoveActorRequest) (*MoveActo
 ```
 在场景中移动角色
 
+### AttemptOpportunityAttack
+```go
+func (e *Engine) AttemptOpportunityAttack(ctx context.Context, req AttemptOpportunityAttackRequest) (*AttemptOpportunityAttackResult, error)
+```
+尝试执行借机攻击
+
 ---
 
 ## 7. 法术系统
@@ -378,7 +390,7 @@ func (e *Engine) GetEquipment(ctx context.Context, req GetEquipmentRequest) (*Eq
 ```go
 func (e *Engine) AttuneItem(ctx context.Context, req AttuneItemRequest) (*AttuneResult, error)
 ```
-调谐或解除调谐魔法物品
+调谐魔法物品
 
 ### TransferItem
 ```go
@@ -646,24 +658,624 @@ func (e *Engine) GetDeathSaveStatus(ctx context.Context, req GetDeathSaveStatusR
 
 ---
 
+## 16. 背景系统
+
+### ApplyBackground
+```go
+func (e *Engine) ApplyBackground(ctx context.Context, req ApplyBackgroundRequest) (*ApplyBackgroundResult, error)
+```
+为角色应用背景
+
+### GetBackgroundFeatures
+```go
+func (e *Engine) GetBackgroundFeatures(ctx context.Context, req GetBackgroundFeaturesRequest) (*GetBackgroundFeaturesResult, error)
+```
+获取背景特性详情
+
+---
+
+## 17.  Crafting（制作）系统
+
+### StartCrafting
+```go
+func (e *Engine) StartCrafting(ctx context.Context, req StartCraftingRequest) (*StartCraftingResult, error)
+```
+开始制作物品
+
+### AdvanceCrafting
+```go
+func (e *Engine) AdvanceCrafting(ctx context.Context, req AdvanceCraftingRequest) (*AdvanceCraftingResult, error)
+```
+推进制作进度
+
+### CompleteCrafting
+```go
+func (e *Engine) CompleteCrafting(ctx context.Context, req CompleteCraftingRequest) (*CompleteCraftingResult, error)
+```
+完成制作并获取物品
+
+### GetCraftingRecipes
+```go
+func (e *Engine) GetCraftingRecipes(ctx context.Context) ([]CraftingRecipeInfo, error)
+```
+获取所有可用的制作配方
+
+---
+
+## 18. 诅咒系统
+
+### CurseActor
+```go
+func (e *Engine) CurseActor(ctx context.Context, req CurseActorRequest) (*CurseActorResult, error)
+```
+对角色施加诅咒
+
+### RemoveCurse
+```go
+func (e *Engine) RemoveCurse(ctx context.Context, req RemoveCurseRequest) (*RemoveCurseResult, error)
+```
+移除角色的诅咒
+
+### GetCurses
+```go
+func (e *Engine) GetCurses(ctx context.Context, req GetCursesRequest) (*GetCursesResult, error)
+```
+获取角色当前的诅咒列表
+
+---
+
+## 19. 环境系统
+
+### SetEnvironment
+```go
+func (e *Engine) SetEnvironment(ctx context.Context, req SetEnvironmentRequest) (*SetEnvironmentResult, error)
+```
+设置当前场景的环境条件
+
+### ResolveEnvironmentalDamage
+```go
+func (e *Engine) ResolveEnvironmentalDamage(ctx context.Context, req ResolveEnvironmentalDamageRequest) (*ResolveEnvironmentalDamageResult, error)
+```
+结算环境伤害
+
+---
+
+## 20. 力竭系统
+
+### ApplyExhaustion
+```go
+func (e *Engine) ApplyExhaustion(ctx context.Context, req ApplyExhaustionRequest) (*ApplyExhaustionResult, error)
+```
+为角色增加力竭等级
+
+### RemoveExhaustion
+```go
+func (e *Engine) RemoveExhaustion(ctx context.Context, req RemoveExhaustionRequest) (*RemoveExhaustionResult, error)
+```
+移除角色的力竭等级
+
+### GetExhaustionStatus
+```go
+func (e *Engine) GetExhaustionStatus(ctx context.Context, req GetExhaustionStatusRequest) (*GetExhaustionStatusResult, error)
+```
+获取角色的力竭状态
+
+---
+
+## 21. 骑乘系统
+
+### MountCreature
+```go
+func (e *Engine) MountCreature(ctx context.Context, req MountCreatureRequest) (*MountCreatureResult, error)
+```
+骑乘一个生物
+
+### Dismount
+```go
+func (e *Engine) Dismount(ctx context.Context, req DismountRequest) (*DismountResult, error)
+```
+从骑乘生物上下来
+
+### CalculateMountSpeed
+```go
+func (e *Engine) CalculateMountSpeed(ctx context.Context, req CalculateMountSpeedRequest) (*CalculateMountSpeedResult, error)
+```
+计算骑乘状态下的速度
+
+---
+
+## 22. 移动系统
+
+### PerformJump
+```go
+func (e *Engine) PerformJump(ctx context.Context, req PerformJumpRequest) (*PerformJumpResult, error)
+```
+执行跳跃动作
+
+### ApplyFallDamage
+```go
+func (e *Engine) ApplyFallDamage(ctx context.Context, req ApplyFallDamageRequest) (*ApplyFallDamageResult, error)
+```
+结算跌落伤害
+
+### CalculateBreathHolding
+```go
+func (e *Engine) CalculateBreathHolding(ctx context.Context, req CalculateBreathHoldingRequest) (*CalculateBreathHoldingResult, error)
+```
+计算闭气时间
+
+### ApplySuffocation
+```go
+func (e *Engine) ApplySuffocation(ctx context.Context, req ApplySuffocationRequest) (*ApplySuffocationResult, error)
+```
+结算窒息效果
+
+### PerformEncounterCheck
+```go
+func (e *Engine) PerformEncounterCheck(ctx context.Context, req PerformEncounterCheckRequest) (*PerformEncounterCheckResult, error)
+```
+执行随机遭遇检定
+
+---
+
+## 23. 毒药系统
+
+### ApplyPoison
+```go
+func (e *Engine) ApplyPoison(ctx context.Context, req ApplyPoisonRequest) (*ApplyPoisonResult, error)
+```
+对角色施加毒药效果
+
+### ResolvePoisonEffect
+```go
+func (e *Engine) ResolvePoisonEffect(ctx context.Context, req ResolvePoisonEffectRequest) (*ResolvePoisonEffectResult, error)
+```
+结算毒药效果
+
+### RemovePoison
+```go
+func (e *Engine) RemovePoison(ctx context.Context, req RemovePoisonRequest) (*RemovePoisonResult, error)
+```
+移除角色的毒药效果
+
+---
+
+## 24. 陷阱系统
+
+### PlaceTrap
+```go
+func (e *Engine) PlaceTrap(ctx context.Context, req PlaceTrapRequest) (*PlaceTrapResult, error)
+```
+在场景中放置陷阱
+
+### DetectTrap
+```go
+func (e *Engine) DetectTrap(ctx context.Context, req DetectTrapRequest) (*DetectTrapResult, error)
+```
+尝试侦测陷阱
+
+### DisarmTrap
+```go
+func (e *Engine) DisarmTrap(ctx context.Context, req DisarmTrapRequest) (*DisarmTrapResult, error)
+```
+尝试解除陷阱
+
+### TriggerTrap
+```go
+func (e *Engine) TriggerTrap(ctx context.Context, req TriggerTrapRequest) (*TriggerTrapResult, error)
+```
+触发陷阱
+
+---
+
+## 25. 魔法物品系统
+
+### UseMagicItem
+```go
+func (e *Engine) UseMagicItem(ctx context.Context, req UseMagicItemRequest) (*UseMagicItemResult, error)
+```
+使用魔法物品
+
+### UnattuneItem
+```go
+func (e *Engine) UnattuneItem(ctx context.Context, req UnattuneItemRequest) (*UnattuneItemResult, error)
+```
+解除对魔法物品的调谐
+
+### RechargeMagicItems
+```go
+func (e *Engine) RechargeMagicItems(ctx context.Context, req RechargeMagicItemsRequest) (*RechargeMagicItemsResult, error)
+```
+恢复角色魔法物品的充能
+
+### GetMagicItemBonus
+```go
+func (e *Engine) GetMagicItemBonus(ctx context.Context, req GetMagicItemBonusRequest) (*GetMagicItemBonusResult, error)
+```
+获取角色从魔法物品获得的加值
+
+---
+
+## 26. 多职业系统
+
+### ValidateMulticlassChoice
+```go
+func (e *Engine) ValidateMulticlassChoice(ctx context.Context, req ValidateMulticlassRequest) (*ValidateMulticlassResult, error)
+```
+验证多职业选择是否符合条件
+
+### GetMulticlassSpellSlots
+```go
+func (e *Engine) GetMulticlassSpellSlots(ctx context.Context, req GetMulticlassSpellSlotsRequest) (*GetMulticlassSpellSlotsResult, error)
+```
+获取多职业角色的法术位
+
+---
+
+## 27. 生活方式系统
+
+### SetLifestyle
+```go
+func (e *Engine) SetLifestyle(ctx context.Context, req SetLifestyleRequest) (*SetLifestyleResult, error)
+```
+设置角色的生活方式
+
+### AdvanceGameTime
+```go
+func (e *Engine) AdvanceGameTime(ctx context.Context, req AdvanceGameTimeRequest) (*AdvanceGameTimeResult, error)
+```
+推进游戏内时间
+
+---
+
+## 28. 骰子系统
+
+### Roll
+```go
+func (e *Engine) Roll(ctx context.Context, req RollRequest) (*RollResult, error)
+```
+执行骰子投掷
+
+### RollAdvantage
+```go
+func (e *Engine) RollAdvantage(ctx context.Context, req RollAdvantageRequest) (*RollResult, error)
+```
+执行优势骰
+
+### RollDisadvantage
+```go
+func (e *Engine) RollDisadvantage(ctx context.Context, req RollDisadvantageRequest) (*RollResult, error)
+```
+执行劣势骰
+
+### RollAbility
+```go
+func (e *Engine) RollAbility(ctx context.Context, req RollAbilityRequest) (*RollResult, error)
+```
+执行属性骰
+
+### RollHitDice
+```go
+func (e *Engine) RollHitDice(ctx context.Context, req RollHitDiceRequest) (*RollResult, error)
+```
+执行生命骰投掷
+
+---
+
+## 29. 数据查询系统
+
+### ListRaces
+```go
+func (e *Engine) ListRaces(ctx context.Context, req ListRacesRequest) (*ListRacesResult, error)
+```
+列出所有可用种族
+
+### GetRace
+```go
+func (e *Engine) GetRace(ctx context.Context, req GetRaceRequest) (*GetRaceResult, error)
+```
+获取指定种族详情
+
+### ListClasses
+```go
+func (e *Engine) ListClasses(ctx context.Context, req ListClassesRequest) (*ListClassesResult, error)
+```
+列出所有可用职业
+
+### GetClass
+```go
+func (e *Engine) GetClass(ctx context.Context, req GetClassRequest) (*GetClassResult, error)
+```
+获取指定职业详情
+
+### ListBackgrounds
+```go
+func (e *Engine) ListBackgrounds(ctx context.Context, req ListBackgroundsRequest) (*ListBackgroundsResult, error)
+```
+列出所有可用背景
+
+### GetBackground
+```go
+func (e *Engine) GetBackground(ctx context.Context, req GetBackgroundRequest) (*GetBackgroundResult, error)
+```
+获取指定背景详情
+
+### ListFeatsData
+```go
+func (e *Engine) ListFeatsData(ctx context.Context, req ListFeatsDataRequest) (*ListFeatsDataResult, error)
+```
+列出所有专长数据
+
+### GetFeatData
+```go
+func (e *Engine) GetFeatData(ctx context.Context, req GetFeatDataRequest) (*GetFeatDataResult, error)
+```
+获取专长详情数据
+
+### ListMonsters
+```go
+func (e *Engine) ListMonsters(ctx context.Context, req ListMonstersRequest) (*ListMonstersResult, error)
+```
+列出所有怪物
+
+### GetMonster
+```go
+func (e *Engine) GetMonster(ctx context.Context, req GetMonsterRequest) (*GetMonsterResult, error)
+```
+获取指定怪物详情
+
+### ListSpells
+```go
+func (e *Engine) ListSpells(ctx context.Context, req ListSpellsRequest) (*ListSpellsResult, error)
+```
+列出所有法术
+
+### GetSpell
+```go
+func (e *Engine) GetSpell(ctx context.Context, req GetSpellRequest) (*GetSpellResult, error)
+```
+获取指定法术详情
+
+### ListWeapons
+```go
+func (e *Engine) ListWeapons(ctx context.Context, req ListWeaponsRequest) (*ListWeaponsResult, error)
+```
+列出所有武器
+
+### GetWeapon
+```go
+func (e *Engine) GetWeapon(ctx context.Context, req GetWeaponRequest) (*GetWeaponResult, error)
+```
+获取指定武器详情
+
+### ListArmors
+```go
+func (e *Engine) ListArmors(ctx context.Context, req ListArmorsRequest) (*ListArmorsResult, error)
+```
+列出所有护甲
+
+### GetArmor
+```go
+func (e *Engine) GetArmor(ctx context.Context, req GetArmorRequest) (*GetArmorResult, error)
+```
+获取指定护甲详情
+
+### ListMagicItems
+```go
+func (e *Engine) ListMagicItems(ctx context.Context, req ListMagicItemsRequest) (*ListMagicItemsResult, error)
+```
+列出所有魔法物品
+
+### GetMagicItem
+```go
+func (e *Engine) GetMagicItem(ctx context.Context, req GetMagicItemRequest) (*GetMagicItemResult, error)
+```
+获取指定魔法物品详情
+
+### ListGears
+```go
+func (e *Engine) ListGears(ctx context.Context, req ListGearsRequest) (*ListGearsResult, error)
+```
+列出所有装备/工具
+
+### GetGear
+```go
+func (e *Engine) GetGear(ctx context.Context, req GetGearRequest) (*GetGearResult, error)
+```
+获取指定装备/工具详情
+
+### ListTools
+```go
+func (e *Engine) ListTools(ctx context.Context, req ListToolsRequest) (*ListToolsResult, error)
+```
+列出所有工具
+
+### GetTool
+```go
+func (e *Engine) GetTool(ctx context.Context, req GetToolRequest) (*GetToolResult, error)
+```
+获取指定工具详情
+
+### ListRecipes
+```go
+func (e *Engine) ListRecipes(ctx context.Context, req ListRecipesRequest) (*ListRecipesResult, error)
+```
+列出所有配方
+
+### GetRecipe
+```go
+func (e *Engine) GetRecipe(ctx context.Context, req GetRecipeRequest) (*GetRecipeResult, error)
+```
+获取指定配方详情
+
+### ListLifestylesData
+```go
+func (e *Engine) ListLifestylesData(ctx context.Context, req ListLifestylesRequest) (*ListLifestylesResult, error)
+```
+列出所有生活方式数据
+
+### GetLifestyleData
+```go
+func (e *Engine) GetLifestyleData(ctx context.Context, req GetLifestyleDataRequest) (*GetLifestyleDataResult, error)
+```
+获取生活方式数据详情
+
+### ListMounts
+```go
+func (e *Engine) ListMounts(ctx context.Context, req ListMountsRequest) (*ListMountsResult, error)
+```
+列出所有骑乘生物
+
+### GetMount
+```go
+func (e *Engine) GetMount(ctx context.Context, req GetMountRequest) (*GetMountResult, error)
+```
+获取指定骑乘生物详情
+
+### ListPoisons
+```go
+func (e *Engine) ListPoisons(ctx context.Context, req ListPoisonsRequest) (*ListPoisonsResult, error)
+```
+列出所有毒药
+
+### GetPoison
+```go
+func (e *Engine) GetPoison(ctx context.Context, req GetPoisonRequest) (*GetPoisonResult, error)
+```
+获取指定毒药详情
+
+### ListTraps
+```go
+func (e *Engine) ListTraps(ctx context.Context, req ListTrapsRequest) (*ListTrapsResult, error)
+```
+列出所有陷阱
+
+### GetTrap
+```go
+func (e *Engine) GetTrap(ctx context.Context, req GetTrapRequest) (*GetTrapResult, error)
+```
+获取指定陷阱详情
+
+---
+
+## 30. 怪物系统
+
+### LoadMonster
+```go
+func (e *Engine) LoadMonster(templateID string) (*model.Enemy, error)
+```
+从模板加载一个怪物
+
+---
+
+## 31. 信息聚合查询
+
+### GetLifestyleInfo
+```go
+func (e *Engine) GetLifestyleInfo(ctx context.Context, req GetLifestyleRequest) (*GetLifestyleResult, error)
+```
+获取角色生活方式信息
+
+### GetCraftingInfo
+```go
+func (e *Engine) GetCraftingInfo(ctx context.Context, req GetCraftingInfoRequest) (*GetCraftingInfoResult, error)
+```
+获取角色制作信息
+
+### GetCarryingCapacity
+```go
+func (e *Engine) GetCarryingCapacity(ctx context.Context, req GetCarryingCapacityRequest) (*GetCarryingCapacityResult, error)
+```
+获取角色负重能力
+
+### GetExhaustionEffects
+```go
+func (e *Engine) GetExhaustionEffects(ctx context.Context, req GetExhaustionEffectsRequest) (*GetExhaustionEffectsResult, error)
+```
+获取角色力竭效果描述
+
+---
+
+## 32. 状态查询
+
+### GetStateSummary
+```go
+func (e *Engine) GetStateSummary(ctx context.Context, gameID model.ID) (*StateSummary, error)
+```
+获取游戏状态摘要
+
+### GetActorSheet
+```go
+func (e *Engine) GetActorSheet(ctx context.Context, gameID model.ID, actorID model.ID) (*ActorSheet, error)
+```
+获取角色完整数据表
+
+### GetCombatSummary
+```go
+func (e *Engine) GetCombatSummary(ctx context.Context, gameID model.ID) (*CombatSummary, error)
+```
+获取战斗摘要
+
+---
+
+## 33. 阶段管理
+
+### SetPhase
+```go
+func (e *Engine) SetPhase(ctx context.Context, gameID model.ID, phase model.Phase, reason string) (*PhaseTransitionResult, error)
+```
+设置游戏阶段
+
+### GetPhase
+```go
+func (e *Engine) GetPhase(ctx context.Context, gameID model.ID) (model.Phase, error)
+```
+获取当前游戏阶段
+
+### GetAllowedOperations
+```go
+func (e *Engine) GetAllowedOperations(ctx context.Context, gameID model.ID) ([]Operation, error)
+```
+获取当前阶段允许的所有操作
+
+---
+
 ## API 分类索引
 
 | 分类 | 文件 | API 数量 |
 |------|------|----------|
-| 引擎初始化 | engine.go | 4 |
-| 游戏会话管理 | game.go | 5 |
-| 角色管理 | actor.go | 10 |
+| 引擎初始化 | engine.go | 3 |
+| 游戏会话管理 | game.go | 6 |
+| 角色管理 | actor.go | 9 |
 | 角色升级与经验 | actor.go | 2 |
 | 休息系统 | actor.go | 3 |
 | 战斗系统 | combat.go | 12 |
-| 法术系统 | spell.go | 10 |
+| 法术系统 | spell.go | 11 |
 | 检定系统 | check.go | 5 |
-| 库存管理 | inventory.go | 10 |
+| 库存管理 | inventory.go | 9 |
 | 专长系统 | feat.go | 5 |
-| 场景管理 | scene.go | 16 |
+| 场景管理 | scene.go | 14 |
 | 探索系统 | exploration.go | 4 |
 | 社交互动 | social.go | 2 |
 | 任务系统 | quest.go | 10 |
 | 死亡豁免 | death_saves.go | 3 |
+| 背景系统 | background.go | 2 |
+| 制作系统 | crafting.go | 4 |
+| 诅咒系统 | curse.go | 3 |
+| 环境系统 | environment.go | 2 |
+| 力竭系统 | exhaustion.go | 3 |
+| 骑乘系统 | mount.go | 3 |
+| 移动系统 | movement.go | 5 |
+| 毒药系统 | poison.go | 3 |
+| 陷阱系统 | trap.go | 4 |
+| 魔法物品系统 | magic_items.go | 4 |
+| 多职业系统 | multiclass.go | 2 |
+| 生活方式系统 | lifestyle.go | 2 |
+| 骰子系统 | dice.go | 5 |
+| 数据查询系统 | data_query.go | 36 |
+| 怪物系统 | monster.go | 1 |
+| 信息聚合查询 | info_queries.go | 4 |
+| 状态查询 | state.go | 3 |
+| 阶段管理 | phase.go | 3 |
 
-**总计**: 116 个公共 API 方法
+**总计**: 178 个公共 API 方法/函数
