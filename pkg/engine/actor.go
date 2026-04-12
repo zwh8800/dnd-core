@@ -495,6 +495,8 @@ func (e *Engine) CreateEnemy(ctx context.Context, req CreateEnemyRequest) (*Crea
 	enemy := &model.Enemy{
 		Actor: model.Actor{
 			ID:            model.NewID(),
+			Name:          req.Enemy.Name,
+			Description:   req.Enemy.Description,
 			AbilityScores: abilityScoresInputToModel(req.Enemy.AbilityScores),
 			Size:          req.Enemy.Size,
 			Speed:         req.Enemy.Speed,
