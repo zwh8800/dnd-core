@@ -136,6 +136,30 @@ func TestCombatEncounters(t *testing.T) {
 				attackResult.AttackResult.Roll.Total,
 				attackResult.AttackResult.Hit,
 				attackResult.AttackResult.IsCritical)
+
+			// 验证敌人状态与攻击结果一致
+			if attackResult.AttackResult.Hit {
+				// 获取敌人当前状态
+				enemyState, err := e.GetActor(ctx, engine.GetActorRequest{
+					GameID:  gameID,
+					ActorID: orc.Actor.ID,
+				})
+				require.NoError(t, err)
+				require.NotNil(t, enemyState.Actor)
+
+				// 验证生命值变化与攻击结果一致
+				if attackResult.AttackResult.Damage != nil {
+					assert.Equal(t, attackResult.AttackResult.Damage.TargetHPAfter, enemyState.Actor.HitPoints.Current,
+						"敌人当前生命值应与攻击结果中的目标HP一致")
+					assert.Equal(t, attackResult.AttackResult.Damage.TargetHPBefore, enemyState.Actor.HitPoints.Maximum,
+						"敌人最大生命值应与攻击结果中的目标HP前一致")
+
+					t.Logf("敌人状态验证: 当前HP=%d, 最大HP=%d, 是否死亡=%v",
+						enemyState.Actor.HitPoints.Current,
+						enemyState.Actor.HitPoints.Maximum,
+						attackResult.AttackResult.Damage.IsDead)
+				}
+			}
 		})
 
 		// 测试下一回合推进
