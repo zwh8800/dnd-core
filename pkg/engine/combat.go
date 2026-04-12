@@ -1233,11 +1233,17 @@ func (e *Engine) ExecuteHealing(ctx context.Context, req ExecuteHealingRequest) 
 
 	wasStable := baseActor.HasCondition(model.ConditionStabilized)
 
+	// 记录治疗前HP，用于计算实际治疗量
+	hpBefore := baseActor.HitPoints.Current
+
 	// 应用治疗
 	baseActor.HitPoints.Current += req.Amount
 	if baseActor.HitPoints.Current > baseActor.HitPoints.Maximum {
 		baseActor.HitPoints.Current = baseActor.HitPoints.Maximum
 	}
+
+	// 计算实际治疗量
+	actualHealed := baseActor.HitPoints.Current - hpBefore
 
 	// 如果角色稳定但HP>0，移除稳定状态
 	if baseActor.HitPoints.Current > 0 && wasStable {
@@ -1256,9 +1262,9 @@ func (e *Engine) ExecuteHealing(ctx context.Context, req ExecuteHealingRequest) 
 
 	return &ExecuteHealingResult{
 		TargetID:  req.TargetID,
-		Healed:    req.Amount,
+		Healed:    actualHealed,
 		CurrentHP: baseActor.HitPoints.Current,
-		Message:   fmt.Sprintf("恢复 %d 点HP", req.Amount),
+		Message:   fmt.Sprintf("恢复 %d 点HP", actualHealed),
 	}, nil
 }
 
