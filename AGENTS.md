@@ -77,37 +77,67 @@ pkg/dice/            - Dice Layer: Randomization and dice rolling
 **pkg/engine** - Core game engine providing:
 - Thread-safe `Engine` struct as the single entry point
 - 50+ public methods for all game operations
-- Phase-based permission system (CharacterCreation, Exploration, Combat, etc.)
+- Phase-based permission system (CharacterCreation, Exploration, Combat, Rest)
 - Request/Result pattern for all API calls
 - Automatic state persistence via storage layer
+- File organization: organized by game system (actor.go, combat.go, spell.go, etc.)
 
 **pkg/model** - Data models only (no business logic):
 - Core types: PlayerCharacter, NPC, Enemy, Companion, Actor
 - Game types: GameState, Combat, Scene, Quest
 - D&D types: Ability, Skill, Feat, Spell, Item, Condition
-- Class-specific hooks in `*_hooks.go` files
+- Class-specific hooks in `*_hooks.go` files (12 classes)
+- Helper methods for convenience (IsAlive, IsDead, etc.)
 
 **pkg/rules** - D&D 5e rule implementations:
+- Attack rolls and damage calculation
 - Check and saving throw mechanics
 - Combat rules (cover, grapple, shove, opportunity attacks)
 - Death saves, exhaustion, rest mechanics
-- Social interaction rules
+- Spell effects and multiclass calculations
+- Social interaction and exploration rules
 
 **pkg/data** - Global game data registry:
 - Thread-safe singleton: `data.GlobalRegistry`
 - Register/Get/List pattern for all data types
-- Contains: races, classes, backgrounds, feats, spells, items, monsters, etc.
+- Contains: 12 classes, races, backgrounds, 100+ feats, 400+ spells, 100+ magic items, monsters, etc.
 - Uses `data.GlobalRegistry.GetRace()`, `GetFeat()`, etc. for lookups
+- Never modify - read-only access only
 
 **pkg/storage** - Persistence abstraction:
 - `Store` interface for pluggable backends
 - Current implementation: in-memory store
 - Methods: SaveGame, LoadGame, DeleteGame, ListGames, UpdateGame
+- Deep copies for isolation between operations
 
 **pkg/dice** - Dice rolling utility:
 - D&D notation parser: "4d6kh3", "2d20", "adv", "dis"
 - Supports keep-high, keep-low, drop modifiers
 - Seeded random for reproducible tests
+- Advantage/disadvantage mechanics
+
+### Game Phase System
+
+The engine uses a **phase-based permission model** to control what operations are allowed when.
+
+**Phases:**
+- `PhaseCharacterCreation` - Building characters (initial phase)
+- `PhaseExploration` - Traveling, interaction, general gameplay
+- `PhaseCombat` - Active combat encounters
+- `PhaseRest` - Long/short rests
+
+**Phase Transitions:**
+```
+CharacterCreation → Exploration ↔ Combat
+                        ↓↑
+                      Rest
+```
+
+**Permission System:**
+- Each phase has an allowed operations map in `phase.go`
+- Data queries allowed in ALL phases
+- Engine methods must call `e.checkPermission(game.Phase, OpYourOperation)`
+- Phase transitions trigger automatic actions (e.g., combat cleanup, XP rewards)
 
 ## API Design Rules (CRITICAL)
 
@@ -262,6 +292,50 @@ Each file contains:
 2. Info struct definitions
 3. Engine method implementations
 4. Helper conversion functions (e.g., `actorToInfo`)
+
+### Character Classes
+
+The game supports 12 D&D 5e classes, each with class-specific hook files in `pkg/model/`:
+
+| Class | Key Features | Hook File |
+|-------|--------------|-----------|
+| Barbarian | Rage, Unarmored Defense, Reckless Attack | `barbarian_hooks.go` |
+| Bard | Bardic Inspiration, Spellcasting (CHA) | `bard_hooks.go` |
+| Cleric | Channel Divinity, Spellcasting (WIS) | `cleric_hooks.go` |
+| Druid | Wild Shape, Spellcasting (WIS) | `druid_hooks.go` |
+| Fighter | Action Surge, Fighting Style, Extra Attack | `fighter_hooks.go` |
+| Monk | Ki Points, Flurry of Blows, Stunning Strike | `monk_hooks.go` |
+| Paladin | Divine Smite, Aura of Protection | `paladin_hooks.go` |
+| Ranger | Favored Enemy, Spellcasting (WIS) | `ranger_hooks.go` |
+| Rogue | Sneak Attack, Cunning Action, Expertise | `rogue_hooks.go` |
+| Sorcerer | Sorcery Points, Metamagic | `sorcerer_hooks.go` |
+| Warlock | Pact Magic, Invocations, Eldritch Blast | `warlock_hooks.go` |
+| Wizard | Spellcasting (INT), Arcane Recovery | `wizard_hooks.go` |
+
+### Combat System Flow
+
+Combat follows this lifecycle:
+1. `StartCombat()` - Initialize combat, set phase to PhaseCombat, generate initiative
+2. `NextTurn()` - Progress initiative order, reset actions
+3. `ExecuteAction()` - Actor takes action (attack, spell, move, etc.)
+4. `ExecuteAttack()` - Roll attack vs AC, trigger damage on hit
+5. `ExecuteDamage()` - Apply damage, check for unconsciousness/death saves
+6. `EndCombat()` - Apply XP rewards, return to PhaseExploration
+
+### Configuration and Initialization
+
+```go
+type Config struct {
+    Storage  storage.Store  // Defaults to in-memory if nil
+    DiceSeed int64          // 0 = random, fixed = deterministic for tests
+    DataPath string         // Empty = built-in data only
+}
+
+// Usage
+cfg := engine.DefaultConfig()
+cfg.DiceSeed = 42  // For deterministic tests
+e, err := engine.New(cfg)
+```
 
 ## Comment Conventions
 
