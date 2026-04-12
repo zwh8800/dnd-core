@@ -37,10 +37,10 @@ const (
 type ArmorType string
 
 const (
-	ArmorTypeLight  ArmorType = "light"
-	ArmorTypeMedium ArmorType = "medium"
-	ArmorTypeHeavy  ArmorType = "heavy"
-	ArmorTypeShield ArmorType = "shield"
+	ArmorTypeLight  ArmorType = "轻型护甲" // light 轻型护甲
+	ArmorTypeMedium ArmorType = "中型护甲" // medium 中型护甲
+	ArmorTypeHeavy  ArmorType = "重型护甲" // heavy 重型护甲
+	ArmorTypeShield ArmorType = "盾牌"   // shield 盾牌
 )
 
 // DamageType 代表伤害类型（这里先定义，后面damage.go会有更详细的定义）
