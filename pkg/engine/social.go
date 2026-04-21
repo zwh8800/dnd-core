@@ -131,6 +131,13 @@ func (e *Engine) GetNPCAttitude(ctx context.Context, req GetNPCAttitudeRequest) 
 		return nil, fmt.Errorf("NPC %s not found", req.NPCID)
 	}
 
+	if npc.SocialState == nil {
+		return &GetNPCAttitudeResult{
+			Attitude:    model.NPCAttitude(npc.Attitude),
+			Disposition: model.NPCDisposition(npc.Disposition),
+		}, nil
+	}
+
 	result := &GetNPCAttitudeResult{
 		Attitude:    npc.SocialState.CurrentAttitude,
 		Disposition: npc.SocialState.Disposition,
