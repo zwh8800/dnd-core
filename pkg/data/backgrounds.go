@@ -154,3 +154,34 @@ var Backgrounds = []*model.BackgroundDefinition{
 		},
 	},
 }
+
+// backgroundNameToID 背景中文名到英文ID的映射
+var backgroundNameToID = map[string]model.BackgroundID{
+	"侍僧": model.BackgroundAcolyte,
+	"罪犯": model.BackgroundCriminal,
+	"学者": model.BackgroundSage,
+	"士兵": model.BackgroundSoldier,
+}
+
+// ResolveBackgroundID 将背景中文名或英文ID解析为标准英文ID
+func ResolveBackgroundID(name string) (model.BackgroundID, bool) {
+	if id, ok := backgroundNameToID[name]; ok {
+		return id, true
+	}
+	// 如果已经是英文ID，直接返回
+	for _, bg := range Backgrounds {
+		if string(bg.ID) == name {
+			return bg.ID, true
+		}
+	}
+	return "", false
+}
+
+// GetBackgroundNames 获取所有背景中文名
+func GetBackgroundNames() []string {
+	names := make([]string, 0, len(Backgrounds))
+	for _, bg := range Backgrounds {
+		names = append(names, bg.Name)
+	}
+	return names
+}

@@ -159,12 +159,21 @@ func (r *DataRegistry) RegisterBackground(bg *model.BackgroundDefinition) error 
 	return nil
 }
 
-// GetBackground 获取背景数据
+// GetBackground 获取背景数据（支持中英文查询）
 func (r *DataRegistry) GetBackground(id string) (*model.BackgroundDefinition, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	bg, exists := r.backgrounds[id]
-	return bg, exists
+	// 先尝试直接匹配ID
+	if bg, exists := r.backgrounds[id]; exists {
+		return bg, true
+	}
+	// 尝试中文名解析
+	if bgID, ok := ResolveBackgroundID(id); ok {
+		if bg, exists := r.backgrounds[string(bgID)]; exists {
+			return bg, true
+		}
+	}
+	return nil, false
 }
 
 // ListBackgrounds 列出所有背景

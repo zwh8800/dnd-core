@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/zwh8800/dnd-core/pkg/data"
@@ -442,6 +443,13 @@ func (e *Engine) CreatePC(ctx context.Context, req CreatePCRequest) (*CreatePCRe
 		return nil, fmt.Errorf("pc input is required")
 	}
 
+	// 校验种族有效性
+	if req.PC.Race != "" {
+		if data.GetRace(req.PC.Race) == nil {
+			return nil, fmt.Errorf("无效的种族: %s，可用种族: %s", req.PC.Race, strings.Join(data.GetRaceNames(), ", "))
+		}
+	}
+
 	// 构建 PlayerCharacter
 	pc := &model.PlayerCharacter{
 		Actor: model.Actor{
@@ -476,7 +484,11 @@ func (e *Engine) CreatePC(ctx context.Context, req CreatePCRequest) (*CreatePCRe
 
 	// 设置背景
 	if req.PC.Background != "" {
-		pc.BackgroundID = req.PC.Background
+		bgID, ok := data.ResolveBackgroundID(req.PC.Background)
+		if !ok {
+			return nil, fmt.Errorf("无效的背景: %s，可用背景: %s", req.PC.Background, strings.Join(data.GetBackgroundNames(), ", "))
+		}
+		pc.BackgroundID = string(bgID)
 	}
 
 	// 设置个性特征
@@ -1763,7 +1775,12 @@ func playerCharacterToInfo(pc *model.PlayerCharacter) *PlayerCharacterInfo {
 	if pc.Personality != nil && pc.Personality.Background != "" {
 		info.Background = pc.Personality.Background
 	} else if pc.BackgroundID != "" {
-		info.Background = pc.BackgroundID
+		// 通过注册表查询中文名
+		if bg, ok := data.GlobalRegistry.GetBackground(string(pc.BackgroundID)); ok {
+			info.Background = bg.Name
+		} else {
+			info.Background = string(pc.BackgroundID)
+		}
 	}
 	return info
 }
