@@ -474,12 +474,17 @@ func (e *Engine) CreatePC(ctx context.Context, req CreatePCRequest) (*CreatePCRe
 		Gold:         req.PC.Gold,
 	}
 
-	// 设置体型和速度（如果提供）
+	// 设置体型和速度（如果提供，否则使用种族默认值）
 	if req.PC.Size != "" {
 		pc.Size = model.Size(req.PC.Size)
 	}
 	if req.PC.Speed != nil {
 		pc.Speed = *req.PC.Speed
+	} else if req.PC.Race != "" {
+		// 未提供速度时，使用种族默认值
+		if raceDef := data.GetRace(req.PC.Race); raceDef != nil {
+			pc.Speed = raceDef.Speed
+		}
 	}
 
 	// 设置背景
