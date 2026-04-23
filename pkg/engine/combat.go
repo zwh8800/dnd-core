@@ -1503,11 +1503,48 @@ func (e *Engine) calculateAndApplyDamage(game *model.GameState, attackerID, targ
 			abilityMod = rules.AbilityModifier(attackerActor.AbilityScores.Strength)
 		}
 	} else if attack.IsUnarmed {
-		// 徒手攻击
-		weaponDamageDice = "1"
+		// 徒手攻击：固定1点伤害，不走骰子掷投
 		damageType = model.DamageTypeBludgeoning
 		abilityMod = rules.AbilityModifier(attackerActor.AbilityScores.Strength)
 		isMelee = true
+
+		baseDamageDice := 1
+		baseDamage := baseDamageDice + abilityMod
+
+		// 应用职业特性伤害钩子
+		if attackerPC != nil && attackerPC.FeatureHooks != nil {
+			dmgCtx := &model.DamageContext{
+				BaseDamage: baseDamageDice,
+				Bonus:      abilityMod,
+				DamageType: damageType,
+				IsMelee:    isMelee,
+				IsRanged:   !isMelee,
+			}
+			for _, hook := range attackerPC.FeatureHooks {
+				hook.OnDamageCalc(dmgCtx)
+			}
+			baseDamageDice = dmgCtx.BaseDamage
+			baseDamage = dmgCtx.BaseDamage + dmgCtx.Bonus
+		}
+
+		if isCritical {
+			baseDamage = rules.CalculateCriticalDamage(baseDamageDice, abilityMod)
+		}
+
+		resistances := model.NewDamageResistances()
+		calc := rules.CalculateDamage(baseDamage, 0, damageType, resistances, isCritical)
+
+		result, err := e.applyDamageToTarget(game, attackerID, targetID, calc.FinalDamage, damageType, false)
+		if err != nil {
+			return nil, err
+		}
+
+		result.RawDamage = baseDamage
+		if isCritical {
+			result.RawDamage = baseDamage * 2
+		}
+
+		return result, nil
 	} else {
 		// 默认使用力量修正和2d6（应该通过WeaponID指定武器）
 		weaponDamageDice = "2d6"
