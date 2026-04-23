@@ -92,7 +92,8 @@ type NextTurnRequest struct {
 // NextTurnResult 下一回合结果
 // 返回推进后的战斗状态信息
 type NextTurnResult struct {
-	Combat *CombatInfo `json:"combat"` // 战斗状态信息
+	Combat *CombatInfo       `json:"combat"` // 战斗状态信息
+	Turn   *EnhancedTurnInfo `json:"turn"`   // 增强回合信息（组合API填充）
 }
 
 // GetCurrentTurnRequest 获取当前回合请求
